@@ -13,9 +13,24 @@ const securedEndpoints: SecureRoute[] = [
     { pattern: /^\/admin(\/.*)?$/, requiredRoles: ["admin"] },
 ]
 
+const IGNORED_PATHS = [
+    "/_next",
+    "/api/auth",
+    "/favicon.ico",
+    "/robots.txt",
+    "/sitemap.xml",
+];
+
+function isIgnoredPath(pathname: string) {
+    return IGNORED_PATHS.some(path => pathname.startsWith(path));
+}
+
 export async function proxy(request: NextRequest) {
-    const session = await getAuthSession();
     const pathname = request.nextUrl.pathname;
+
+    if (isIgnoredPath(pathname)) return NextResponse.next();
+
+    const session = await getAuthSession();
 
     for (const route of securedEndpoints) {
         if (route.pattern.test(pathname)) {

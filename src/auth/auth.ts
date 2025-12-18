@@ -91,6 +91,18 @@ export const authOptions = {
 
 export const auth = NextAuth(authOptions)
 
-export async function getAuthSession(): Promise<Session | null> {
-    return getServerSession(authOptions)
+export async function getAuthSession(
+    timeoutMs = 3000
+): Promise<Session | null> {
+    try {
+        return await Promise.race([
+            getServerSession(authOptions),
+            new Promise<null>((_, reject) =>
+                setTimeout(() => reject(new Error("Auth timeout")), timeoutMs)
+            ),
+        ]);
+    } catch (error) {
+        console.error("[AUTH] getServerSession failed:", error);
+        return null;
+    }
 }
