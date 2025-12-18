@@ -1,6 +1,7 @@
 'use client';
 import {signIn, signOut, useSession} from "next-auth/react";
 import Link from "next/link";
+import {Button} from "@chakra-ui/react";
 
 export default function Home() {
     const {data: session} = useSession()
@@ -66,7 +67,7 @@ function GreetingButton() {
         console.log(data);
     };
 
-    return <button onClick={handleClick}>Load greeting</button>;
+    return <Button onClick={handleClick}>Load greeting</Button>;
 }
 
 function SecuredButton() {
@@ -76,5 +77,5 @@ function SecuredButton() {
         console.log(data);
     };
 
-    return <button onClick={handleClick}>Load secured</button>;
+    return <Button onClick={handleClick}>Load secured</Button>;
 }

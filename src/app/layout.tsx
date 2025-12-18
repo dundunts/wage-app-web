@@ -1,7 +1,7 @@
 import "./globals.css";
 import {AuthSessionProvider} from "./providers/session-provider";
 import {Provider} from "@/components/ui/provider";
-import {Header} from "@/components/header/Header";
+import {Header} from "@/components/navigation/Header";
 
 export default function RootLayout({children}: { children: React.ReactNode; }) {
     return (
