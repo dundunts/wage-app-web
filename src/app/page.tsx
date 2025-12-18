@@ -1,14 +1,18 @@
 'use client';
 import {signIn, signOut, useSession} from "next-auth/react";
+import Link from "next/link";
 
 export default function Home() {
-    const { data: session } = useSession()
+    const {data: session} = useSession()
     if (session) {
         return (
             <>
-                Signed in as {session.user?.email} <br />
+                Signed in as {session.user?.email} <br/>
                 Access token: {session.accessToken} <br/>
                 <button onClick={() => signOut()}>Sign out</button>
+
+                <br/><br/>
+                Roles: {session.realmRoles}
 
                 <br/><br/>
                 Greetings:
@@ -17,12 +21,15 @@ export default function Home() {
                 <br/><br/>
                 Secured:
                 <SecuredButton/>
+
+                <br/><br/>
+                <Navigation/>
             </>
         )
     }
     return (
         <>
-            Not signed in <br />
+            Not signed in <br/>
             <button onClick={() => signIn()}>Sign in</button>
 
             <br/><br/>
@@ -32,7 +39,23 @@ export default function Home() {
             <br/><br/>
             Secured:
             <SecuredButton/>
+
+            <br/><br/>
+            <Navigation/>
         </>
+    )
+}
+
+function Navigation() {
+    return (
+        <div>
+            <title>Navigation:</title>
+            <ul>
+                <li><Link href='/secured'>to Secured</Link></li>
+                <li><Link href='/public'>to Public</Link></li>
+                <li><Link href='/admin'>to Admin</Link></li>
+            </ul>
+        </div>
     )
 }
 

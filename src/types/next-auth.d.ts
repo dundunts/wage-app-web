@@ -4,6 +4,7 @@ import "next-auth/jwt";
 declare module "next-auth" {
     interface Session {
         accessToken: string;
+        realmRoles: string[];
         error?: "RefreshTokenError"
     }
 }
@@ -13,6 +14,7 @@ declare module "next-auth/jwt" {
         access_token: string
         expires_at: number
         refresh_token?: string
+        realm_roles?: string[]
         error?: "RefreshTokenError"
     }
 }

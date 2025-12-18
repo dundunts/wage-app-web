@@ -1,6 +1,18 @@
 import KeycloakProvider from "next-auth/providers/keycloak";
-import NextAuth, {AuthOptions, getServerSession, Session} from "next-auth";
+import NextAuth, {Account, AuthOptions, getServerSession, Session} from "next-auth";
 import {refreshKeycloakToken} from "@/auth/auth.api.keycloak";
+
+function parseRoles(accessToken?: string) {
+    let roles: string[] = [];
+    if (accessToken) {
+        const payload = JSON.parse(
+            Buffer.from(accessToken.split(".")[1], "base64").toString()
+        );
+
+        roles = payload.realm_access?.roles ?? [];
+    }
+    return roles;
+}
 
 export const authOptions = {
     providers: [
@@ -15,11 +27,14 @@ export const authOptions = {
         async jwt({ token, account }) {
             if (account) {
                 // First-time login, save the `access_token`, its expiry and the `refresh_token`
+                const roles = parseRoles(account.access_token);
+
                 return {
                     ...token,
                     access_token: account.access_token,
                     expires_at: account.expires_at,
                     refresh_token: account.refresh_token,
+                    realm_roles: roles
                 }
             } else if (Date.now() < token.expires_at * 1000) {
                 // Subsequent logins, but the `access_token` is still valid
@@ -44,6 +59,8 @@ export const authOptions = {
                         refresh_token?: string
                     }
 
+                    const roles = parseRoles(newTokens.access_token);
+
                     return {
                         ...token,
                         access_token: newTokens.access_token,
@@ -52,6 +69,7 @@ export const authOptions = {
                         refresh_token: newTokens.refresh_token
                             ? newTokens.refresh_token
                             : token.refresh_token,
+                        realm_roles: roles
                     }
                 } catch (error) {
                     console.error("Error refreshing access_token", error)
@@ -65,6 +83,7 @@ export const authOptions = {
             // Send properties to the client, like an access_token from a provider.
             session.accessToken = token.access_token
             session.error = token.error
+            session.realmRoles = token.realm_roles || []
             return session
         }
     }
