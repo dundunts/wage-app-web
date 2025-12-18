@@ -1,10 +1,9 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import {NextResponse} from "next/server";
+import {getAuthSession} from "@/auth/auth";
 
 export async function GET() {
     console.log("Calling public API")
-    const session = await getServerSession(authOptions);
+    const session = await getAuthSession();
     console.log(`Session: ${session}`)
 
     if (!session?.accessToken) {
