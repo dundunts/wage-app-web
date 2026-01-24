@@ -1,8 +1,8 @@
 import {JWT} from "next-auth/jwt";
 
-const baseUrl = "http://localhost:8080"
+const baseUrl = process.env.KEYCLOAK_URL!
 
-const realm = "WageApp"
+const realm = process.env.KEYCLOAK_REALM!
 
 const tokenUrl = `${baseUrl}/realms/${realm}/protocol/openid-connect/token`
 
