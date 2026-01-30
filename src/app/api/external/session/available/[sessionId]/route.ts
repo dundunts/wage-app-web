@@ -1,0 +1,19 @@
+import { NextResponse } from "next/server";
+import { backendFetch } from "@/lib/api/backendFetch";
+
+interface Params {
+    sessionId: string;
+}
+
+export async function GET(
+    _: Request,
+    { params }: { params: Promise<Params> }
+) {
+    const sessionId = (await params).sessionId
+
+    const response = await backendFetch(
+        `/api/v1/session/get/available/${sessionId}`
+    );
+
+    return NextResponse.json(await response.json());
+}

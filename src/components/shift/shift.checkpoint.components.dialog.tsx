@@ -15,44 +15,45 @@ import {
     VStack,
 } from "@chakra-ui/react";
 import {useMemo, useState} from "react";
-import {Employee} from "@/types/employee.types";
-import {
-    CalcCheckpointFormType,
-    CheckpointCalcDestination, CheckpointFormFieldRecord,
-    ShiftCheckpointPayload,
-    ShiftCheckpoint
-} from "@/types/shift.types";
+import {CompanyEmployeeInfo, EmployeeBase} from "@/types/employee.types";
 import {CheckedChangeDetails} from "@zag-js/checkbox";
 import {DateTimePicker} from "@/components/date/components.date.pickers";
 import {checkpointDialogForms} from "@/components/shift/shift.checkpoint.components.dialog.constants";
+import {
+    Checkpoint,
+    CheckpointCalcDestination,
+    CheckpointMetricRecordPayload,
+    CheckpointPayload,
+    CheckpointType
+} from "@/types/checkpoint.types";
 
 type CreateCheckpointDialogProps = {
-    origin?: ShiftCheckpoint;
-    initialFormType?: CalcCheckpointFormType;
-    companyEmployees: Employee[];
-    prevCheckpoint?: ShiftCheckpoint;
+    origin?: Checkpoint;
+    initialFormType?: CheckpointType;
+    companyEmployees: CompanyEmployeeInfo[];
+    prevCheckpoint?: Checkpoint;
     open: boolean;
     onClose: () => void;
-    onSave: (payload: ShiftCheckpointPayload) => void;
+    onSave: (payload: CheckpointPayload) => void;
 }
 
-function getInitialValues(origin?: ShiftCheckpoint) {
-    return origin?.fieldRecords.reduce((acc, item) =>
+function getInitialValues(origin?: Checkpoint) {
+    return origin?.metricRecords.reduce((acc, item) =>
         ({...acc, [item.label]: item.value}), {}) || {};
 }
 
-function getInitialEmployees(origin?: ShiftCheckpoint, prevCheckpoint?: ShiftCheckpoint) {
+function getInitialEmployees(origin?: Checkpoint, prevCheckpoint?: Checkpoint) {
     return origin?.employees || prevCheckpoint?.employees || [];
 }
 
-function getInitialDate(origin?: ShiftCheckpoint) {
+function getInitialDate(origin?: Checkpoint) {
     return origin?.dateTime || new Date()
 }
 
 export function CheckpointDialog(
     {
         origin,
-        initialFormType = origin?.type || CalcCheckpointFormType.REGULAR,
+        initialFormType = origin?.type || CheckpointType.REGULAR,
         companyEmployees,
         prevCheckpoint,
         open,
@@ -61,24 +62,25 @@ export function CheckpointDialog(
     }: CreateCheckpointDialogProps
 ) {
     const [formType, setFormType] =
-        useState<CalcCheckpointFormType>(initialFormType);
+        useState<CheckpointType>(initialFormType);
 
     const [values, setValues] = useState<Record<string, number>>(getInitialValues(origin));
-    const [selectedEmployees, setSelectedEmployees] = useState<Employee[]>(getInitialEmployees(origin, prevCheckpoint));
+    const [selectedEmployees, setSelectedEmployees] = useState<EmployeeBase[]>(getInitialEmployees(origin, prevCheckpoint));
     const [date, setDate] = useState<Date>(getInitialDate(origin));
 
     const [employeesSelectError, setEmployeesSelectError] = useState(false)
 
     const form = checkpointDialogForms[formType];
 
+    //TODO remove logs
     console.log("Edit dialog. Origin", origin)
     console.log("Edit dialog. Selected employees", selectedEmployees)
     console.log("Edit dialog. Values", values)
 
     const {revenue, tips} = useMemo(() => {
         return form.fields.reduce(
-            (acc, field, index) => {
-                const value = values[index] ?? 0;
+            (acc, field) => {
+                const value = values[field.label] ?? 0;
 
                 if (field.destination === CheckpointCalcDestination.REVENUE) {
                     acc.revenue += value;
@@ -93,24 +95,26 @@ export function CheckpointDialog(
         );
     }, [values, form]);
 
-    const handleCreate = () => {
+    const handleSave = () => {
         if (selectedEmployees.length === 0) {
             setEmployeesSelectError(true)
             return
         }
 
-        onSave({
+        const payload: CheckpointPayload = {
             revenue,
             tips,
-            employees: selectedEmployees,
+            employeeIds: selectedEmployees.map(e => e.id),
             dateTime: date,
             type: formType,
             fieldRecords: form.fields.map(f =>
-                ({...f, value: values[f.label]} as CheckpointFormFieldRecord)),
-        });
+                ({...f, value: values[f.label]} as CheckpointMetricRecordPayload)),
+        }
+
+        onSave(payload);
     };
 
-    function pickEmployee(e: CheckedChangeDetails, emp: Employee) {
+    function pickEmployee(e: CheckedChangeDetails, emp: EmployeeBase) {
         setEmployeesSelectError(false)
         if (e.checked) setSelectedEmployees([...selectedEmployees, emp])
         else setSelectedEmployees(selectedEmployees.filter(el => el.id !== emp.id))
@@ -146,10 +150,10 @@ export function CheckpointDialog(
                                 maxWidth="max-content"
                                 orientation="horizontal"
                                 value={formType}
-                                onValueChange={(e) => setFormType(CalcCheckpointFormType[e.value as keyof typeof CalcCheckpointFormType])}
+                                onValueChange={(e) => setFormType(CheckpointType[e.value as keyof typeof CheckpointType])}
                             >
                                 <SegmentGroup.Indicator/>
-                                {Object.values(CalcCheckpointFormType).map((item) => (
+                                {Object.values(CheckpointType).map((item) => (
                                     <SegmentGroup.Item key={item} value={item}>
                                         <SegmentGroup.ItemText>{checkpointDialogForms[item].label}</SegmentGroup.ItemText>
                                         <SegmentGroup.ItemHiddenInput/>
@@ -164,7 +168,7 @@ export function CheckpointDialog(
                                         <Text>{field.label}</Text>
                                         <Input
                                             type="number"
-                                            value={values[index] ?? 0}
+                                            value={values[field.label] ?? 0}
                                             onChange={(e) =>
                                                 setValues((prev) => ({
                                                     ...prev,
@@ -194,7 +198,7 @@ export function CheckpointDialog(
                                             >
                                                 <CheckboxCard.HiddenInput/>
                                                 <CheckboxCard.Control>
-                                                    <CheckboxCard.Label>{emp.simpleName}</CheckboxCard.Label>
+                                                    <CheckboxCard.Label>{emp.simpleName || `${emp.lastName} ${emp.firstName[0]}.`}</CheckboxCard.Label>
                                                     <CheckboxCard.Indicator/>
                                                 </CheckboxCard.Control>
                                             </CheckboxCard.Root>
@@ -238,7 +242,7 @@ export function CheckpointDialog(
                             <Button variant="ghost" onClick={onClose}>
                                 Отмена
                             </Button>
-                            <Button colorPalette="teal" onClick={handleCreate}>
+                            <Button colorPalette="teal" onClick={handleSave}>
                                 Сохранить
                             </Button>
                         </HStack>

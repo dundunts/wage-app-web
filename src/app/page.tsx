@@ -5,7 +5,7 @@ import {Button} from "@chakra-ui/react";
 
 export default function Home() {
     const {data: session} = useSession()
-    if (session) {
+    if (session && !session.error) {
         return (
             <>
                 Signed in as {session.user?.email} <br/>

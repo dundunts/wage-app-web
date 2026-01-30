@@ -1,15 +1,13 @@
-import {ShiftCheckpoint} from "@/types/shift.types";
-import {Box, Button, Card, Flex, HStack, IconButton, Stack, Text, VStack} from "@chakra-ui/react";
-import {ArrowDown, ArrowUp, Pencil, Trash} from "lucide-react";
+import {Box, Button, Card, Flex, HStack, Stack, Text, VStack} from "@chakra-ui/react";
+import {Pencil, Trash} from "lucide-react";
 import React from "react";
+import {Checkpoint} from "@/types/checkpoint.types";
 
 type ShiftCheckpointCardProps = {
-    checkpoint: ShiftCheckpoint,
+    checkpoint: Checkpoint,
     position: number,
     onDeleteRequested: () => void,
     onEdit: () => void,
-    // onMoveUp: () => void,
-    // onMoveDown: () => void
 }
 
 export function ShiftCheckpointCard(
@@ -18,8 +16,6 @@ export function ShiftCheckpointCard(
         position,
         onDeleteRequested,
         onEdit,
-        // onMoveUp,
-        // onMoveDown,
     }: ShiftCheckpointCardProps
 ) {
     return (
@@ -30,26 +26,6 @@ export function ShiftCheckpointCard(
                     <Text fontWeight="semibold">
                         Чекпоинт #{position}
                     </Text>
-
-                    {/*<HStack gap={1}>*/}
-                    {/*    <IconButton*/}
-                    {/*        aria-label="Move up"*/}
-                    {/*        variant="ghost"*/}
-                    {/*        size="sm"*/}
-                    {/*        onClick={onMoveUp}*/}
-                    {/*    >*/}
-                    {/*        <ArrowUp size={16}/>*/}
-                    {/*    </IconButton>*/}
-
-                    {/*    <IconButton*/}
-                    {/*        aria-label="Move down"*/}
-                    {/*        variant="ghost"*/}
-                    {/*        size="sm"*/}
-                    {/*        onClick={onMoveDown}*/}
-                    {/*    >*/}
-                    {/*        <ArrowDown size={16}/>*/}
-                    {/*    </IconButton>*/}
-                    {/*</HStack>*/}
                 </Flex>
             </Card.Header>
 

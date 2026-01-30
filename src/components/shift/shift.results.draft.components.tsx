@@ -1,9 +1,9 @@
 import {Box, HStack, Stack, Table, Text} from "@chakra-ui/react";
 import React from 'react';
-import {EmployeePaymentDraft, ShiftResultsDraft} from "@/types/shift.results.draft.types";
+import {PaymentDraft, ShiftResultDraft} from "@/types/draft.types";
 
 type ShiftResultsDraftTableProps = {
-    resultsDraft: ShiftResultsDraft;
+    resultsDraft: ShiftResultDraft;
 }
 
 export function ShiftResultsDraftTable({resultsDraft} : ShiftResultsDraftTableProps) {
@@ -15,8 +15,6 @@ export function ShiftResultsDraftTable({resultsDraft} : ShiftResultsDraftTablePr
                     <Table.ColumnHeader textAlign="right">%</Table.ColumnHeader>
                     <Table.ColumnHeader textAlign="right">Чаевые</Table.ColumnHeader>
                     <Table.ColumnHeader textAlign="right">Итого</Table.ColumnHeader>
-                    <Table.ColumnHeader>Начало</Table.ColumnHeader>
-                    <Table.ColumnHeader>Конец</Table.ColumnHeader>
                     <Table.ColumnHeader>Отработал</Table.ColumnHeader>
                 </Table.Row>
             </Table.Header>
@@ -24,9 +22,7 @@ export function ShiftResultsDraftTable({resultsDraft} : ShiftResultsDraftTablePr
             <Table.Body>
                 {resultsDraft.payments.map((p) => {
                     const total = p.percentFromRevenue + p.tips;
-                    const workedMs =
-                        new Date(p.endWorkAt).getTime() -
-                        new Date(p.startWorkAt).getTime();
+                    const workedMs = p.workSeconds * 1000
 
                     const workedHours = Math.floor(workedMs / 36e5);
                     const workedMinutes = Math.floor((workedMs % 36e5) / 6e4);
@@ -48,12 +44,6 @@ export function ShiftResultsDraftTable({resultsDraft} : ShiftResultsDraftTablePr
                                 {total.toLocaleString()} ₽
                             </Table.Cell>
                             <Table.Cell>
-                                {new Date(p.startWorkAt).toLocaleTimeString()}
-                            </Table.Cell>
-                            <Table.Cell>
-                                {new Date(p.endWorkAt).toLocaleTimeString()}
-                            </Table.Cell>
-                            <Table.Cell>
                                 {workedHours}ч {workedMinutes}м
                             </Table.Cell>
                         </Table.Row>
@@ -65,14 +55,12 @@ export function ShiftResultsDraftTable({resultsDraft} : ShiftResultsDraftTablePr
 }
 
 type EmployeePaymentDraftCardProps = {
-    payment: EmployeePaymentDraft
+    payment: PaymentDraft
 }
 
 export function EmployeePaymentDraftCard({payment: p} : EmployeePaymentDraftCardProps) {
     const total = p.percentFromRevenue + p.tips;
-    const workedMs =
-        new Date(p.endWorkAt).getTime() -
-        new Date(p.startWorkAt).getTime();
+    const workedMs = p.workSeconds * 1000;
 
     const workedHours = Math.floor(workedMs / 36e5);
     const workedMinutes = Math.floor((workedMs % 36e5) / 6e4);
@@ -109,13 +97,6 @@ export function EmployeePaymentDraftCard({payment: p} : EmployeePaymentDraftCard
                 {/*<Divider />*/}
 
                 {/* Time row */}
-                <HStack justify="space-between" fontSize="sm">
-                    <Text>Смена</Text>
-                    <Text>
-                        {new Date(p.startWorkAt).toLocaleTimeString()} –{" "}
-                        {new Date(p.endWorkAt).toLocaleTimeString()}
-                    </Text>
-                </HStack>
                 <HStack justify="space-between" fontSize="sm">
                     <Text>Отработал</Text>
                     <Text>

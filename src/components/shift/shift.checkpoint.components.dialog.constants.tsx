@@ -1,6 +1,6 @@
-import {CalcCheckpointFormType, CheckpointCalcDestination, CheckpointForm} from "@/types/shift.types";
+import {CheckpointCalcDestination, CheckpointForm, CheckpointType} from "@/types/checkpoint.types";
 
-export const checkpointDialogForms: Record<CalcCheckpointFormType, CheckpointForm> = {
+export const checkpointDialogForms: Record<CheckpointType, CheckpointForm> = {
     REGULAR: {
         label: "Обычный",
         fields: [

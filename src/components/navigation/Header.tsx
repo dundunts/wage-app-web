@@ -17,7 +17,8 @@ import {
 } from "@chakra-ui/react";
 import {ChevronLeft, ChevronRight, Menu, User} from "lucide-react";
 import {useState} from "react";
-import {navItems} from "@/components/navigation/navigation";
+import {NavItem, navItems} from "@/components/navigation/navigation";
+import {useRouter} from "next/navigation";
 
 export function Header() {
     return (
@@ -56,6 +57,12 @@ export function Header() {
 }
 
 function DesktopNavigation() {
+    const router = useRouter()
+
+    function navTo(item: NavItem) {
+        if (item.href) router.push(item.href)
+    }
+
     return (
         <HStack display={{base: "none", md: "flex"}}>
             {navItems.map((level1) =>
@@ -90,6 +97,7 @@ function DesktopNavigation() {
                                                                 size="sm"
                                                                 justifyContent="flex-start"
                                                                 color="fg.muted"
+                                                                onClick={() => navTo(level3)}
                                                             >
                                                                 {level3.label}
                                                             </Button>
@@ -101,6 +109,7 @@ function DesktopNavigation() {
                                                         size="sm"
                                                         fontWeight="medium"
                                                         justifyContent="flex-start"
+                                                        onClick={() => navTo(level2)}
                                                     >
                                                         {level2.label}
                                                     </Button>
@@ -112,7 +121,7 @@ function DesktopNavigation() {
                             </Popover.Positioner>
                         </Portal>
                     </Popover.Root>
-                    : <Button key={level1.label} variant="ghost" fontWeight="medium">
+                    : <Button key={level1.label} variant="ghost" fontWeight="medium" onClick={() => navTo(level1)}>
                         {level1.label}
                     </Button>
             )}
@@ -124,6 +133,12 @@ function MobileNavigation() {
     const {open, onOpen, onClose} = useDisclosure();
     const [level1, setLevel1] = useState<number | null>(null);
     const [level2, setLevel2] = useState<number | null>(null);
+
+    const router = useRouter()
+
+    function navTo(item: NavItem) {
+        if (item.href) router.push(item.href)
+    }
 
     const reset = () => {
         setLevel1(null);
@@ -174,7 +189,10 @@ function MobileNavigation() {
                                             key={item.label}
                                             variant="ghost"
                                             justifyContent="space-between"
-                                            onClick={() => setLevel1(i)}
+                                            onClick={() => {
+                                                if (item.children) setLevel1(i)
+                                                else navTo(item)
+                                            }}
                                         >
                                             {item.label}
                                             <ChevronRight/>
@@ -188,7 +206,10 @@ function MobileNavigation() {
                                             key={item.label}
                                             variant="ghost"
                                             justifyContent="space-between"
-                                            onClick={() => setLevel2(i)}
+                                            onClick={() => {
+                                                if (item.children) setLevel2(i)
+                                                else navTo(item)
+                                            }}
                                         >
                                             {item.label}
                                             <ChevronRight/>
@@ -204,8 +225,9 @@ function MobileNavigation() {
                                                 variant="ghost"
                                                 justifyContent="flex-start"
                                                 onClick={() => {
-                                                    onClose();
-                                                    reset();
+                                                    navTo(item);
+                                                    // onClose();
+                                                    // reset();
                                                 }}
                                             >
                                                 {item.label}

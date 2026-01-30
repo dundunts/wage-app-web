@@ -32,6 +32,11 @@ export async function proxy(request: NextRequest) {
 
     const session = await getAuthSession();
 
+    // Любой путь требует авторизации
+    if (!session) {
+        return NextResponse.redirect(new URL(loginUrl, request.url));
+    }
+
     for (const route of securedEndpoints) {
         if (route.pattern.test(pathname)) {
             // не авторизован

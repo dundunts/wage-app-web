@@ -1,4 +1,4 @@
-interface NavItem {
+export interface NavItem {
     label: string;
     href?: string;
     children?: NavItem[]
@@ -7,16 +7,17 @@ interface NavItem {
 export const navItems: NavItem[] = [
     {
         label: "Калькулятор",
-        children: [
-            {
-                label: "Отчет внутри смены",
-                href: "/calc/in-shift"
-            },
-            {
-                label: "Отчет за день",
-                href: "/calc/for-day"
-            },
-        ],
+        href: "/calculator"
+        // children: [
+        //     {
+        //         label: "Отчет внутри смены",
+        //         href: "/calc/in-shift"
+        //     },
+        //     {
+        //         label: "Отчет за день",
+        //         href: "/calc/for-day"
+        //     },
+        // ],
     },
     {
         label: "Статистика"
