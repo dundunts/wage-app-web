@@ -1,0 +1,349 @@
+// @/app/results/_components/ShiftResultModal.tsx
+"use client";
+
+import { useEffect, useState, useMemo } from "react";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
+import {
+    Dialog,
+    Button,
+    Input,
+    Stack,
+    Flex,
+    Text,
+    IconButton,
+    Box,
+    Grid,
+    Select,
+    createListCollection,
+    Spinner,
+} from "@chakra-ui/react";
+import { HiTrash, HiPlus } from "react-icons/hi";
+import { Company } from "@/types/company.types";
+import { CompanyEmployeeInfo } from "@/types/employee.types";
+import { ShiftResultDetailed, SaveShiftResultPayload } from "@/types/shiftResult.types";
+import { getCoworkersForCompany } from "@/service/employee/employee.service";
+import { saveShiftResult } from "@/service/results/shiftResult.service"; // Проверь путь импорта
+import { toaster } from "@/components/ui/toaster";
+
+interface InitialData {
+    result: ShiftResultDetailed;
+    companyId: string;
+}
+
+interface ShiftResultModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSuccess: () => void;
+    companies: Company[];
+    initialData?: InitialData | null;
+}
+
+interface FormValues {
+    companyId: string;
+    date: string;
+    payments: {
+        employeeId: string;
+        percentFromRevenue: number;
+        tips: number;
+        workHours: number;
+    }[];
+}
+
+export function ShiftResultModal({
+                                     isOpen,
+                                     onClose,
+                                     onSuccess,
+                                     companies,
+                                     initialData,
+                                 }: ShiftResultModalProps) {
+    const [employees, setEmployees] = useState<CompanyEmployeeInfo[]>([]);
+    const [isEmployeesLoading, setIsEmployeesLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const { control, register, handleSubmit, watch, reset } = useForm<FormValues>({
+        defaultValues: {
+            companyId: "",
+            date: new Date().toISOString().split("T")[0],
+            payments: [],
+        },
+    });
+
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: "payments",
+    });
+
+    const selectedCompanyId = watch("companyId");
+
+    // === Подготовка коллекций для Chakra UI Select ===
+
+    // Коллекция компаний
+    const companyCollection = useMemo(() => {
+        return createListCollection({
+            items: companies,
+            itemToString: (item) => item.title,
+            itemToValue: (item) => item.id,
+        });
+    }, [companies]);
+
+    // Коллекция сотрудников (динамическая)
+    const employeeCollection = useMemo(() => {
+        return createListCollection({
+            items: employees.map(e => ({
+                label: `${e.lastName} ${e.firstName}`,
+                value: e.id
+            })),
+        });
+    }, [employees]);
+
+    // 1. Инициализация формы
+    useEffect(() => {
+        if (isOpen) {
+            if (initialData) {
+                const { result, companyId } = initialData;
+                reset({
+                    companyId: companyId,
+                    date: new Date(result.date).toISOString().split("T")[0],
+                    payments: result.payments.map((p) => ({
+                        employeeId: p.employee.id,
+                        percentFromRevenue: p.percentFromRevenue,
+                        tips: p.tips,
+                        workHours: Number((p.workSeconds / 3600).toFixed(2)),
+                    })),
+                });
+            } else {
+                reset({
+                    companyId: companies[0]?.id || "",
+                    date: new Date().toISOString().split("T")[0],
+                    payments: [],
+                });
+            }
+        }
+    }, [isOpen, initialData, companies, reset]);
+
+    // 2. Загрузка сотрудников
+    useEffect(() => {
+        if (!selectedCompanyId) {
+            setEmployees([]);
+            return;
+        }
+
+        setIsEmployeesLoading(true);
+        getCoworkersForCompany(selectedCompanyId)
+            .then(setEmployees)
+            .catch((e) => {
+                console.error("Err loading employees", e);
+                toaster.create({ title: "Ошибка загрузки сотрудников", type: "error" });
+            })
+            .finally(() => setIsEmployeesLoading(false));
+    }, [selectedCompanyId]);
+
+    const onSubmit = async (data: FormValues) => {
+        setIsSubmitting(true);
+        try {
+            const payload: SaveShiftResultPayload = {
+                companyId: data.companyId,
+                overwrite: !!initialData,
+                date: new Date(data.date),
+                payments: data.payments.map((p) => ({
+                    employeeId: p.employeeId,
+                    percentFromRevenue: Number(p.percentFromRevenue),
+                    tips: Number(p.tips),
+                    workSeconds: Math.round(p.workHours * 3600),
+                })),
+            };
+
+            await saveShiftResult(payload);
+            toaster.create({ title: "Сохранено успешно", type: "success" });
+            onSuccess();
+            onClose();
+        } catch (error) {
+            toaster.create({ title: "Ошибка сохранения", type: "error" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Dialog.Root
+            open={isOpen}
+            onOpenChange={(details) => !details.open && onClose()}
+            size="xl"
+            scrollBehavior="inside" // Важно для длинных списков, чтобы модалка скроллилась внутри
+        >
+            <Dialog.Backdrop />
+            <Dialog.Positioner>
+                <Dialog.Content>
+                    <form onSubmit={handleSubmit(onSubmit)}>
+                        <Dialog.Header>
+                            <Dialog.Title>
+                                {initialData ? "Редактировать результат" : "Создать результат смены"}
+                            </Dialog.Title>
+                        </Dialog.Header>
+
+                        <Dialog.Body>
+                            <Stack gap={5}>
+                                {/* Верхняя панель: Компания и Дата */}
+                                <Flex gap={4} direction={{ base: "column", sm: "row" }}>
+                                    <Box flex={1}>
+                                        <Text fontSize="sm" mb={1} fontWeight="medium">Компания</Text>
+                                        <Controller
+                                            control={control}
+                                            name="companyId"
+                                            render={({ field }) => (
+                                                <Select.Root
+                                                    collection={companyCollection}
+                                                    value={field.value ? [field.value] : []}
+                                                    onValueChange={(e) => field.onChange(e.value[0])}
+                                                    disabled={!!initialData} // Не меняем компанию при редактировании
+                                                    width="100%"
+                                                >
+                                                    <Select.Trigger>
+                                                        <Select.ValueText placeholder="Выберите компанию" />
+                                                    </Select.Trigger>
+                                                    <Select.Positioner>
+                                                        <Select.Content>
+                                                            {companyCollection.items.map((company) => (
+                                                                <Select.Item item={company} key={company.id}>
+                                                                    {company.title}
+                                                                </Select.Item>
+                                                            ))}
+                                                        </Select.Content>
+                                                    </Select.Positioner>
+                                                </Select.Root>
+                                            )}
+                                        />
+                                    </Box>
+
+                                    <Box flex={1}>
+                                        <Text fontSize="sm" mb={1} fontWeight="medium">Дата</Text>
+                                        <Input type="date" {...register("date", { required: true })} />
+                                    </Box>
+                                </Flex>
+
+                                <hr />
+
+                                {/* Список выплат */}
+                                <Box>
+                                    <Flex justify="space-between" align="center" mb={2}>
+                                        <Text fontWeight="bold">Список выплат</Text>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => append({ employeeId: "", percentFromRevenue: 0, tips: 0, workHours: 0 })}
+                                        >
+                                            <HiPlus /> Добавить
+                                        </Button>
+                                    </Flex>
+
+                                    {/* Заголовки таблицы */}
+                                    {fields.length > 0 && (
+                                        <Grid templateColumns="2fr 1fr 1fr 1fr auto" gap={2} mb={2} px={1}>
+                                            <Text fontSize="xs" color="gray.500">Сотрудник</Text>
+                                            <Text fontSize="xs" color="gray.500">% от выр.</Text>
+                                            <Text fontSize="xs" color="gray.500">Чаевые</Text>
+                                            <Text fontSize="xs" color="gray.500">Часы</Text>
+                                            <Box w="32px" />
+                                        </Grid>
+                                    )}
+
+                                    <Stack gap={2}>
+                                        {fields.map((field, index) => (
+                                            <Grid
+                                                key={field.id}
+                                                templateColumns="2fr 1fr 1fr 1fr auto"
+                                                gap={2}
+                                                alignItems="start" // Changed to start so errors don't misalign grid if added later
+                                            >
+                                                {/* Выбор сотрудника (Chakra UI Select + Controller) */}
+                                                <Controller
+                                                    control={control}
+                                                    name={`payments.${index}.employeeId`}
+                                                    rules={{ required: true }}
+                                                    render={({ field }) => (
+                                                        <Select.Root
+                                                            collection={employeeCollection}
+                                                            value={field.value ? [field.value] : []}
+                                                            onValueChange={(e) => field.onChange(e.value[0])}
+                                                            disabled={isEmployeesLoading}
+                                                            size="sm"
+                                                        >
+                                                            <Select.Trigger>
+                                                                {isEmployeesLoading ? (
+                                                                    <Spinner size="xs" />
+                                                                ) : (
+                                                                    <Select.ValueText placeholder="Сотрудник" />
+                                                                )}
+                                                            </Select.Trigger>
+                                                            <Select.Positioner>
+                                                                <Select.Content>
+                                                                    {employeeCollection.items.map((emp) => (
+                                                                        <Select.Item item={emp} key={emp.value}>
+                                                                            {emp.label}
+                                                                        </Select.Item>
+                                                                    ))}
+                                                                </Select.Content>
+                                                            </Select.Positioner>
+                                                        </Select.Root>
+                                                    )}
+                                                />
+
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    size="sm"
+                                                    placeholder="0"
+                                                    {...register(`payments.${index}.percentFromRevenue` as const, { valueAsNumber: true })}
+                                                />
+
+                                                <Input
+                                                    type="number"
+                                                    size="sm"
+                                                    placeholder="0"
+                                                    {...register(`payments.${index}.tips` as const, { valueAsNumber: true })}
+                                                />
+
+                                                <Input
+                                                    type="number"
+                                                    step="0.5"
+                                                    size="sm"
+                                                    placeholder="ч"
+                                                    {...register(`payments.${index}.workHours` as const, { valueAsNumber: true })}
+                                                />
+
+                                                <IconButton
+                                                    aria-label="Delete"
+                                                    colorPalette="red"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => remove(index)}
+                                                >
+                                                    <HiTrash />
+                                                </IconButton>
+                                            </Grid>
+                                        ))}
+                                    </Stack>
+
+                                    {fields.length === 0 && (
+                                        <Text color="gray.500" fontSize="sm" textAlign="center" py={4}>
+                                            Нет сотрудников в списке
+                                        </Text>
+                                    )}
+                                </Box>
+                            </Stack>
+                        </Dialog.Body>
+
+                        <Dialog.Footer>
+                            <Dialog.ActionTrigger asChild>
+                                <Button variant="outline" onClick={onClose}>Отмена</Button>
+                            </Dialog.ActionTrigger>
+                            <Button type="submit" loading={isSubmitting}>
+                                {initialData ? "Сохранить изменения" : "Создать"}
+                            </Button>
+                        </Dialog.Footer>
+                    </form>
+                </Dialog.Content>
+            </Dialog.Positioner>
+        </Dialog.Root>
+    );
+}

@@ -29,21 +29,23 @@ export async function GET(
 
 export async function PUT(
     request: NextRequest,
-    { params }: Params
+    { params }: { params: Promise<{id: string}> }
 ) {
     try {
+        const id = (await params).id
         const payload: CompanyPayload = await request.json();
 
         await backendFetch(
-            `/api/v1/company/update/${params.id}`,
+            `/api/v1/company/update/${id}`,
             {
                 method: "PUT",
                 body: JSON.stringify(payload),
             }
         );
 
-        return NextResponse.json(null, { status: 204 });
+        return new NextResponse(null, { status: 204 });
     } catch (e) {
+        console.error(e)
         return NextResponse.json(
             { error: (e as Error).message },
             { status: 400 }
@@ -53,15 +55,17 @@ export async function PUT(
 
 export async function DELETE(
     _: Request,
-    { params }: Params
+    { params }: { params: Promise<{id: string}> }
 ) {
     try {
+        const id = (await params).id
+
         await backendFetch(
-            `/api/v1/company/delete/${params.id}`,
+            `/api/v1/company/delete/${id}`,
             { method: "DELETE" }
         );
 
-        return NextResponse.json(null, { status: 204 });
+        return new NextResponse(null, { status: 204 });
     } catch (e) {
         return NextResponse.json(
             { error: (e as Error).message },

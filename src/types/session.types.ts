@@ -27,5 +27,5 @@ export interface CreateRecalculatingShiftSessionPayload {
 
 export interface UpdateShiftSessionStartWorkTimePayload {
     sessionId: string;       // UUID
-    startWorkTime: string;   // HH:mm:ss
+    startWorkTime: string;   // HH:mm
 }

@@ -1,4 +1,10 @@
-import {CompanyEmployeeInfo, CompanyEmployeesResponse, Employee, EmployeePosition} from "@/types/employee.types";
+import {
+    CompanyEmployeeInfo,
+    CompanyEmployeesResponse,
+    CreateEmployeePayload,
+    Employee,
+    EmployeePosition, UpdateEmployeePayload
+} from "@/types/employee.types";
 
 export async function getEmployee(id: string): Promise<Employee> {
     const res = await fetch(`/api/external/employee/get/${id}`, {
@@ -49,4 +55,64 @@ export async function getCoworkersForCompany(companyId: string): Promise<Company
 export async function getAvailableEmployeesForCompany(companyId: string): Promise<CompanyEmployeeInfo[]> {
     const coworkers = await getCoworkersForCompany(companyId)
     return coworkers.filter(emp => emp.position === EmployeePosition.WAITER_ACTIVE)
+}
+
+/**
+ * Создать сотрудника
+ * POST /api/external/employee/create
+ * returns Employee
+ */
+export async function createEmployee(
+    payload: CreateEmployeePayload
+): Promise<Employee> {
+    const res = await fetch("/api/external/employee/create", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+        throw new Error("Failed to create employee");
+    }
+
+    return res.json();
+}
+
+/**
+ * Обновить сотрудника
+ * PUT /api/external/employee/update/:id
+ * returns 204 no content
+ */
+export async function updateEmployee(
+    id: string,
+    payload: UpdateEmployeePayload
+): Promise<void> {
+    const res = await fetch(`/api/external/employee/update/${id}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+        throw new Error("Failed to update employee");
+    }
+}
+
+/**
+ * Удалить сотрудника
+ * DELETE /api/external/employee/delete/:id
+ * returns 204 no content
+ */
+export async function deleteEmployee(id: string): Promise<void> {
+    const res = await fetch(`/api/external/employee/delete/${id}`, {
+        method: "DELETE",
+    });
+
+    if (!res.ok) {
+        throw new Error("Failed to delete employee");
+    }
 }

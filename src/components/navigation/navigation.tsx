@@ -23,16 +23,19 @@ export const navItems: NavItem[] = [
         label: "Статистика"
     },
     {
-        label: "Отчеты"
+        label: "Отчеты",
+        href: "/results"
     },
     {
         label: "Админ. панель",
         children: [
             {
                 label: "Предприятия",
+                href: "/company"
             },
             {
                 label: "Работники",
+                href: "/employee"
             },
         ],
     },
