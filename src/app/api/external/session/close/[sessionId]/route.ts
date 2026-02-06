@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { backendFetch } from "@/lib/api/backendFetch";
+import { backendFetch } from "@/lib/api/backendFetch.axios";
 
 interface Params {
     params: { sessionId: string };

@@ -1,6 +1,6 @@
 // app/api/checkpoint/update/route.ts
 import { NextResponse } from "next/server";
-import { backendFetch } from "@/lib/api/backendFetch";
+import { backendFetch } from "@/lib/api/backendFetch.axios";
 import {UpdateShiftCheckpointPayload} from "@/types/checkpoint.types";
 
 export async function POST(request: Request) {
@@ -10,11 +10,11 @@ export async function POST(request: Request) {
         "/api/v1/checkpoint/update",
         {
             method: "POST",
-            body: JSON.stringify(payload),
+            data: payload,
         }
     );
 
-    return NextResponse.json(await response.json(), {
+    return NextResponse.json(await response.data, {
         status: response.status,
     });
 }

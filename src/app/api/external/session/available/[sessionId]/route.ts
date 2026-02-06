@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { backendFetch } from "@/lib/api/backendFetch";
+import { backendFetch } from "@/lib/api/backendFetch.axios";
 
 interface Params {
     sessionId: string;
@@ -15,5 +15,5 @@ export async function GET(
         `/api/v1/session/get/available/${sessionId}`
     );
 
-    return NextResponse.json(await response.json());
+    return NextResponse.json(await response.data);
 }

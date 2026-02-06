@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { backendFetch } from "@/lib/api/backendFetch";
+import { backendFetch } from "@/lib/api/backendFetch.axios";
 
 interface Params {
     resultId: string;
@@ -15,7 +15,7 @@ export async function GET(
         `/api/v1/shift-result/${resultId}/get/detailed`
     );
 
-    return NextResponse.json(await response.json(), {
+    return NextResponse.json(await response.data, {
         status: response.status,
     });
 }

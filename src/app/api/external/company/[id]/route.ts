@@ -1,5 +1,5 @@
 import {NextRequest, NextResponse} from "next/server";
-import {backendFetch} from "@/lib/api/backendFetch";
+import {backendFetch} from "@/lib/api/backendFetch.axios";
 import {CompanyPayload} from "@/types/company.types";
 
 interface Params {
@@ -17,7 +17,7 @@ export async function GET(
             `/api/v1/company/get/${id}`
         );
 
-        const company = await response.json();
+        const company = await response.data;
         return NextResponse.json(company);
     } catch (e) {
         return NextResponse.json(
@@ -39,7 +39,7 @@ export async function PUT(
             `/api/v1/company/update/${id}`,
             {
                 method: "PUT",
-                body: JSON.stringify(payload),
+                data: payload,
             }
         );
 

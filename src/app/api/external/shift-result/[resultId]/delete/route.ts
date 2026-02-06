@@ -1,4 +1,4 @@
-import { backendFetch } from "@/lib/api/backendFetch";
+import { backendFetch } from "@/lib/api/backendFetch.axios";
 import { NextResponse } from "next/server";
 
 interface Params {

@@ -1,6 +1,6 @@
 // app/api/external/employee/get/by-companies/route.ts
 import { NextResponse } from "next/server";
-import { backendFetch } from "@/lib/api/backendFetch";
+import { backendFetch } from "@/lib/api/backendFetch.axios";
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
@@ -12,5 +12,5 @@ export async function GET(req: Request) {
         `/api/v1/employee/get/by-companies?${query}`
     );
 
-    return NextResponse.json(await res.json(), { status: res.status });
+    return NextResponse.json(await res.data, { status: res.status });
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { backendFetch } from "@/lib/api/backendFetch";
+import { backendFetch } from "@/lib/api/backendFetch.axios";
 import { CompanyPayload } from "@/types/company.types";
 
 export async function POST(request: NextRequest) {
@@ -10,11 +10,11 @@ export async function POST(request: NextRequest) {
             "/api/v1/company/create",
             {
                 method: "POST",
-                body: JSON.stringify(payload),
+                data: JSON.stringify(payload),
             }
         );
 
-        const company = await response.json();
+        const company = await response.data;
         return NextResponse.json(company, { status: 201 });
     } catch (e) {
         return NextResponse.json(

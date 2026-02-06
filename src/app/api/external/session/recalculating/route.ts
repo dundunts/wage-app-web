@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { backendFetch } from "@/lib/api/backendFetch";
+import { backendFetch } from "@/lib/api/backendFetch.axios";
 import { CreateRecalculatingShiftSessionPayload } from "@/types/session.types";
 
 export async function POST(request: NextRequest) {
@@ -10,9 +10,9 @@ export async function POST(request: NextRequest) {
         "/api/v1/session/recalculating",
         {
             method: "POST",
-            body: JSON.stringify(payload),
+            data: JSON.stringify(payload),
         }
     );
 
-    return NextResponse.json(await response.json(), { status: 201 });
+    return NextResponse.json(await response.data, { status: 201 });
 }

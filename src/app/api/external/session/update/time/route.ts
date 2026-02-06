@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { backendFetch } from "@/lib/api/backendFetch";
+import { backendFetch } from "@/lib/api/backendFetch.axios";
 import {UpdateShiftSessionStartWorkTimePayload} from "@/types/session.types";
 
 export async function PUT(request: NextRequest) {
@@ -10,7 +10,7 @@ export async function PUT(request: NextRequest) {
         "/api/v1/session/update/time",
         {
             method: "PUT",
-            body: JSON.stringify(payload),
+            data: JSON.stringify(payload),
         }
     );
 

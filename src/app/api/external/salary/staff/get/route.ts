@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { backendFetch } from "@/lib/api/backendFetch";
+import { backendFetch } from "@/lib/api/backendFetch.axios";
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -8,7 +8,7 @@ export async function GET(request: Request) {
         `/api/v1/salary/staff/get?${searchParams.toString()}`
     );
 
-    return NextResponse.json(await response.json(), {
+    return NextResponse.json(await response.data, {
         status: response.status,
     });
 }

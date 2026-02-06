@@ -47,7 +47,8 @@ export const authOptions = {
             } else {
                 // Subsequent logins, but the `access_token` has expired, try to refresh it
                 console.log("Auth [jwt callback] - refresh token branch")
-                if (!token.refresh_token || token.error) throw new TypeError("Missing refresh_token")
+                // if (!token.refresh_token || token.error) throw new TypeError(`Missing refresh_token ${token.refresh_token} || ${token.error}`)
+                if (!token.refresh_token) throw new TypeError(`Missing refresh_token ${token.refresh_token} || ${token.error}`)
 
                 console.log(`Auth [jwt callback] - Refresh token for refreshing: ${token.refresh_token}`)
 
@@ -59,15 +60,9 @@ export const authOptions = {
 
                     console.log(`Auth [jwt callback] - response status from refresh: ${response.status}`)
 
-                    const tokensOrError = await response.json()
+                    if (response.status !== 200) throw response
 
-                    if (!response.ok) throw tokensOrError
-
-                    const newTokens = tokensOrError as {
-                        access_token: string
-                        expires_in: number
-                        refresh_token: string
-                    }
+                    const newTokens = response.data
 
                     console.log(`Auth [jwt callback] - Refreshing tokens result: ${newTokens.access_token} ${newTokens.refresh_token}`)
 

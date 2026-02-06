@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { backendFetch } from "@/lib/api/backendFetch";
+import { backendFetch } from "@/lib/api/backendFetch.axios";
 
 export async function POST(request: Request) {
     const payload = await request.json();
@@ -8,11 +8,11 @@ export async function POST(request: Request) {
         `/api/v1/shift-result/save`,
         {
             method: "POST",
-            body: JSON.stringify(payload),
+            data: JSON.stringify(payload),
         }
     );
 
-    return NextResponse.json(await response.json(), {
+    return NextResponse.json(await response.data, {
         status: response.status,
     });
 }

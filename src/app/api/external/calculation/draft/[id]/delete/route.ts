@@ -1,6 +1,6 @@
 // app/api/calculation/draft/[id]/delete/route.ts
-import { backendFetch } from "@/lib/api/backendFetch";
 import { NextResponse } from "next/server";
+import {backendFetch} from "@/lib/api/backendFetch.axios";
 
 interface Params {
     id: string;
