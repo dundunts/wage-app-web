@@ -8,19 +8,10 @@ export const navItems: NavItem[] = [
     {
         label: "Калькулятор",
         href: "/calculator"
-        // children: [
-        //     {
-        //         label: "Отчет внутри смены",
-        //         href: "/calc/in-shift"
-        //     },
-        //     {
-        //         label: "Отчет за день",
-        //         href: "/calc/for-day"
-        //     },
-        // ],
     },
     {
-        label: "Статистика"
+        label: "Статистика",
+        href: "/statistic"
     },
     {
         label: "Отчеты",

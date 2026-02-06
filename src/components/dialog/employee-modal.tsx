@@ -17,7 +17,7 @@ import {Controller, useController, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useEffect} from "react";
 import {Employee, EmployeePosition} from "@/types/employee.types";
-import {useAllCompanies} from "@/hooks/use-all-companies";
+import {useAllCompanies} from "@/hooks/useAllCompanies";
 import {CreateEmployeeFormValues, createEmployeeSchema} from "@/schemas/employee.schema";
 import {createEmployee, updateEmployee} from "@/service/employee/employee.service";
 import {toaster} from "@/components/ui/toaster";

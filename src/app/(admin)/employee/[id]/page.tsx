@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 
 import { getEmployee, deleteEmployee } from "@/service/employee/employee.service";
-import { useAllCompanies } from "@/hooks/use-all-companies";
+import { useAllCompanies } from "@/hooks/useAllCompanies";
 import { Employee, EmployeePosition } from "@/types/employee.types";
 import { DeleteConfirmModal } from "@/components/dialog/delete-confirm-modal";
 import {toaster} from "@/components/ui/toaster";

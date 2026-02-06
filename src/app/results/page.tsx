@@ -7,7 +7,7 @@ import { getUserCompanies } from "@/service/company/company.service";
 import { getShiftResultsByPeriodPage, deleteShiftResult } from "@/service/results/shiftResult.service";
 import { Company } from "@/types/company.types";
 import { Page } from "@/types/common.types"; // (Assuming Page is exported from common)
-import { useShiftResultFilters } from "./_hooks/useShiftResultFilters";
+import { useShiftResultFilters } from "../../hooks/useShiftResultFilters";
 import { ResultsFilters } from "./_components/ResultsFilters";
 import { ResultsTable } from "./_components/ResultsTable";
 import { Toaster, toaster } from "@/components/ui/toaster";

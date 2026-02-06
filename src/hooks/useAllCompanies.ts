@@ -1,4 +1,4 @@
-// @/hooks/use-all-companies.ts
+// @/hooks/useAllCompanies.ts
 import { useEffect, useState } from "react";
 import { getCompaniesPage } from "@/service/company/company.service";
 import { Company } from "@/types/company.types";

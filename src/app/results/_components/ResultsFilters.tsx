@@ -4,7 +4,7 @@
 import {Box, Flex, Select, Input, Text, createListCollection} from "@chakra-ui/react";
 import { Company } from "@/types/company.types";
 import {PeriodType} from "@/types/enums";
-import {ShiftResultFilters} from "@/app/results/_hooks/useShiftResultFilters";
+import {ShiftResultFilters} from "@/hooks/useShiftResultFilters";
 
 interface ResultsFiltersProps {
     companies: Company[];

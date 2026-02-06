@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 import {DeleteConfirmModal} from "@/components/dialog/delete-confirm-modal";
-import {useAllCompanies} from "@/hooks/use-all-companies";
+import {useAllCompanies} from "@/hooks/useAllCompanies";
 import {
     getEmployeesByCompanies,
     deleteEmployee,

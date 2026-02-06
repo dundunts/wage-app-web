@@ -1,4 +1,11 @@
+// @/types/salary.types.ts
+
 /* ================= enums ================= */
+
+export enum StatisticScope {
+    OWN = "OWN",
+    STAFF = "STAFF"
+}
 
 export enum PeriodType {
     CUSTOM = "CUSTOM",

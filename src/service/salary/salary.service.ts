@@ -11,14 +11,16 @@ interface GetOwnSalaryParams {
 export async function getOwnSalary(
     params: GetOwnSalaryParams
 ): Promise<Payroll> {
+    const mappedParams = {...params, now: new Date().toISOString().slice(0, 10)}
+
     const searchParams = new URLSearchParams(
-        Object.entries(params)
+        Object.entries(mappedParams)
             .filter(([, v]) => v !== undefined)
             .map(([k, v]) => [k, String(v)])
     );
 
     const res = await fetch(
-        `/api/salary/own/get?${searchParams.toString()}`,
+        `/api/external/salary/own/get?${searchParams.toString()}`,
         { cache: "no-store" }
     );
 
@@ -40,14 +42,16 @@ interface GetStaffSalaryParams {
 export async function getStaffSalary(
     params: GetStaffSalaryParams
 ): Promise<Payroll> {
+    const mappedParams = {...params, now: new Date().toISOString().slice(0, 10)}
+
     const searchParams = new URLSearchParams(
-        Object.entries(params)
+        Object.entries(mappedParams)
             .filter(([, v]) => v !== undefined)
             .map(([k, v]) => [k, String(v)])
     );
 
     const res = await fetch(
-        `/api/salary/staff/get?${searchParams.toString()}`,
+        `/api/external/salary/staff/get?${searchParams.toString()}`,
         { cache: "no-store" }
     );
 
