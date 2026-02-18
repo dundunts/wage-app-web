@@ -13,6 +13,7 @@ import {
 import { Company } from "@/types/company.types";
 import { PageHeader } from "@/components/page/PageHeader";
 import { EmptyState } from "@/components/page/EmptyState";
+import {companyService} from "@/service/company/company.service";
 
 export default function CalculatorCompanyPage() {
     const router = useRouter();
@@ -25,14 +26,16 @@ export default function CalculatorCompanyPage() {
         async function loadCompanies() {
             try {
                 console.log("Start loading companies")
-                const res = await fetch("/api/external/company/for-user");
-                console.log(`Loading companies result: ${res.status}`)
+                // const res = await fetch("/api/external/company/for-user");
+                // console.log(`Loading companies result: ${res.status}`)
+                //
+                // if (!res.ok) {
+                //     throw new Error("Не удалось загрузить компании");
+                // }
 
-                if (!res.ok) {
-                    throw new Error("Не удалось загрузить компании");
-                }
+                // const data: Company[] = await res.json();
 
-                const data: Company[] = await res.json();
+                const data = await companyService.getForUser()
 
                 console.log("Companies data", data)
 

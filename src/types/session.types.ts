@@ -1,3 +1,5 @@
+// @/types/session.types.ts
+
 import {Checkpoint} from "@/types/checkpoint.types";
 
 export type SessionStatus =

@@ -1,27 +1,59 @@
-import {Session} from "@/types/session.types";
+// @/service/session/session.service.ts
 
-export async function getSessions(companyId: string): Promise<Session[]> {
-    const res = await fetch(
-        `/api/external/session/available/all?companyId=${companyId}`,
-        { cache: "no-store" }
-    );
+import {OpenNewShiftSessionPayload, Session, UpdateShiftSessionStartWorkTimePayload} from "@/types/session.types";
+import {SessionApiClient, sessionApiClient} from "@/api/session/session.api.client";
 
-    if (!res.ok) {
-        throw new Error("Failed to load sessions");
+export class SessionService {
+    constructor(private readonly apiClient: SessionApiClient) {
     }
 
-    return res.json();
-}
-
-export async function getAvailableSession(sessionId: string): Promise<Session> {
-    const res = await fetch(
-        `/api/external/session/available/${sessionId}`,
-        { cache: "no-store" }
-    );
-
-    if (!res.ok) {
-        throw new Error("Failed to load session");
+    async getAllAvailableByCompany(companyId: string): Promise<Session[]> {
+        try {
+            const response = await this.apiClient.fetchAllAvailableByCompany(companyId)
+            return response.data
+        } catch (e) {
+            console.error("Session service", e)
+            return Promise.reject(e)
+        }
     }
 
-    return res.json();
+    async getAvailableById(sessionId: string): Promise<Session> {
+        try {
+            const response = await this.apiClient.fetchAvailableById(sessionId)
+            return response.data
+        } catch (e) {
+            console.error("Session service", e)
+            return Promise.reject(e)
+        }
+    }
+
+    async open(payload: OpenNewShiftSessionPayload): Promise<Session> {
+        try {
+            const response = await this.apiClient.open(payload)
+            return response.data
+        } catch (e) {
+            console.error("Session service", e)
+            return Promise.reject(e)
+        }
+    }
+
+    async close(sessionId: string): Promise<void> {
+        try {
+            await this.apiClient.close(sessionId)
+        } catch (e) {
+            console.error("Session service", e)
+            return Promise.reject(e)
+        }
+    }
+
+    async updateStartWorkTime(payload: UpdateShiftSessionStartWorkTimePayload): Promise<void> {
+        try {
+            await this.apiClient.updateStartWorkTime(payload)
+        } catch (e) {
+            console.error("Session service", e)
+            return Promise.reject(e)
+        }
+    }
 }
+
+export const sessionService = new SessionService(sessionApiClient);

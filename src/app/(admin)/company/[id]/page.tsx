@@ -1,27 +1,15 @@
 // @/app/(admin)/company/[id]/page.tsx
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-import {
-    Box,
-    Button,
-    Heading,
-    Text,
-    Stack,
-    HStack,
-    Flex,
-    Spinner,
-    Center,
-    Separator,
-    Card
-} from "@chakra-ui/react";
-import { ArrowLeft, Edit, Trash2 } from "lucide-react";
+import {useCallback, useEffect, useState} from "react";
+import {useParams, useRouter} from "next/navigation";
+import {useSession} from "next-auth/react";
+import {Box, Button, Card, Center, Flex, Heading, HStack, Separator, Spinner, Stack, Text} from "@chakra-ui/react";
+import {ArrowLeft, Edit, Trash2} from "lucide-react";
 
-import { Company, CompanyPayload } from "@/types/company.types";
-import { getCompany, updateCompany, deleteCompany } from "@/service/company/company.service";
-import { CompanyFormModal } from "@/components/company/company-form-modal";
+import {Company, CompanyPayload} from "@/types/company.types";
+import {companyService} from "@/service/company/company.service";
+import {CompanyFormModal} from "@/components/company/company-form-modal";
 import {DeleteConfirmModal} from "@/components/dialog/delete-confirm-modal";
 
 export default function CompanyDetailsPage() {
@@ -47,7 +35,7 @@ export default function CompanyDetailsPage() {
         setError(null);
 
         try {
-            const data = await getCompany(id);
+            const data = await companyService.getById(id);
             setCompany(data);
         } catch (err) {
             console.error(err);
@@ -69,7 +57,7 @@ export default function CompanyDetailsPage() {
         if (!company) return;
         setActionLoading(true);
         try {
-            await updateCompany(company.id, payload);
+            await companyService.update(company.id, payload);
             await fetchCompanyData(); // Обновляем данные на странице
             setEditOpen(false);
         } catch (err) {
@@ -84,7 +72,7 @@ export default function CompanyDetailsPage() {
         if (!company) return;
         setActionLoading(true);
         try {
-            await deleteCompany(company.id);
+            await companyService.delete(company.id);
             router.push("/company"); // Редирект к списку
         } catch (err) {
             console.error(err);

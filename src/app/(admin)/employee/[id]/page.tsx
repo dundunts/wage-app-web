@@ -1,34 +1,28 @@
 // @/app/(admin)/employee/[id]/page.tsx
 "use client";
 
-import { useEffect, useState, use } from "react";
-import { useRouter } from "next/navigation";
+import {use, useEffect, useState} from "react";
+import {useRouter} from "next/navigation";
 import {
+    Badge,
     Box,
-    Heading,
+    Breadcrumb,
     Button,
+    Center,
     Flex,
+    Grid,
+    Heading,
+    Separator,
+    Spinner,
     Stack,
     Text,
-    Badge,
-    Grid,
-    Spinner,
-    Center,
-    Breadcrumb, Separator,
 } from "@chakra-ui/react";
-import {
-    ArrowLeft,
-    Pencil,
-    Trash2,
-    User,
-    Building2,
-    ChevronRight,
-} from "lucide-react";
+import {ArrowLeft, Building2, ChevronRight, Pencil, Trash2, User,} from "lucide-react";
 
-import { getEmployee, deleteEmployee } from "@/service/employee/employee.service";
-import { useAllCompanies } from "@/hooks/useAllCompanies";
-import { Employee, EmployeePosition } from "@/types/employee.types";
-import { DeleteConfirmModal } from "@/components/dialog/delete-confirm-modal";
+import {employeeService} from "@/service/employee/employee.service";
+import {useAllCompanies} from "@/hooks/useAllCompanies";
+import {Employee, EmployeePosition} from "@/types/employee.types";
+import {DeleteConfirmModal} from "@/components/dialog/delete-confirm-modal";
 import {toaster} from "@/components/ui/toaster";
 import {EmployeeModal} from "@/components/dialog/employee-modal";
 
@@ -52,7 +46,7 @@ export default function EmployeeDetailPage({ params }: Props) {
     const fetchEmployeeData = async () => {
         try {
             setIsLoading(true);
-            const data = await getEmployee(id);
+            const data = await employeeService.getById(id);
             setEmployee(data);
         } catch (error) {
             console.error(error);
@@ -74,7 +68,7 @@ export default function EmployeeDetailPage({ params }: Props) {
     const handleDelete = async () => {
         try {
             setIsDeleting(true);
-            await deleteEmployee(id);
+            await employeeService.delete(id);
             toaster.create({
                 title: "Сотрудник удалён",
                 type: "success",

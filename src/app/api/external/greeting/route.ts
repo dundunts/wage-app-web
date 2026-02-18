@@ -1,5 +1,5 @@
 import {NextResponse} from "next/server";
-import {getAuthSession} from "@/auth/auth";
+import {getAuthSession} from "@/sample/auth/auth";
 
 export async function GET() {
     const session = await getAuthSession();

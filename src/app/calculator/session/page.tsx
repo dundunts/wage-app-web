@@ -1,20 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import {
-    Stack,
-    Box,
-    Text,
-    Spinner,
-} from "@chakra-ui/react";
+import {useEffect, useMemo, useState} from "react";
+import {useRouter, useSearchParams} from "next/navigation";
+import {Box, Spinner, Stack, Text,} from "@chakra-ui/react";
 import {Session} from "@/types/session.types";
-import { PageHeader } from "@/components/page/PageHeader";
-import { EmptyState } from "@/components/page/EmptyState";
-import { OpenSessionModal } from "@/app/calculator/session/open-session-modal";
+import {PageHeader} from "@/components/page/PageHeader";
+import {EmptyState} from "@/components/page/EmptyState";
+import {OpenSessionModal} from "@/app/calculator/session/open-session-modal";
 import {Company} from "@/types/company.types";
-import {getCompany} from "@/service/company/company.service";
-import {getSessions} from "@/service/session/session.service";
+import {companyService} from "@/service/company/company.service";
+import {sessionService} from "@/service/session/session.service";
 
 export default function SessionPage() {
     const router = useRouter();
@@ -38,10 +33,10 @@ export default function SessionPage() {
             setLoading(true);
             
             try {
-                const company = await getCompany(companyId)
+                const company = await companyService.getById(companyId)
                 setCompany(company)
 
-                const sessions = await getSessions(companyId)
+                const sessions = await sessionService.getAllAvailableByCompany(companyId)
                 setSessions(sessions)
             } catch (e) {
                 console.error("Error while loading data", e)

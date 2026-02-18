@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { backendFetch } from "@/lib/api/backendFetch.axios";
+import { backendFetch } from "@/sample/lib/api/backendFetch.axios";
 import { CreateRecalculatingShiftSessionPayload } from "@/types/session.types";
 
 export async function POST(request: NextRequest) {

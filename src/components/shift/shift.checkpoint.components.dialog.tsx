@@ -4,7 +4,7 @@ import {
     Box,
     Button,
     CheckboxCard,
-    Dialog,
+    Dialog, Field,
     For,
     Grid,
     HStack,
@@ -14,7 +14,7 @@ import {
     Text,
     VStack,
 } from "@chakra-ui/react";
-import {useMemo, useState} from "react";
+import React, {useMemo, useState} from "react";
 import {CompanyEmployeeInfo, EmployeeBase} from "@/types/employee.types";
 import {CheckedChangeDetails} from "@zag-js/checkbox";
 import {DateTimePicker} from "@/components/date/components.date.pickers";
@@ -46,8 +46,8 @@ function getInitialEmployees(origin?: Checkpoint, prevCheckpoint?: Checkpoint) {
     return origin?.employees || prevCheckpoint?.employees || [];
 }
 
-function getInitialDate(origin?: Checkpoint) {
-    return origin?.dateTime || new Date()
+function getInitialDate(origin?: Checkpoint): Date {
+    return origin?.dateTime ? new Date(origin.dateTime) : new Date()
 }
 
 export function CheckpointDialog(
@@ -67,6 +67,7 @@ export function CheckpointDialog(
     const [values, setValues] = useState<Record<string, number>>(getInitialValues(origin));
     const [selectedEmployees, setSelectedEmployees] = useState<EmployeeBase[]>(getInitialEmployees(origin, prevCheckpoint));
     const [date, setDate] = useState<Date>(getInitialDate(origin));
+    // const [date, setDate] = useState<Date>(new Date());
 
     const [employeesSelectError, setEmployeesSelectError] = useState(false)
 
@@ -76,6 +77,7 @@ export function CheckpointDialog(
     console.log("Edit dialog. Origin", origin)
     console.log("Edit dialog. Selected employees", selectedEmployees)
     console.log("Edit dialog. Values", values)
+    console.log("Edit dialog. Selected date", date.toLocaleString())
 
     const {revenue, tips} = useMemo(() => {
         return form.fields.reduce(
@@ -212,7 +214,22 @@ export function CheckpointDialog(
                                 <Text fontSize="sm" mb={2} color="fg.muted">
                                     Дата и время
                                 </Text>
-                                <DateTimePicker value={date} onChange={setDate}/>
+                                {/*<DateTimePicker value={date} onChange={setDate}/>*/}
+                                <Field.Root>
+                                    <Field.Label>Время начала (ЧЧ:ММ)</Field.Label>
+                                    <Input
+                                        type="datetime-local"
+                                        size="lg"
+                                        value={toLocalDateTimeInputValue(date)}
+                                        onChange={e => {
+                                            console.log(e.target.value)
+                                            setDate(new Date(e.target.value))
+                                        }}
+                                    />
+                                    {/*<Field.ErrorText>*/}
+                                    {/*    {errors.startWorkTime?.message}*/}
+                                    {/*</Field.ErrorText>*/}
+                                </Field.Root>
                             </Box>
 
                             {/* Preview */}
@@ -252,3 +269,9 @@ export function CheckpointDialog(
         </Dialog.Root>
     );
 }
+
+const toLocalDateTimeInputValue = (date: Date) => {
+    const pad = (n: number) => n.toString().padStart(2, "0");
+
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};

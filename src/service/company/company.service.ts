@@ -1,32 +1,6 @@
 import {Company, CompanyPayload} from "@/types/company.types";
 import {Page} from "@/types/common.types";
-import {ShiftResultDetailed} from "@/types/shiftResult.types";
-
-export async function getCompany(companyId: string): Promise<Company> {
-    const res = await fetch(
-        `/api/external/company/${companyId}`,
-        { cache: "no-store" }
-    );
-
-    if (!res.ok) {
-        throw new Error("Failed to load company");
-    }
-
-    return res.json();
-}
-
-export async function getUserCompanies(): Promise<Company[]> {
-    const res = await fetch(
-        "/api/external/company/for-user",
-        { cache: "no-store" }
-    );
-
-    if (!res.ok) {
-        throw new Error("Не удалось загрузить компании");
-    }
-
-    return res.json();
-}
+import {companyApiClient, CompanyApiClient} from "@/api/company/company.api.client";
 
 interface GetCompanyPageParams {
     page?: number;
@@ -34,76 +8,70 @@ interface GetCompanyPageParams {
     sort?: string;
 }
 
-export async function getCompaniesPage(
-    params: GetCompanyPageParams
-): Promise<Page<Company>> {
-    const searchParams = new URLSearchParams(
-        Object.entries(params)
-            .filter(([, v]) => v !== undefined)
-            .map(([k, v]) => [k, String(v)])
-    );
-
-    const res = await fetch(
-        `/api/external/company/get/page?${searchParams}`,
-        { cache: "no-store" }
-    );
-
-    if (!res.ok) {
-        throw new Error("Failed to load companies");
+export class CompanyService {
+    constructor(private readonly apiClient: CompanyApiClient) {
     }
 
-    return res.json();
-}
-
-export async function createCompany(
-    payload: CompanyPayload
-): Promise<Company> {
-    const res = await fetch(
-        "/api/external/company/create",
-        {
-            method: "POST",
-            body: JSON.stringify(payload),
-            cache: "no-store",
+    async getById(companyId: string): Promise<Company> {
+        try {
+            const response = await this.apiClient.fetchById(companyId)
+            return response.data
+        } catch (e) {
+            console.error("Get company by id error:", e)
+            return Promise.reject(e)
         }
-    );
-
-    if (!res.ok) {
-        throw new Error("Failed to create company");
     }
 
-    return res.json();
-}
-
-export async function updateCompany(
-    companyId: string,
-    payload: CompanyPayload
-): Promise<void> {
-    const res = await fetch(
-        `/api/external/company/${companyId}`,
-        {
-            method: "PUT",
-            body: JSON.stringify(payload),
-            cache: "no-store",
+    async getForUser(): Promise<Company[]> {
+        try {
+            const response = await this.apiClient.fetchForUser()
+            return response.data.companies
+        } catch (e) {
+            console.error("Get companies for user error:", e)
+            return Promise.reject(e)
         }
-    );
-
-    if (!res.ok) {
-        throw new Error("Failed to update company");
     }
-}
 
-export async function deleteCompany(
-    companyId: string
-): Promise<void> {
-    const res = await fetch(
-        `/api/external/company/${companyId}`,
-        {
-            method: "DELETE",
-            cache: "no-store",
+    async getPage(params: GetCompanyPageParams): Promise<Page<Company>> {
+        try {
+            const page = params.page || 0
+            const size = params.size || 30
+
+            const response = await this.apiClient.fetchPage(page, size)
+            return response.data
+        } catch (e) {
+            console.error("Get companies page error:", e)
+            return Promise.reject(e)
         }
-    );
+    }
 
-    if (!res.ok) {
-        throw new Error("Failed to delete company");
+    async create(payload: CompanyPayload): Promise<Company> {
+        try {
+            const response = await this.apiClient.create(payload)
+            return response.data
+        } catch (e) {
+            console.error("Create company error:", e)
+            return Promise.reject(e)
+        }
+    }
+
+    async update(id: string, payload: CompanyPayload): Promise<void> {
+        try {
+            await this.apiClient.update(id, payload)
+        } catch (e) {
+            console.error("Update company error:", e)
+            return Promise.reject(e)
+        }
+    }
+
+    async delete(id: string): Promise<void> {
+        try {
+            await this.apiClient.delete(id)
+        } catch (e) {
+            console.error("Delete company error:", e)
+            return Promise.reject(e)
+        }
     }
 }
+
+export const companyService = new CompanyService(companyApiClient)

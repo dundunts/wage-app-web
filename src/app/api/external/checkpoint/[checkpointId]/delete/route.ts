@@ -1,6 +1,6 @@
 // app/api/checkpoint/[checkpointId]/delete/route.ts
 import { NextResponse } from "next/server";
-import { backendFetch } from "@/lib/api/backendFetch.axios";
+import { backendFetch } from "@/sample/lib/api/backendFetch.axios";
 
 interface Params {
     checkpointId: string;

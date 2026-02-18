@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {Company} from "@/types/company.types";
+import {sessionService} from "@/service/session/session.service";
 
 interface Props {
     company: Company;
@@ -30,23 +31,30 @@ export function OpenSessionModal({ company }: Props) {
     const router = useRouter();
 
     const submit = async () => {
-        const res = await fetch(
-            "/api/external/session/open",
-            {
-                method: "POST",
-                body: JSON.stringify({
-                    companyId: company.id,
-                    startWorkAt: new Date(dateTime).toISOString(),
-                }),
-            }
-        );
+        sessionService.open({
+            companyId: company.id,
+            startWorkAt: new Date(dateTime).toISOString(),
+        }).then(session => router.push(
+            `/calculator/checkpoints?sessionId=${session.id}`
+        ))
 
-        if (res.ok) {
-            const session = await res.json();
-            router.push(
-                `/calculator/checkpoints?sessionId=${session.id}`
-            );
-        }
+        // const res = await fetch(
+        //     "/api/external/session/open",
+        //     {
+        //         method: "POST",
+        //         body: JSON.stringify({
+        //             companyId: company.id,
+        //             startWorkAt: new Date(dateTime).toISOString(),
+        //         }),
+        //     }
+        // );
+        //
+        // if (res.ok) {
+        //     const session = await res.json();
+        //     router.push(
+        //         `/calculator/checkpoints?sessionId=${session.id}`
+        //     );
+        // }
     };
 
     return (

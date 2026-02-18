@@ -1,15 +1,20 @@
+// @/app/api/external/session/close/[sessionId]/route.ts
 import { NextResponse } from "next/server";
-import { backendFetch } from "@/lib/api/backendFetch.axios";
+import { backendFetch } from "@/sample/lib/api/backendFetch.axios";
 
 interface Params {
-    params: { sessionId: string };
+    params: Promise<{ sessionId: string }>;
 }
 
-export async function PUT(_: Request, { params }: Params) {
+export async function PUT(_: Request, { params }: Params ) {
+    const sessionId = (await params).sessionId
+
+    console.log("Close session. Session id: ", sessionId)
+
     await backendFetch(
-        `/api/v1/session/${params.sessionId}/close`,
+        `/api/v1/session/${sessionId}/close`,
         { method: "PUT" }
     );
 
-    return NextResponse.json(null, { status: 204 });
+    return new NextResponse(null, { status: 204 });
 }

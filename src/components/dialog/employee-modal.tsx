@@ -1,17 +1,17 @@
 "use client";
 
 import {
-    Dialog,
     Button,
-    Text,
-    Stack,
-    SimpleGrid,
-    Box,
+    Checkbox,
+    CheckboxGroup,
+    createListCollection,
+    Dialog,
+    Field,
+    Fieldset,
     Input,
     Select,
-    Checkbox,
-    Field, Portal, createListCollection, CheckboxGroup,
-    Fieldset,
+    SimpleGrid,
+    Stack,
 } from "@chakra-ui/react";
 import {Controller, useController, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -19,9 +19,8 @@ import {useEffect} from "react";
 import {Employee, EmployeePosition} from "@/types/employee.types";
 import {useAllCompanies} from "@/hooks/useAllCompanies";
 import {CreateEmployeeFormValues, createEmployeeSchema} from "@/schemas/employee.schema";
-import {createEmployee, updateEmployee} from "@/service/employee/employee.service";
+import {employeeService} from "@/service/employee/employee.service";
 import {toaster} from "@/components/ui/toaster";
-import {Demo} from "@/components/dialog/demo";
 
 interface EmployeeModalProps {
     isOpen: boolean;
@@ -92,10 +91,10 @@ export const EmployeeModal = ({
             };
 
             if (isEditMode && initialData) {
-                await updateEmployee(initialData.id, payload);
+                await employeeService.update(initialData.id, payload);
                 toaster.create({title: "Сотрудник обновлён", type: "success"});
             } else {
-                await createEmployee(payload);
+                await employeeService.create(payload);
                 toaster.create({title: "Сотрудник создан", type: "success"});
             }
 

@@ -1,7 +1,7 @@
 // @/hooks/useAllCompanies.ts
-import { useEffect, useState } from "react";
-import { getCompaniesPage } from "@/service/company/company.service";
-import { Company } from "@/types/company.types";
+import {useEffect, useState} from "react";
+import {companyService} from "@/service/company/company.service";
+import {Company} from "@/types/company.types";
 
 interface UseAllCompaniesReturn {
     companies: Company[];
@@ -21,7 +21,7 @@ export function useAllCompanies(): UseAllCompaniesReturn {
             try {
                 setIsLoading(true);
                 // Запрашиваем с запасом, как указано в ТЗ
-                const data = await getCompaniesPage({ page: 0, size: 100 });
+                const data = await companyService.getPage({ page: 0, size: 100 });
                 if (mounted) {
                     setCompanies(data.content);
                 }

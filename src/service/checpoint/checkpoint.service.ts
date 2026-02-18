@@ -1,49 +1,39 @@
 import {Checkpoint, CreateRegularCheckpointPayload, UpdateShiftCheckpointPayload} from "@/types/checkpoint.types";
+import {checkpointApiClient, CheckpointApiClient} from "@/api/checkpoint/checkpoint.api.client";
 
-export async function createCheckpoint(payload: CreateRegularCheckpointPayload): Promise<Checkpoint> {
-    const res = await fetch(
-        `/api/external/checkpoint/create`,
-        {
-            method: "POST",
-            body: JSON.stringify(payload),
-            cache: "no-store"
-        }
-    );
-
-    if (!res.ok) {
-        throw new Error("Failed to load company");
+export class CheckpointService {
+    constructor(private readonly apiClient: CheckpointApiClient) {
     }
 
-    return res.json();
-}
-
-export async function updateCheckpoint(payload: UpdateShiftCheckpointPayload): Promise<Checkpoint> {
-    const res = await fetch(
-        `/api/external/checkpoint/update`,
-        {
-            method: "POST",
-            body: JSON.stringify(payload),
-            cache: "no-store"
+    async create(payload: CreateRegularCheckpointPayload): Promise<Checkpoint> {
+        try {
+            const response = await this.apiClient.create(payload)
+            return response.data
+        } catch (e) {
+            console.error("Checkpoint service", e)
+            return Promise.reject(e)
         }
-    );
-
-    if (!res.ok) {
-        throw new Error("Failed to load company");
     }
 
-    return res.json();
-}
-
-export async function deleteCheckpoint(checkpointId: string): Promise<void> {
-    const res = await fetch(
-        `/api/external/checkpoint/${checkpointId}/delete`,
-        {
-            method: "DELETE",
-            cache: "no-store"
+    async update(payload: UpdateShiftCheckpointPayload): Promise<Checkpoint> {
+        try {
+            console.log("Checkpoint service. Update checkpoint", payload)
+            const response = await this.apiClient.update(payload)
+            return response.data
+        } catch (e) {
+            console.error("Checkpoint service", e)
+            return Promise.reject(e)
         }
-    );
+    }
 
-    if (!res.ok) {
-        throw new Error("Failed to load company");
+    async delete(id: string): Promise<void> {
+        try {
+            await this.apiClient.delete(id)
+        } catch (e) {
+            console.error("Checkpoint service", e)
+            return Promise.reject(e)
+        }
     }
 }
+
+export const checkpointService = new CheckpointService(checkpointApiClient)

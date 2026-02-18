@@ -1,6 +1,6 @@
 // app/api/external/employee/create/route.ts
 import { NextResponse } from "next/server";
-import { backendFetch } from "@/lib/api/backendFetch.axios";
+import { backendFetch } from "@/sample/lib/api/backendFetch.axios";
 
 export async function POST(req: Request) {
     const body = await req.json();

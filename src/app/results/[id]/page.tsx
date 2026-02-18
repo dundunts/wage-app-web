@@ -1,17 +1,27 @@
 // @/app/results/[id]/page.tsx
 "use client";
 
-import { useEffect, useState, use } from "react";
-import { useRouter } from "next/navigation";
+import {use, useEffect, useState} from "react";
+import {useRouter} from "next/navigation";
 import {
-    Box, Container, Heading, Flex, Button, Text, Spinner, Card, Stack, Badge, Grid, Separator
+    Badge,
+    Box,
+    Button,
+    Card,
+    Container,
+    Flex,
+    Grid,
+    Heading,
+    Separator,
+    Spinner,
+    Stack,
+    Text
 } from "@chakra-ui/react";
-import { getShiftResultDetailed, deleteShiftResult } from "@/service/results/shiftResult.service";
-import { ShiftResultDetailed } from "@/types/shiftResult.types";
-import { ShiftResultModal } from "../_components/ShiftResultModal";
-import { getUserCompanies } from "@/service/company/company.service";
-import { Company } from "@/types/company.types";
-import { toaster } from "@/components/ui/toaster";
+import {shiftResultService} from "@/service/results/shiftResult.service";
+import {ShiftResultDetailed} from "@/types/shiftResult.types";
+import {companyService} from "@/service/company/company.service";
+import {Company} from "@/types/company.types";
+import {toaster} from "@/components/ui/toaster";
 
 // В Next.js 16 params - это Promise
 export default function ResultDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -30,8 +40,9 @@ export default function ResultDetailsPage({ params }: { params: Promise<{ id: st
         const fetchData = async () => {
             try {
                 const [resultRes, companiesRes] = await Promise.all([
-                    getShiftResultDetailed(id),
-                    getUserCompanies()
+                    shiftResultService.getDetailed(id),
+                    // getUserCompanies()
+                    companyService.getForUser()
                 ]);
                 setData(resultRes.shiftResult);
                 setCompanies(companiesRes);
@@ -48,7 +59,7 @@ export default function ResultDetailsPage({ params }: { params: Promise<{ id: st
         if (!confirm("Удалить этот результат безвозвратно?")) return;
 
         try {
-            await deleteShiftResult(id);
+            await shiftResultService.delete(id);
             toaster.create({ title: "Удалено", type: "success" });
             router.push("/results");
         } catch(e) {
@@ -59,7 +70,7 @@ export default function ResultDetailsPage({ params }: { params: Promise<{ id: st
     const handleEditSuccess = () => {
         // Перезагрузка данных страницы
         setIsLoading(true);
-        getShiftResultDetailed(id)
+        shiftResultService.getDetailed(id)
             .then(res => setData(res.shiftResult))
             .finally(() => setIsLoading(false));
     };

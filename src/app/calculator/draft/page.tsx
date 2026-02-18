@@ -8,7 +8,7 @@ import {useRouter, useSearchParams} from "next/navigation";
 import {ShiftResultDraft} from "@/types/draft.types";
 import {PageHeader} from "@/components/page/PageHeader";
 import {EmptyState} from "@/components/page/EmptyState";
-import {confirmDraft, deleteDraft, getDraftForSession} from "@/service/calculation/calculation.service";
+import {calculationService} from "@/service/calculation/calculation.service";
 
 export default function DraftPage() {
     const searchParams = useSearchParams();
@@ -33,7 +33,7 @@ export default function DraftPage() {
         setLoading(true)
         
         try {
-            const draft = await getDraftForSession(sessionId)
+            const draft = await calculationService.getDraftForSession(sessionId)
             setResultDraft(draft)
         } catch (e) {
             console.error("Error while loading data", e)
@@ -45,7 +45,7 @@ export default function DraftPage() {
 
     async function handleBackToCheckpoints() {
         if (resultDraft) {
-            await deleteDraft(resultDraft.id);
+            await calculationService.deleteDraft(resultDraft.id);
         }
 
         router.replace(`/calculator/checkpoints?sessionId=${sessionId}`)
@@ -53,8 +53,8 @@ export default function DraftPage() {
 
     async function handleAcceptResults() {
         if (resultDraft) {
-            const res = await confirmDraft(resultDraft.id)
-            router.replace(`/result/${res.resultId}`)
+            const res = await calculationService.confirmDraft(resultDraft.id)
+            router.replace(`/results/${res.resultId}`)
         }
     }
 

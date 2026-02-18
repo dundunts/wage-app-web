@@ -1,7 +1,7 @@
 import {NextResponse} from "next/server";
-import {getAuthSession} from "@/auth/auth";
+import {getAuthSession} from "@/sample/auth/auth";
 import {Company, UserCompaniesResponse} from "@/types/company.types";
-import {backendFetch} from "@/lib/api/backendFetch.axios";
+import {backendFetch} from "@/sample/lib/api/backendFetch.axios";
 
 export async function GET() {
     const controller = new AbortController();

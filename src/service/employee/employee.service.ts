@@ -3,116 +3,92 @@ import {
     CompanyEmployeesResponse,
     CreateEmployeePayload,
     Employee,
-    EmployeePosition, UpdateEmployeePayload
+    EmployeePosition,
+    UpdateEmployeePayload
 } from "@/types/employee.types";
+import {employeeApiClient, EmployeeApiClient} from "@/api/employee/employee.api.client";
 
-export async function getEmployee(id: string): Promise<Employee> {
-    const res = await fetch(`/api/external/employee/get/${id}`, {
-        cache: "no-store",
-    });
-
-    if (!res.ok) throw new Error("Failed to load employee");
-    return res.json();
-}
-
-export async function getAllEmployees(): Promise<Employee[]> {
-    const res = await fetch(`/api/external/employee/get/all`, {
-        cache: "no-store",
-    });
-
-    if (!res.ok) throw new Error("Failed to load employees");
-    return res.json();
-}
-
-export async function getEmployeesByCompanies(
-    companyIds: string[]
-): Promise<CompanyEmployeesResponse[]> {
-    const query = companyIds.map(id => `companyIds=${id}`).join("&");
-
-    const res = await fetch(
-        `/api/external/employee/get/by-companies?${query}`,
-        { cache: "no-store" }
-    );
-
-    if (!res.ok) throw new Error("Failed to load employees");
-    return res.json();
-}
-
-export async function getCoworkers(): Promise<CompanyEmployeesResponse[]> {
-    const res = await fetch(`/api/external/employee/get/coworkers`, {
-        cache: "no-store",
-    });
-
-    if (!res.ok) throw new Error("Failed to load coworkers");
-    return res.json();
-}
-
-export async function getCoworkersForCompany(companyId: string): Promise<CompanyEmployeeInfo[]> {
-    const coworkersByCompany = await getCoworkers()
-    return coworkersByCompany.find(info => info.companyId === companyId)?.data || []
-}
-
-export async function getAvailableEmployeesForCompany(companyId: string): Promise<CompanyEmployeeInfo[]> {
-    const coworkers = await getCoworkersForCompany(companyId)
-    return coworkers.filter(emp => emp.position === EmployeePosition.WAITER_ACTIVE)
-}
-
-/**
- * Создать сотрудника
- * POST /api/external/employee/create
- * returns Employee
- */
-export async function createEmployee(
-    payload: CreateEmployeePayload
-): Promise<Employee> {
-    const res = await fetch("/api/external/employee/create", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-        throw new Error("Failed to create employee");
+export class EmployeeService {
+    constructor(private readonly apiClient: EmployeeApiClient) {
     }
 
-    return res.json();
-}
+    async getById(id: string): Promise<Employee> {
+        try {
+            const response = await this.apiClient.fetchById(id)
+            return response.data
+        } catch (e) {
+            console.error("Get employee by id error:", e)
+            return Promise.reject(e)
+        }
+    }
 
-/**
- * Обновить сотрудника
- * PUT /api/external/employee/update/:id
- * returns 204 no content
- */
-export async function updateEmployee(
-    id: string,
-    payload: UpdateEmployeePayload
-): Promise<void> {
-    const res = await fetch(`/api/external/employee/update/${id}`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-    });
+    async getAll(): Promise<Employee[]> {
+        try {
+            const response = await this.apiClient.fetchAll()
+            return response.data
+        } catch (e) {
+            console.error("Get employees error:", e)
+            return Promise.reject(e)
+        }
+    }
 
-    if (!res.ok) {
-        throw new Error("Failed to update employee");
+    async getByCompanies(companyIds: string[]): Promise<CompanyEmployeesResponse[]> {
+        try {
+            const response = await this.apiClient.fetchByCompanies(companyIds)
+            return response.data
+        } catch (e) {
+            console.error("Get employees by companies error:", e)
+            return Promise.reject(e)
+        }
+    }
+
+    async getCoworkers(): Promise<CompanyEmployeesResponse[]> {
+        try {
+            const response = await this.apiClient.fetchCoworkers()
+            return response.data
+        } catch (e) {
+            console.error("Get employees-coworkers error:", e)
+            return Promise.reject(e)
+        }
+    }
+
+    async getCoworkersForCompany(companyId: string): Promise<CompanyEmployeeInfo[]> {
+        const coworkersByCompany = await this.getCoworkers()
+        return coworkersByCompany.find(info => info.companyId === companyId)?.data || []
+    }
+
+    async getAvailableEmployeesForCompany(companyId: string): Promise<CompanyEmployeeInfo[]> {
+        const coworkers = await this.getCoworkersForCompany(companyId)
+        return coworkers.filter(emp => emp.position === EmployeePosition.WAITER_ACTIVE)
+    }
+
+    async create(payload: CreateEmployeePayload): Promise<Employee> {
+        try {
+            const response = await this.apiClient.create(payload)
+            return response.data
+        } catch (e) {
+            console.error("Create employee error:", e)
+            return Promise.reject(e)
+        }
+    }
+
+    async update(id: string, payload: UpdateEmployeePayload): Promise<void> {
+        try {
+            await this.apiClient.update(id, payload)
+        } catch (e) {
+            console.error("Update employee error:", e)
+            return Promise.reject(e)
+        }
+    }
+
+    async delete(id: string): Promise<void> {
+        try {
+            await this.apiClient.delete(id)
+        } catch (e) {
+            console.error("Delete employee error:", e)
+            return Promise.reject(e)
+        }
     }
 }
 
-/**
- * Удалить сотрудника
- * DELETE /api/external/employee/delete/:id
- * returns 204 no content
- */
-export async function deleteEmployee(id: string): Promise<void> {
-    const res = await fetch(`/api/external/employee/delete/${id}`, {
-        method: "DELETE",
-    });
-
-    if (!res.ok) {
-        throw new Error("Failed to delete employee");
-    }
-}
+export const employeeService = new EmployeeService(employeeApiClient)

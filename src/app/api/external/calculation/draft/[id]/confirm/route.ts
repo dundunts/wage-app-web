@@ -1,6 +1,6 @@
 // app/api/calculation/draft/[id]/confirm/route.ts
 import { NextResponse } from "next/server";
-import {backendFetch} from "@/lib/api/backendFetch.axios";
+import {backendFetch} from "@/sample/lib/api/backendFetch.axios";
 import {ShiftResultDraft} from "@/types/draft.types";
 
 interface Params {

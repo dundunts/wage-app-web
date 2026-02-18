@@ -1,35 +1,28 @@
 // @/components/company/company-list.tsx
 "use client";
 
-import { useState } from "react";
-import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import {useState} from "react";
+import {usePathname, useRouter, useSearchParams} from "next/navigation";
 import Link from "next/link";
 import {
     Box,
     Button,
+    Center,
+    Flex,
     Heading,
     HStack,
     IconButton,
-    Table,
     Menu,
-    Text,
-    Flex,
     Spacer,
     Spinner,
-    Center
+    Table,
+    Text
 } from "@chakra-ui/react";
-import {
-    MoreHorizontal,
-    Trash2,
-    Eye,
-    Plus,
-    ChevronLeft,
-    ChevronRight
-} from "lucide-react";
+import {ChevronLeft, ChevronRight, Eye, MoreHorizontal, Plus, Trash2} from "lucide-react";
 
-import { Company, CompanyPayload } from "@/types/company.types";
-import { createCompany, deleteCompany } from "@/service/company/company.service";
-import { CompanyFormModal } from "./company-form-modal";
+import {Company, CompanyPayload} from "@/types/company.types";
+import {companyService} from "@/service/company/company.service";
+import {CompanyFormModal} from "./company-form-modal";
 import {Page} from "@/types/common.types";
 import {DeleteConfirmModal} from "@/components/dialog/delete-confirm-modal";
 
@@ -54,7 +47,7 @@ export const CompanyList = ({ data, isLoadingData, onRefresh }: CompanyListProps
     const handleCreate = async (payload: CompanyPayload) => {
         setActionLoading(true);
         try {
-            await createCompany(payload);
+            await companyService.create(payload);
             onRefresh(); // Обновляем таблицу
         } catch (error) {
             console.error(error);
@@ -68,7 +61,7 @@ export const CompanyList = ({ data, isLoadingData, onRefresh }: CompanyListProps
         if (!companyToDelete) return;
         setActionLoading(true);
         try {
-            await deleteCompany(companyToDelete.id);
+            await companyService.delete(companyToDelete.id);
             onRefresh(); // Обновляем таблицу
             setCompanyToDelete(null);
         } catch (error) {

@@ -1,13 +1,22 @@
 import axios, {AxiosRequestConfig, AxiosResponse} from "axios";
-import {getAuthSession} from "@/auth/auth";
+import {getAuthSession} from "@/sample/auth/auth";
+import * as http from "node:http";
+import * as https from "node:https";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://92.255.107.65:8085";
 
 const axiosInstance = axios.create({
-    baseURL: BACKEND_URL,
+    baseURL: process.env.BACKEND_URL, // Убедитесь, что переменная есть
     headers: {
         "Content-Type": "application/json",
+        // Явно просим сервер закрывать соединение
+        "Connection": "close",
     },
+    // Отключаем keepAlive на уровне Node агента
+    httpAgent: new http.Agent({ keepAlive: false }),
+    httpsAgent: new https.Agent({ keepAlive: false }),
+    // Обязательно добавьте таймаут, чтобы не висеть вечно
+    timeout: 10000,
 });
 
 export async function backendFetch<T>(
@@ -23,19 +32,22 @@ export async function backendFetch<T>(
     console.log(`Access token: ${session.accessToken}`);
 
     try {
-        return await axiosInstance({
+        const promise = axiosInstance({
             url: url,
             ...config,
             headers: {
                 Authorization: `Bearer ${session.accessToken}`,
-                // Имитация cache: 'no-store' через HTTP заголовки,
-                // так как Axios не поддерживает нативный флаг Next.js
-                "Cache-Control": "no-store, no-cache, must-revalidate",
-                Pragma: "no-cache",
-                Expires: "0",
                 ...config.headers,
             },
         });
+
+        promise.then(res => {
+            console.log(`Backend fetch success: ${res.status}`);
+        }).catch(err => {
+            console.error(`Backend fetch failed: ${err.message}`);
+        });
+
+        return promise;
     } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
             // Пытаемся достать текст ошибки так же, как вы делали это с response.text()

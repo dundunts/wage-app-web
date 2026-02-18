@@ -1,6 +1,6 @@
 // app/api/checkpoint/create/route.ts
 import { NextResponse } from "next/server";
-import { backendFetch } from "@/lib/api/backendFetch.axios";
+import { backendFetch } from "@/sample/lib/api/backendFetch.axios";
 import {CreateRegularCheckpointPayload} from "@/types/checkpoint.types";
 
 export async function POST(request: Request) {

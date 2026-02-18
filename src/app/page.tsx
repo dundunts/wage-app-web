@@ -4,47 +4,47 @@ import Link from "next/link";
 import {Button} from "@chakra-ui/react";
 
 export default function Home() {
-    const {data: session} = useSession()
-    if (session && !session.error) {
-        return (
-            <>
-                Signed in as {session.user?.email} <br/>
-                Access token: {session.accessToken} <br/>
-                <button onClick={() => signOut()}>Sign out</button>
-
-                <br/><br/>
-                Roles: {session.realmRoles}
-
-                <br/><br/>
-                Greetings:
-                <GreetingButton/>
-
-                <br/><br/>
-                Secured:
-                <SecuredButton/>
-
-                <br/><br/>
-                <Navigation/>
-            </>
-        )
-    }
-    return (
-        <>
-            Not signed in <br/>
-            <button onClick={() => signIn()}>Sign in</button>
-
-            <br/><br/>
-            Greetings:
-            <GreetingButton/>
-
-            <br/><br/>
-            Secured:
-            <SecuredButton/>
-
-            <br/><br/>
-            <Navigation/>
-        </>
-    )
+    // const {data: session} = useSession()
+    // if (session && !session.error) {
+    //     return (
+    //         <>
+    //             Signed in as {session.user?.email} <br/>
+    //             Access token: {session.accessToken} <br/>
+    //             <button onClick={() => signOut()}>Sign out</button>
+    //
+    //             <br/><br/>
+    //             Roles: {session.realmRoles}
+    //
+    //             <br/><br/>
+    //             Greetings:
+    //             <GreetingButton/>
+    //
+    //             <br/><br/>
+    //             Secured:
+    //             <SecuredButton/>
+    //
+    //             <br/><br/>
+    //             <Navigation/>
+    //         </>
+    //     )
+    // }
+    // return (
+    //     <>
+    //         Not signed in <br/>
+    //         <button onClick={() => signIn()}>Sign in</button>
+    //
+    //         <br/><br/>
+    //         Greetings:
+    //         <GreetingButton/>
+    //
+    //         <br/><br/>
+    //         Secured:
+    //         <SecuredButton/>
+    //
+    //         <br/><br/>
+    //         <Navigation/>
+    //     </>
+    // )
 }
 
 function Navigation() {

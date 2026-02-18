@@ -1,4 +1,7 @@
 import { Payroll, PeriodType } from "@/types/salary.types";
+import {sessionApiClient, SessionApiClient} from "@/api/session/session.api.client";
+import {OpenNewShiftSessionPayload, Session, UpdateShiftSessionStartWorkTimePayload} from "@/types/session.types";
+import {salaryApiClient, SalaryApiClient} from "@/api/salary/salary.api.client";
 
 interface GetOwnSalaryParams {
     companyId: string;
@@ -6,29 +9,6 @@ interface GetOwnSalaryParams {
     start?: string;
     end?: string;
     now?: string;
-}
-
-export async function getOwnSalary(
-    params: GetOwnSalaryParams
-): Promise<Payroll> {
-    const mappedParams = {...params, now: new Date().toISOString().slice(0, 10)}
-
-    const searchParams = new URLSearchParams(
-        Object.entries(mappedParams)
-            .filter(([, v]) => v !== undefined)
-            .map(([k, v]) => [k, String(v)])
-    );
-
-    const res = await fetch(
-        `/api/external/salary/own/get?${searchParams.toString()}`,
-        { cache: "no-store" }
-    );
-
-    if (!res.ok) {
-        throw new Error("Failed to load own salary");
-    }
-
-    return res.json();
 }
 
 interface GetStaffSalaryParams {
@@ -39,25 +19,31 @@ interface GetStaffSalaryParams {
     now?: string;
 }
 
-export async function getStaffSalary(
-    params: GetStaffSalaryParams
-): Promise<Payroll> {
-    const mappedParams = {...params, now: new Date().toISOString().slice(0, 10)}
-
-    const searchParams = new URLSearchParams(
-        Object.entries(mappedParams)
-            .filter(([, v]) => v !== undefined)
-            .map(([k, v]) => [k, String(v)])
-    );
-
-    const res = await fetch(
-        `/api/external/salary/staff/get?${searchParams.toString()}`,
-        { cache: "no-store" }
-    );
-
-    if (!res.ok) {
-        throw new Error("Failed to load staff salary");
+export class SalaryService {
+    constructor(private readonly apiClient: SalaryApiClient) {
     }
 
-    return res.json();
+    async getOwn(params: GetOwnSalaryParams): Promise<Payroll> {
+        try {
+            const mappedParams = {...params, now: new Date().toISOString().slice(0, 10)}
+            const response = await this.apiClient.fetchOwn(mappedParams)
+            return response.data
+        } catch (e) {
+            console.error("Salary service", e)
+            return Promise.reject(e)
+        }
+    }
+
+    async getStaff(params: GetStaffSalaryParams): Promise<Payroll> {
+        try {
+            const mappedParams = {...params, now: new Date().toISOString().slice(0, 10)}
+            const response = await this.apiClient.fetchStaff(mappedParams)
+            return response.data
+        } catch (e) {
+            console.error("Salary service", e)
+            return Promise.reject(e)
+        }
+    }
 }
+
+export const salaryService = new SalaryService(salaryApiClient);

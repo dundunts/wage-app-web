@@ -1,6 +1,6 @@
 import KeycloakProvider from "next-auth/providers/keycloak";
 import NextAuth, {Account, AuthOptions, getServerSession, Session} from "next-auth";
-import {refreshKeycloakToken} from "@/auth/auth.api.keycloak";
+import {refreshKeycloakToken} from "@/sample/auth/auth.api.keycloak";
 
 function parseRoles(accessToken?: string) {
     let roles: string[] = [];
@@ -102,7 +102,7 @@ export const authOptions = {
     }
 } as AuthOptions
 
-export const auth = NextAuth(authOptions)
+// export const auth = NextAuth(authOptions)
 
 export async function getAuthSession(
     timeoutMs = 3000

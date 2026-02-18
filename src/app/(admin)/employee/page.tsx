@@ -1,22 +1,13 @@
 // @/app/(admin)/employee/page.tsx
 "use client";
 
-import {useEffect, useState, useCallback, useMemo} from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
 import {useRouter} from "next/navigation";
-import {
-    MoreVertical,
-    Plus,
-    Trash2,
-    Eye,
-    UserX,
-} from "lucide-react";
+import {Eye, MoreVertical, Plus, Trash2, UserX,} from "lucide-react";
 
 import {DeleteConfirmModal} from "@/components/dialog/delete-confirm-modal";
 import {useAllCompanies} from "@/hooks/useAllCompanies";
-import {
-    getEmployeesByCompanies,
-    deleteEmployee,
-} from "@/service/employee/employee.service";
+import {employeeService,} from "@/service/employee/employee.service";
 import {CompanyEmployeeInfo} from "@/types/employee.types";
 import {toaster} from "@/components/ui/toaster";
 import {EmployeeModal} from "@/components/dialog/employee-modal";
@@ -70,7 +61,7 @@ export default function EmployeeListPage() {
 
         try {
             setIsEmployeesLoading(true);
-            const response = await getEmployeesByCompanies([selectedCompanyId]);
+            const response = await employeeService.getByCompanies([selectedCompanyId]);
             const companyData = response.find(
                 (r) => r.companyId === selectedCompanyId
             );
@@ -107,7 +98,7 @@ export default function EmployeeListPage() {
 
         try {
             setIsDeleting(true);
-            await deleteEmployee(employeeToDelete);
+            await employeeService.delete(employeeToDelete);
             toaster.create({
                 title: "Сотрудник удалён",
                 type: "success",

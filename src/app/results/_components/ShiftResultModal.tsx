@@ -1,29 +1,29 @@
 // @/app/results/_components/ShiftResultModal.tsx
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { useForm, useFieldArray, Controller } from "react-hook-form";
+import {useEffect, useMemo, useState} from "react";
+import {Controller, useFieldArray, useForm} from "react-hook-form";
 import {
-    Dialog,
-    Button,
-    Input,
-    Stack,
-    Flex,
-    Text,
-    IconButton,
     Box,
-    Grid,
-    Select,
+    Button,
     createListCollection,
+    Dialog,
+    Flex,
+    Grid,
+    IconButton,
+    Input,
+    Select,
     Spinner,
+    Stack,
+    Text,
 } from "@chakra-ui/react";
-import { HiTrash, HiPlus } from "react-icons/hi";
-import { Company } from "@/types/company.types";
-import { CompanyEmployeeInfo } from "@/types/employee.types";
-import { ShiftResultDetailed, SaveShiftResultPayload } from "@/types/shiftResult.types";
-import { getCoworkersForCompany } from "@/service/employee/employee.service";
-import { saveShiftResult } from "@/service/results/shiftResult.service"; // Проверь путь импорта
-import { toaster } from "@/components/ui/toaster";
+import {HiPlus, HiTrash} from "react-icons/hi";
+import {Company} from "@/types/company.types";
+import {CompanyEmployeeInfo} from "@/types/employee.types";
+import {SaveShiftResultPayload, ShiftResultDetailed} from "@/types/shiftResult.types";
+import {employeeService} from "@/service/employee/employee.service";
+import {shiftResultService} from "@/service/results/shiftResult.service"; // Проверь путь импорта
+import {toaster} from "@/components/ui/toaster";
 
 interface InitialData {
     result: ShiftResultDetailed;
@@ -129,7 +129,7 @@ export function ShiftResultModal({
         }
 
         setIsEmployeesLoading(true);
-        getCoworkersForCompany(selectedCompanyId)
+        employeeService.getCoworkersForCompany(selectedCompanyId)
             .then(setEmployees)
             .catch((e) => {
                 console.error("Err loading employees", e);
@@ -153,7 +153,7 @@ export function ShiftResultModal({
                 })),
             };
 
-            await saveShiftResult(payload);
+            await shiftResultService.save(payload);
             toaster.create({ title: "Сохранено успешно", type: "success" });
             onSuccess();
             onClose();

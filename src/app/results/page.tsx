@@ -1,16 +1,16 @@
 // @/app/results/page.tsx
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { Box, Heading, Button, Container, Flex, useDialog } from "@chakra-ui/react"; // Note: useDialog is conceptual, implementing basic confirm below
-import { getUserCompanies } from "@/service/company/company.service";
-import { getShiftResultsByPeriodPage, deleteShiftResult } from "@/service/results/shiftResult.service";
-import { Company } from "@/types/company.types";
-import { Page } from "@/types/common.types"; // (Assuming Page is exported from common)
-import { useShiftResultFilters } from "../../hooks/useShiftResultFilters";
-import { ResultsFilters } from "./_components/ResultsFilters";
-import { ResultsTable } from "./_components/ResultsTable";
-import { Toaster, toaster } from "@/components/ui/toaster";
+import {useEffect, useState, useTransition} from "react";
+import {Button, Container, Flex, Heading} from "@chakra-ui/react"; // Note: useDialog is conceptual, implementing basic confirm below
+import {companyService} from "@/service/company/company.service";
+import {shiftResultService} from "@/service/results/shiftResult.service";
+import {Company} from "@/types/company.types";
+import {Page} from "@/types/common.types"; // (Assuming Page is exported from common)
+import {useShiftResultFilters} from "../../hooks/useShiftResultFilters";
+import {ResultsFilters} from "./_components/ResultsFilters";
+import {ResultsTable} from "./_components/ResultsTable";
+import {toaster} from "@/components/ui/toaster";
 import {ShiftResultDetailed} from "@/types/shiftResult.types";
 import {ShiftResultModal} from "@/app/results/_components/ShiftResultModal"; // Предполагаю наличие тостера
 
@@ -28,7 +28,8 @@ export default function ResultsPage() {
 
     // 1. Загрузка компаний при маунте
     useEffect(() => {
-        getUserCompanies()
+        // getUserCompanies()
+        companyService.getForUser()
             .then((data) => {
                 setCompanies(data);
                 if (data.length > 0 && !filters.companyId) {
@@ -44,7 +45,7 @@ export default function ResultsPage() {
             if (!filters.companyId) return;
 
             setIsLoading(true);
-            getShiftResultsByPeriodPage({
+            shiftResultService.getPageByPeriod({
                 companyId: filters.companyId,
                 periodType: filters.periodType,
                 now: new Date().toISOString(),
@@ -77,7 +78,7 @@ export default function ResultsPage() {
 
         startTransition(async () => {
             try {
-                await deleteShiftResult(id);
+                await shiftResultService.delete(id);
                 toaster.create({ title: "Удалено успешно", type: "success" });
                 // Перезагрузка данных (триггер эффекта)
                 // В идеале использовать React Query invalidate, но здесь просто перезапросим

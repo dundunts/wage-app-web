@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {Payroll, PeriodType} from "@/types/salary.types";
-import { getOwnSalary, getStaffSalary } from "@/service/salary/salary.service";
-import { StatisticFilters } from "@/hooks/useStatisticFilter";
-import { StatisticScope } from "@/types/salary.types";
+import {useEffect, useState} from "react";
+import {Payroll, PeriodType, StatisticScope} from "@/types/salary.types";
+import {salaryService} from "@/service/salary/salary.service";
+import {StatisticFilters} from "@/hooks/useStatisticFilter";
 import {toaster} from "@/components/ui/toaster";
 
 interface UseSalaryStatisticResult {
@@ -32,8 +31,8 @@ export function useSalaryStatistic(filters: StatisticFilters): UseSalaryStatisti
 
                 const result =
                     filters.scope === StatisticScope.STAFF
-                        ? await getStaffSalary(commonParams)
-                        : await getOwnSalary(commonParams);
+                        ? await salaryService.getStaff(commonParams)
+                        : await salaryService.getOwn(commonParams);
 
                 setData(result);
             } catch (e) {
