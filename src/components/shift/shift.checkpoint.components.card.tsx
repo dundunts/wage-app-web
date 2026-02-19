@@ -2,6 +2,7 @@ import {Box, Button, Card, Flex, HStack, Stack, Text, VStack} from "@chakra-ui/r
 import {Pencil, Trash} from "lucide-react";
 import React from "react";
 import {Checkpoint} from "@/types/checkpoint.types";
+import {formatEmployeeName} from "@/utils/employee.utils";
 
 type ShiftCheckpointCardProps = {
     checkpoint: Checkpoint,
@@ -47,7 +48,7 @@ export function ShiftCheckpointCard(
                                     bg="bg.subtle"
                                     fontSize="sm"
                                 >
-                                    {e.simpleName}
+                                    {formatEmployeeName(e)}
                                 </Box>
                             ))}
                         </HStack>

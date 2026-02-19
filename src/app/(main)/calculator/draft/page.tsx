@@ -9,6 +9,7 @@ import {ShiftResultDraft} from "@/types/draft.types";
 import {PageHeader} from "@/components/page/PageHeader";
 import {EmptyState} from "@/components/page/EmptyState";
 import {calculationService} from "@/service/calculation/calculation.service";
+import {formatEmployeeName} from "@/utils/employee.utils";
 
 export default function DraftPage() {
     const searchParams = useSearchParams();
@@ -34,6 +35,7 @@ export default function DraftPage() {
         
         try {
             const draft = await calculationService.getDraftForSession(sessionId)
+            draft.payments.sort((a, b) => (b.tips + b.percentFromRevenue) - (a.tips + a.percentFromRevenue))
             setResultDraft(draft)
         } catch (e) {
             console.error("Error while loading data", e)
