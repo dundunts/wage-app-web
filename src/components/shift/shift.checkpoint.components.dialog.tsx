@@ -4,7 +4,8 @@ import {
     Box,
     Button,
     CheckboxCard,
-    Dialog, Field,
+    Dialog,
+    Field,
     For,
     Grid,
     HStack,
@@ -17,7 +18,6 @@ import {
 import React, {useMemo, useState} from "react";
 import {CompanyEmployeeInfo, EmployeeBase} from "@/types/employee.types";
 import {CheckedChangeDetails} from "@zag-js/checkbox";
-import {DateTimePicker} from "@/components/date/components.date.pickers";
 import {checkpointDialogForms} from "@/components/shift/shift.checkpoint.components.dialog.constants";
 import {
     Checkpoint,
@@ -73,12 +73,6 @@ export function CheckpointDialog(
 
     const form = checkpointDialogForms[formType];
 
-    //TODO remove logs
-    console.log("Edit dialog. Origin", origin)
-    console.log("Edit dialog. Selected employees", selectedEmployees)
-    console.log("Edit dialog. Values", values)
-    console.log("Edit dialog. Selected date", date.toLocaleString())
-
     const {revenue, tips} = useMemo(() => {
         return form.fields.reduce(
             (acc, field) => {
@@ -113,6 +107,8 @@ export function CheckpointDialog(
                 ({...f, value: values[f.label]} as CheckpointMetricRecordPayload)),
         }
 
+        console.log("Saving checkpoint with payload:", payload)
+
         onSave(payload);
     };
 
@@ -127,7 +123,6 @@ export function CheckpointDialog(
             open={open}
             onOpenChange={(details) => {
                 if (details.open) {
-                    //TODO debug setup initial values
                     setFormType(initialFormType);
                     setValues(getInitialValues(origin));
                     setSelectedEmployees(getInitialEmployees(origin, prevCheckpoint));
@@ -214,7 +209,6 @@ export function CheckpointDialog(
                                 <Text fontSize="sm" mb={2} color="fg.muted">
                                     Дата и время
                                 </Text>
-                                {/*<DateTimePicker value={date} onChange={setDate}/>*/}
                                 <Field.Root>
                                     <Field.Label>Время начала (ЧЧ:ММ)</Field.Label>
                                     <Input
@@ -226,9 +220,6 @@ export function CheckpointDialog(
                                             setDate(new Date(e.target.value))
                                         }}
                                     />
-                                    {/*<Field.ErrorText>*/}
-                                    {/*    {errors.startWorkTime?.message}*/}
-                                    {/*</Field.ErrorText>*/}
                                 </Field.Root>
                             </Box>
 

@@ -1,16 +1,17 @@
 import {AxiosInstance, AxiosResponse} from "axios";
 import {axiosBackendClient} from "@/api/config/api";
-import {Checkpoint, CreateRegularCheckpointPayload, UpdateShiftCheckpointPayload} from "@/types/checkpoint.types";
+import {Checkpoint} from "@/types/checkpoint.types";
+import {CreateRegularCheckpointApiPayload, UpdateShiftCheckpointApiPayload} from "@/api/checkpoint/checkpoint.api.dto";
 
 export class CheckpointApiClient {
     constructor(private readonly client: AxiosInstance) {
     }
 
-    async create(payload: CreateRegularCheckpointPayload): Promise<AxiosResponse<Checkpoint>> {
+    async create(payload: CreateRegularCheckpointApiPayload): Promise<AxiosResponse<Checkpoint>> {
         return this.client.post("/api/v1/checkpoint/create", payload)
     }
 
-    async update(payload: UpdateShiftCheckpointPayload): Promise<AxiosResponse<Checkpoint>> {
+    async update(payload: UpdateShiftCheckpointApiPayload): Promise<AxiosResponse<Checkpoint>> {
         return this.client.post(`/api/v1/checkpoint/update`, payload)
     }
 
