@@ -20,7 +20,7 @@ export interface Session {
 
 export interface OpenNewShiftSessionPayload {
     companyId: string;     // UUID
-    startWorkAt: string;   // ISO date-time
+    startWorkAt: Date;   // ISO date-time
 }
 
 export interface CreateRecalculatingShiftSessionPayload {

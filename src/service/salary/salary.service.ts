@@ -1,6 +1,4 @@
-import { Payroll, PeriodType } from "@/types/salary.types";
-import {sessionApiClient, SessionApiClient} from "@/api/session/session.api.client";
-import {OpenNewShiftSessionPayload, Session, UpdateShiftSessionStartWorkTimePayload} from "@/types/session.types";
+import {Payroll, PeriodType} from "@/types/salary.types";
 import {salaryApiClient, SalaryApiClient} from "@/api/salary/salary.api.client";
 
 interface GetOwnSalaryParams {

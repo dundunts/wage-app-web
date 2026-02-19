@@ -6,7 +6,7 @@ import {Box, Spinner, Stack, Text,} from "@chakra-ui/react";
 import {Session} from "@/types/session.types";
 import {PageHeader} from "@/components/page/PageHeader";
 import {EmptyState} from "@/components/page/EmptyState";
-import {OpenSessionModal} from "@/app/(main)/calculator/session/open-session-modal";
+import {SessionOpenDialog} from "@/components/session/session.open.dialog";
 import {Company} from "@/types/company.types";
 import {companyService} from "@/service/company/company.service";
 import {sessionService} from "@/service/session/session.service";
@@ -100,7 +100,7 @@ export default function SessionPage() {
                         title="Нет открытых сессий"
                         description="Откройте новую сессию для начала работы"
                     />
-                    <OpenSessionModal company={company} />
+                    <SessionOpenDialog company={company} />
                 </>
             )}
 

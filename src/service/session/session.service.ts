@@ -2,6 +2,7 @@
 
 import {OpenNewShiftSessionPayload, Session, UpdateShiftSessionStartWorkTimePayload} from "@/types/session.types";
 import {SessionApiClient, sessionApiClient} from "@/api/session/session.api.client";
+import {formatLocalDateTime} from "@/utils/date.utils";
 
 export class SessionService {
     constructor(private readonly apiClient: SessionApiClient) {
@@ -29,7 +30,10 @@ export class SessionService {
 
     async open(payload: OpenNewShiftSessionPayload): Promise<Session> {
         try {
-            const response = await this.apiClient.open(payload)
+            const response = await this.apiClient.open({
+                ...payload,
+                startWorkAt: formatLocalDateTime(payload.startWorkAt)
+            })
             return response.data
         } catch (e) {
             console.error("Session service", e)

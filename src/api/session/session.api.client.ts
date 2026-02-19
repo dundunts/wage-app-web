@@ -1,6 +1,7 @@
 import {AxiosInstance, AxiosResponse} from "axios";
 import {axiosBackendClient} from "@/api/config/api";
-import {OpenNewShiftSessionPayload, Session, UpdateShiftSessionStartWorkTimePayload} from "@/types/session.types";
+import {Session, UpdateShiftSessionStartWorkTimePayload} from "@/types/session.types";
+import {OpenNewShiftSessionApiPayload} from "@/api/session/session.api.dto";
 
 export class SessionApiClient {
     constructor(private readonly client: AxiosInstance) {
@@ -16,7 +17,7 @@ export class SessionApiClient {
         return this.client.get(`/api/v1/session/get/available/${sessionId}`)
     }
 
-    async open(payload: OpenNewShiftSessionPayload): Promise<AxiosResponse<Session>> {
+    async open(payload: OpenNewShiftSessionApiPayload): Promise<AxiosResponse<Session>> {
         return this.client.post("/api/v1/session/open", payload)
     }
 

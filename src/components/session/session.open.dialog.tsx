@@ -12,19 +12,20 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {Company} from "@/types/company.types";
 import {sessionService} from "@/service/session/session.service";
+import {toLocalDateTimeInputValue} from "@/utils/date.utils";
 
 interface Props {
     company: Company;
 }
 
-export function OpenSessionModal({ company }: Props) {
+export function SessionOpenDialog({ company }: Props) {
     const { open, onOpen, onClose } = useDisclosure();
 
-    function getInitDate(startTime: string): string {
+    function getInitDate(startTime: string): Date {
         const now = new Date()
         const parts = startTime.split(":").map(v => Number(v))
         now.setHours(parts[0], parts[1])
-        return now.toISOString().slice(0, 16)
+        return now
     }
 
     const [dateTime, setDateTime] = useState(getInitDate(company.defaultShiftStartTime));
@@ -33,28 +34,10 @@ export function OpenSessionModal({ company }: Props) {
     const submit = async () => {
         sessionService.open({
             companyId: company.id,
-            startWorkAt: new Date(dateTime).toISOString(),
+            startWorkAt: dateTime,
         }).then(session => router.push(
             `/calculator/checkpoints?sessionId=${session.id}`
         ))
-
-        // const res = await fetch(
-        //     "/api/external/session/open",
-        //     {
-        //         method: "POST",
-        //         body: JSON.stringify({
-        //             companyId: company.id,
-        //             startWorkAt: new Date(dateTime).toISOString(),
-        //         }),
-        //     }
-        // );
-        //
-        // if (res.ok) {
-        //     const session = await res.json();
-        //     router.push(
-        //         `/calculator/checkpoints?sessionId=${session.id}`
-        //     );
-        // }
     };
 
     return (
@@ -89,8 +72,8 @@ export function OpenSessionModal({ company }: Props) {
                                     </Text>
                                     <Input
                                         type="datetime-local"
-                                        value={dateTime}
-                                        onChange={(e) => setDateTime(e.target.value)}
+                                        value={toLocalDateTimeInputValue(dateTime)}
+                                        onChange={(e) => setDateTime(new Date(e.target.value))}
                                     />
                                 </Box>
                             </VStack>

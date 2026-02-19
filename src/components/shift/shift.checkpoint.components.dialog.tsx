@@ -26,6 +26,7 @@ import {
     CheckpointPayload,
     CheckpointType
 } from "@/types/checkpoint.types";
+import {toLocalDateTimeInputValue} from "@/utils/date.utils";
 
 type CreateCheckpointDialogProps = {
     origin?: Checkpoint;
@@ -260,9 +261,3 @@ export function CheckpointDialog(
         </Dialog.Root>
     );
 }
-
-const toLocalDateTimeInputValue = (date: Date) => {
-    const pad = (n: number) => n.toString().padStart(2, "0");
-
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
