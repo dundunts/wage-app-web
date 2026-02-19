@@ -38,6 +38,7 @@ class AuthService {
         try {
             const payload: LogoutRequest = { refreshToken: TokensRepository.getRefreshToken() || '' }
             await this.authApiClient.logout(payload);
+            this.getUserState().clearAuth()
         } catch (e) {
             console.log("Error in logout")
             console.log(e)

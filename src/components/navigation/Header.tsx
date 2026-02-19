@@ -15,12 +15,18 @@ import {
     useDisclosure,
     VStack,
 } from "@chakra-ui/react";
-import {ChevronLeft, ChevronRight, Menu, User} from "lucide-react";
+import {ChevronLeft, ChevronRight, LogOut, Menu, User} from "lucide-react";
 import {useState} from "react";
 import {NavItem, navItems} from "@/components/navigation/navigation";
 import {useRouter} from "next/navigation";
+import {authService} from "@/service/auth.service";
 
 export function Header() {
+
+    function handleLogout() {
+        authService.logout()
+    }
+
     return (
         <Box
             as="header"
@@ -45,8 +51,12 @@ export function Header() {
                 <DesktopNavigation/>
 
                 <HStack>
-                    <Button variant="ghost" display={{base: "none", md: "inline-flex"}}>
-                        <User size={18}/> Профиль
+                    <Button
+                        variant="ghost"
+                        display={{base: "none", md: "inline-flex"}}
+                        onClick={handleLogout}
+                    >
+                        <LogOut size={18}/> Выйти
                     </Button>
 
                     <MobileNavigation/>
