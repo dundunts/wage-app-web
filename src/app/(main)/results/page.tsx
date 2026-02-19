@@ -12,7 +12,9 @@ import {ResultsFilters} from "../../../components/results/ResultsFilters";
 import {ResultsTable} from "../../../components/results/ResultsTable";
 import {toaster} from "@/components/ui/toaster";
 import {ShiftResultDetailed} from "@/types/shiftResult.types";
-import {ShiftResultModal} from "@/components/results/ShiftResultModal"; // Предполагаю наличие тостера
+import {ShiftResultModal} from "@/components/results/ShiftResultModal";
+import {salaryService} from "@/service/salary/salary.service";
+import {PeriodType} from "@/types/salary.types"; // Предполагаю наличие тостера
 
 export default function ResultsPage() {
     const [companies, setCompanies] = useState<Company[]>([]);
@@ -89,13 +91,49 @@ export default function ResultsPage() {
         });
     };
 
+    const handleDownload = async () => {
+        try {
+            const blob = await salaryService.downloadReportTable({
+                companyId: filters.companyId,
+                periodType: filters.periodType as PeriodType,
+                now: new Date().toISOString(),
+                start: filters.start || undefined,
+                end: filters.end || undefined,
+            });
+
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+
+            link.href = url;
+            link.download = "salary-report.xlsx"; // имя файла
+
+            document.body.appendChild(link);
+            link.click();
+
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     return (
         <Container maxW="7xl" py={8}>
             <Flex justify="space-between" align="center" mb={6}>
                 <Heading size="2xl">Результаты смен</Heading>
-                <Button colorPalette="blue" onClick={() => {setCreateModalOpen(true)}}>
-                    Создать результат
-                </Button>
+
+                <Flex justify="space-between" align="center" gap={2}>
+                    <Button colorPalette="blue" onClick={() => {setCreateModalOpen(true)}}>
+                        Создать результат
+                    </Button>
+                    <Button
+                        colorPalette="gray"
+                        onClick={handleDownload}
+                        disabled={!filters.companyId}
+                    >
+                        Скачать Excel
+                    </Button>
+                </Flex>
             </Flex>
 
             <ResultsFilters

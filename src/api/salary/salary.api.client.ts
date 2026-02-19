@@ -29,6 +29,16 @@ export class SalaryApiClient {
     async fetchStaff(params: GetStaffSalaryParams): Promise<AxiosResponse<Payroll>> {
         return this.client.get("/api/v1/salary/staff/get", { params })
     }
+
+    async downloadStaffExcelTable(params: GetStaffSalaryParams): Promise<AxiosResponse> {
+        return this.client.get(
+            "/api/v1/salary/reports-table",
+            {
+                params,
+                responseType: "blob",
+            }
+        )
+    }
 }
 
 export const salaryApiClient = new SalaryApiClient(axiosBackendClient)
