@@ -13,8 +13,7 @@ export default function RootLayout({children}: { children: React.ReactNode; }) {
         <body>
         <Provider>
             <AuthInitializer/>
-            <Header/>
-                {children}
+            {children}
         </Provider>
         </body>
         </html>

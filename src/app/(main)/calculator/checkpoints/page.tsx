@@ -211,6 +211,9 @@ export function CalcInShiftPage() {
         year: "numeric"
     });
 
+    //TODO delete logs
+    console.log("Checkpoints page. Checkpoints:", checkpoints)
+
     return (
         <Container maxW="breakpoint-lg" py={6}>
             <Stack gap={6}>
