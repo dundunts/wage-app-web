@@ -16,7 +16,7 @@ export class CompanyApiClient {
     }
 
     async fetchPage(page: number, size: number): Promise<AxiosResponse<Page<Company>>> {
-        return this.client.get("/api/external/company/get/page", {
+        return this.client.get("/api/v1/company/get/page", {
             params: { page, size }
         })
     }

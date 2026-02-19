@@ -2,7 +2,7 @@
 "use client";
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import {useCallback, useEffect, useMemo} from "react";
 import {PeriodType} from "@/types/enums";
 import {StatisticScope} from "@/types/salary.types";
 
@@ -29,6 +29,14 @@ export function useStatisticFilters(defaultCompanyId?: string) {
             end: searchParams.get("end") || "",
         };
     }, [searchParams, defaultCompanyId]);
+
+    useEffect(() => {
+        if (!searchParams.get("companyId") && defaultCompanyId) {
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("companyId", defaultCompanyId);
+            router.replace(`${pathname}?${params.toString()}`);
+        }
+    }, [defaultCompanyId, searchParams, pathname, router]);
 
     // Функция обновления любого параметра
     const setFilter = useCallback(

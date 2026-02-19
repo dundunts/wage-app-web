@@ -5,7 +5,6 @@ import { useAllCompanies } from "@/hooks/useAllCompanies";
 import { useStatisticFilters } from "@/hooks/useStatisticFilter";
 import { PeriodType, StatisticScope } from "@/types/salary.types";
 import { StatisticDateRange } from "@/components/statistic/StatisticDateRange";
-import {EmployeePosition} from "@/types/employee.types";
 
 export function StatisticFilters() {
     const { companies, isLoading } = useAllCompanies();
