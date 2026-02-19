@@ -3,7 +3,6 @@
 
 import {useCallback, useEffect, useState} from "react";
 import {useSearchParams} from "next/navigation";
-import {useSession} from "next-auth/react";
 import {Center, Spinner, Text} from "@chakra-ui/react";
 import {CompanyList} from "@/components/company/company-list";
 import {companyService} from "@/service/company/company.service";
@@ -11,7 +10,6 @@ import {Company} from "@/types/company.types";
 import {Page} from "@/types/common.types";
 
 export default function CompanyPage() {
-    const { status } = useSession();
     const searchParams = useSearchParams();
 
     // Состояние данных
@@ -26,15 +24,13 @@ export default function CompanyPage() {
 
     // Функция загрузки данных
     const fetchData = useCallback(async () => {
-        if (status !== "authenticated") return;
-
         setIsLoading(true);
         setError(null);
 
         try {
             // Здесь мы вызываем сервисный метод.
             // Токен берется автоматически браузером (куки) или обрабатывается внутри fetch/api route
-            const result = await companyService.getPage({ page, size, sort });
+            const result = await companyService.getPage({page, size, sort});
             setData(result);
         } catch (err) {
             console.error("Failed to load companies:", err);
@@ -42,31 +38,12 @@ export default function CompanyPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [page, size, sort, status]);
+    }, [page, size, sort]);
 
     // Эффект для загрузки при смене параметров или аутентификации
     useEffect(() => {
-        if (status === "authenticated") {
-            fetchData();
-        }
-    }, [fetchData, status]);
-
-    // Обработка состояний сессии
-    if (status === "loading") {
-        return (
-            <Center h="100vh">
-                <Spinner size="xl" />
-            </Center>
-        );
-    }
-
-    if (status === "unauthenticated") {
-        return (
-            <Center h="100vh">
-                <Text>Доступ запрещен. Пожалуйста, войдите в систему.</Text>
-            </Center>
-        );
-    }
+        fetchData();
+    }, [fetchData]);
 
     if (error && !data) {
         return (

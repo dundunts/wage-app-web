@@ -3,7 +3,6 @@
 
 import {useCallback, useEffect, useState} from "react";
 import {useParams, useRouter} from "next/navigation";
-import {useSession} from "next-auth/react";
 import {Box, Button, Card, Center, Flex, Heading, HStack, Separator, Spinner, Stack, Text} from "@chakra-ui/react";
 import {ArrowLeft, Edit, Trash2} from "lucide-react";
 
@@ -15,7 +14,6 @@ import {DeleteConfirmModal} from "@/components/dialog/delete-confirm-modal";
 export default function CompanyDetailsPage() {
     const { id } = useParams<{ id: string }>();
     const router = useRouter();
-    const { status } = useSession();
 
     // --- Состояние ---
     const [company, setCompany] = useState<Company | null>(null);
@@ -29,7 +27,7 @@ export default function CompanyDetailsPage() {
 
     // --- Загрузка данных ---
     const fetchCompanyData = useCallback(async () => {
-        if (!id || status !== "authenticated") return;
+        if (!id) return;
 
         setIsLoading(true);
         setError(null);
@@ -43,13 +41,11 @@ export default function CompanyDetailsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [id, status]);
+    }, [id]);
 
     useEffect(() => {
-        if (status === "authenticated") {
             fetchCompanyData();
-        }
-    }, [status, fetchCompanyData]);
+    }, [fetchCompanyData]);
 
     // --- Хендлеры действий ---
 
@@ -84,7 +80,7 @@ export default function CompanyDetailsPage() {
 
     // --- Обработка состояний загрузки страницы ---
 
-    if (status === "loading" || isLoading) {
+    if (isLoading) {
         return (
             <Center h="100vh">
                 <Spinner size="xl" color="blue.500" />
