@@ -7,12 +7,12 @@ import {companyService} from "@/service/company/company.service";
 import {shiftResultService} from "@/service/results/shiftResult.service";
 import {Company} from "@/types/company.types";
 import {Page} from "@/types/common.types"; // (Assuming Page is exported from common)
-import {useShiftResultFilters} from "../../hooks/useShiftResultFilters";
-import {ResultsFilters} from "./_components/ResultsFilters";
-import {ResultsTable} from "./_components/ResultsTable";
+import {useShiftResultFilters} from "../../../hooks/useShiftResultFilters";
+import {ResultsFilters} from "../../../components/results/ResultsFilters";
+import {ResultsTable} from "../../../components/results/ResultsTable";
 import {toaster} from "@/components/ui/toaster";
 import {ShiftResultDetailed} from "@/types/shiftResult.types";
-import {ShiftResultModal} from "@/app/results/_components/ShiftResultModal"; // Предполагаю наличие тостера
+import {ShiftResultModal} from "@/components/results/ShiftResultModal"; // Предполагаю наличие тостера
 
 export default function ResultsPage() {
     const [companies, setCompanies] = useState<Company[]>([]);
