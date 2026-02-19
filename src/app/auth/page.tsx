@@ -1,21 +1,10 @@
 // @/app/auth/page.tsx
 "use client";
 
-import React, {useState, useEffect, Suspense} from "react";
-import {
-    Box,
-    Button,
-    Container,
-    Heading,
-    Input,
-    Stack,
-    Text,
-    Center,
-    VStack,
-} from "@chakra-ui/react";
+import React, {Suspense, useState} from "react";
+import {Box, Button, Center, Container, Heading, Input, Stack, VStack,} from "@chakra-ui/react";
 import {Field} from "@/components/ui/field"; // * Примечание 1
-import {PasswordInput} from "@/components/ui/password-input" // * Примечание 1 (или стандартный InputGroup)
-import {useForm} from "react-hook-form";
+import {Controller, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useRouter, useSearchParams} from "next/navigation";
 import {authService} from "@/service/auth.service";
@@ -32,6 +21,7 @@ function LoginForm() {
     const [isLoading, setIsLoading] = useState(false);
 
     const {
+        control,
         register,
         handleSubmit,
         formState: {errors},
@@ -122,9 +112,18 @@ function LoginForm() {
                         </Field>
 
                         {/* Remember Me - опционально, если нужен чекбокс */}
-                        <Checkbox {...register("rememberMe")}>
-                            Запомнить меня
-                        </Checkbox>
+                        <Controller
+                            control={control}
+                            name={"rememberMe"}
+                            render={ ({field}) =>
+                                <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={(e) => field.onChange(!!e.checked)}
+                                >
+                                    Запомнить меня
+                                </Checkbox>
+                            }
+                        />
 
                         <Button
                             type="submit"
