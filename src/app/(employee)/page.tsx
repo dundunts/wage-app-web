@@ -1,81 +1,80 @@
 'use client';
-import {signIn, signOut, useSession} from "next-auth/react";
-import Link from "next/link";
-import {Button} from "@chakra-ui/react";
+
+import {Badge, Box, Button, Container, Flex, Heading, VStack, Text} from "@chakra-ui/react";
 
 export default function Home() {
-    // const {data: session} = useSession()
-    // if (session && !session.error) {
-    //     return (
-    //         <>
-    //             Signed in as {session.user?.email} <br/>
-    //             Access token: {session.accessToken} <br/>
-    //             <button onClick={() => signOut()}>Sign out</button>
-    //
-    //             <br/><br/>
-    //             Roles: {session.realmRoles}
-    //
-    //             <br/><br/>
-    //             Greetings:
-    //             <GreetingButton/>
-    //
-    //             <br/><br/>
-    //             Secured:
-    //             <SecuredButton/>
-    //
-    //             <br/><br/>
-    //             <Navigation/>
-    //         </>
-    //     )
-    // }
-    // return (
-    //     <>
-    //         Not signed in <br/>
-    //         <button onClick={() => signIn()}>Sign in</button>
-    //
-    //         <br/><br/>
-    //         Greetings:
-    //         <GreetingButton/>
-    //
-    //         <br/><br/>
-    //         Secured:
-    //         <SecuredButton/>
-    //
-    //         <br/><br/>
-    //         <Navigation/>
-    //     </>
-    // )
-}
-
-function Navigation() {
     return (
-        <div>
-            <title>Navigation:</title>
-            <ul>
-                <li><Link href='/secured'>to Secured</Link></li>
-                <li><Link href='/public'>to Public</Link></li>
-                <li><Link href='/admin'>to Admin</Link></li>
-            </ul>
-        </div>
-    )
-}
+        <Flex
+            mt={10}
+            color="gray.100"
+            align="center"
+            justify="center"
+            px={4}
+        >
+            <Container maxW="3xl">
+                <VStack gap={8} textAlign="center">
+                    <Badge
+                        colorPalette="purple"
+                        variant="solid"
+                        px={4}
+                        py={2}
+                        borderRadius="full"
+                        fontSize="sm"
+                    >
+                        Релиз HuiMonet v2 - WageApp 🚀
+                    </Badge>
 
-function GreetingButton() {
-    const handleClick = async () => {
-        const res = await fetch("/api/external/greeting");
-        const data = await res.json();
-        console.log(data);
-    };
+                    <Heading
+                        size="2xl"
+                        fontWeight="extrabold"
+                    >
+                        Дорогие друзья,
+                    </Heading>
+                    <Heading
+                        size="xl"
+                        fontWeight="extrabold"
+                    >
+                        Уважаемые коллеги,
+                    </Heading>
+                    <Heading
+                        size="md"
+                        fontWeight="extrabold"
+                    >
+                        Дамы и господа,
+                    </Heading>
+                    <Heading
+                        size="xs"
+                        fontWeight="extrabold"
+                    >
+                        Или просто дешевки
+                    </Heading>
 
-    return <Button onClick={handleClick}>Load greeting</Button>;
-}
+                    <Text fontSize="xl" color="gray.300">
+                        Это главная страница, но тут ничего нет.
+                    </Text>
 
-function SecuredButton() {
-    const handleClick = async () => {
-        const res = await fetch("/api/external/secured");
-        const data = await res.json();
-        console.log(data);
-    };
+                    <Text fontSize="lg" color="gray.400">
+                        Это не лень. Это <b>концепция</b>.
+                    </Text>
 
-    return <Button onClick={handleClick}>Load secured</Button>;
+                    <Box
+                        p={6}
+                        bg="gray.800"
+                        borderRadius="2xl"
+                        boxShadow="xl"
+                        border="1px solid"
+                        borderColor="gray.700"
+                    >
+                        <Text fontSize="md" color="gray.300">
+                            Здесь может быть то, что придумаете
+                        </Text>
+                    </Box>
+
+                    <Text fontSize="xs" color="gray.600">
+                        Версия 0.0.0 — других не будет.
+                    </Text>
+                </VStack>
+            </Container>
+        </Flex>
+    );
 }
