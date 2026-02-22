@@ -222,7 +222,7 @@ export default function EmployeeListPage() {
                                     <Table.Cell>
                                         <Menu.Root>
                                             <Menu.Trigger asChild>
-                                                <Button variant="ghost" size="sm">
+                                                <Button variant="subtle" size="sm">
                                                     <MoreVertical size={16}/>
                                                 </Button>
                                             </Menu.Trigger>

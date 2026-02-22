@@ -124,7 +124,7 @@ export default function EmployeeDetailPage({ params }: Props) {
             <Flex justify="space-between" align="flex-start" mb={8}>
                 <Flex gap={4} align="center">
                     <Button
-                        variant="ghost"
+                        variant="subtle"
                         onClick={() => router.push("/employee")}
                         px={2}
                     >

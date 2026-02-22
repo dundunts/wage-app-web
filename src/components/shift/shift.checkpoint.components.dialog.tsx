@@ -248,7 +248,7 @@ export function CheckpointDialog(
 
                     <Dialog.Footer>
                         <HStack justify="flex-end">
-                            <Button variant="ghost" onClick={onClose}>
+                            <Button variant="subtle" onClick={onClose}>
                                 Отмена
                             </Button>
                             <Button colorPalette="teal" onClick={handleSave}>

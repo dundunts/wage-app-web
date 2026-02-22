@@ -82,7 +82,7 @@ export function SessionOpenDialog({ company }: Props) {
                         <Dialog.Footer>
                             <HStack justify="flex-end" gap={2}>
                                 <Button
-                                    variant="ghost"
+                                    variant="subtle"
                                     onClick={onOpen}
                                 >
                                     Отмена

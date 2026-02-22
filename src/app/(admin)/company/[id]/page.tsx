@@ -92,7 +92,7 @@ export default function CompanyDetailsPage() {
         return (
             <Box p={6}>
                 <Button
-                    variant="ghost"
+                    variant="subtle"
                     onClick={() => router.back()}
                     mb={4}
                 >
@@ -109,7 +109,7 @@ export default function CompanyDetailsPage() {
         <Box p={6} maxW="800px" mx="auto">
             {/* Навигация */}
             <Button
-                variant="ghost"
+                variant="subtle"
                 onClick={() => router.push("/company")}
                 mb={6}
                 size="sm"

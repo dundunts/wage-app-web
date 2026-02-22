@@ -75,7 +75,7 @@ export function ResultsTable({ data, isLoading, onEdit, onDelete }: ResultsTable
                             <Table.Cell textAlign="end">
                                 <Menu.Root>
                                     <Menu.Trigger asChild>
-                                        <IconButton variant="ghost" size="sm" aria-label="Опции">
+                                        <IconButton variant="subtle" size="sm" aria-label="Опции">
                                             <HiDotsVertical />
                                         </IconButton>
                                     </Menu.Trigger>

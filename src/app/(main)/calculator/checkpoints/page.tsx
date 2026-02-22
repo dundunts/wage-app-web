@@ -243,7 +243,7 @@ export function CalcInShiftPage() {
                                 Начало:
                             </Text>
                             <Button
-                                variant="ghost"
+                                variant="subtle"
                                 size="sm"
                                 height="auto"
                                 px={2}

@@ -159,7 +159,7 @@ export default function ResultsPage() {
                     >
                         Назад
                     </Button>
-                    <Button variant="ghost" disabled>
+                    <Button variant="subtle" disabled>
                         Стр. {filters.page + 1} из {resultsPage.totalPages}
                     </Button>
                     <Button

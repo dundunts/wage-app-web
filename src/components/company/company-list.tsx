@@ -145,7 +145,7 @@ export const CompanyList = ({ data, isLoadingData, onRefresh }: CompanyListProps
                                     <Table.Cell textAlign="end">
                                         <Menu.Root positioning={{ placement: "bottom-end" }}>
                                             <Menu.Trigger asChild>
-                                                <IconButton variant="ghost" size="sm" aria-label="Опции">
+                                                <IconButton variant="subtle" size="sm" aria-label="Опции">
                                                     <MoreHorizontal />
                                                 </IconButton>
                                             </Menu.Trigger>

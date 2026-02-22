@@ -314,7 +314,7 @@ export function ShiftResultModal({
                                                 <IconButton
                                                     aria-label="Delete"
                                                     colorPalette="red"
-                                                    variant="ghost"
+                                                    variant="subtle"
                                                     size="sm"
                                                     onClick={() => remove(index)}
                                                 >

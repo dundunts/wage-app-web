@@ -15,18 +15,26 @@ import {
     useDisclosure,
     VStack,
 } from "@chakra-ui/react";
-import {ChevronLeft, ChevronRight, LogOut, Menu, User} from "lucide-react";
+import {ChevronLeft, ChevronRight, LogOut, Menu} from "lucide-react";
 import {useState} from "react";
 import {NavItem, navItems} from "@/components/navigation/navigation";
 import {useRouter} from "next/navigation";
 import {authService} from "@/service/auth.service";
+import useUserStore from "@/store/userStore";
+
+function handleLogout() {
+    authService.logout()
+}
+
+function filterNavItems(items: NavItem[], permissions: string[]): NavItem[] {
+    return items.filter(item => {
+        const requiredPermissions = item.requiredPermissions || []
+        if (!requiredPermissions) return true;
+        return requiredPermissions.every(permission => permissions.includes(permission))
+    })
+}
 
 export function Header() {
-
-    function handleLogout() {
-        authService.logout()
-    }
-
     return (
         <Box
             as="header"
@@ -52,7 +60,7 @@ export function Header() {
 
                 <HStack>
                     <Button
-                        variant="ghost"
+                        variant="subtle"
                         display={{base: "none", md: "inline-flex"}}
                         onClick={handleLogout}
                     >
@@ -75,11 +83,11 @@ function DesktopNavigation() {
 
     return (
         <HStack display={{base: "none", md: "flex"}}>
-            {navItems.map((level1) =>
+            {filterNavItems(navItems, useUserStore().permissions).map((level1) =>
                 level1.children && level1.children.length > 0
                     ? <Popover.Root key={level1.label}>
                         <Popover.Trigger asChild>
-                            <Button variant="ghost" fontWeight="medium">
+                            <Button variant="subtle" fontWeight="medium">
                                 {level1.label}
                             </Button>
                         </Popover.Trigger>
@@ -93,7 +101,7 @@ function DesktopNavigation() {
                                                 {level2.children && level2.children.length > 0 ? (
                                                     <>
                                                         <Button
-                                                            variant="ghost"
+                                                            variant="subtle"
                                                             fontSize="sm"
                                                             fontWeight="semibold"
                                                         >
@@ -103,7 +111,7 @@ function DesktopNavigation() {
                                                         {level2.children.map((level3) => (
                                                             <Button
                                                                 key={level3.href}
-                                                                variant="ghost"
+                                                                variant="subtle"
                                                                 size="sm"
                                                                 justifyContent="flex-start"
                                                                 color="fg.muted"
@@ -115,7 +123,7 @@ function DesktopNavigation() {
                                                     </>
                                                 ) : (
                                                     <Button
-                                                        variant="ghost"
+                                                        variant="subtle"
                                                         size="sm"
                                                         fontWeight="medium"
                                                         justifyContent="flex-start"
@@ -131,7 +139,7 @@ function DesktopNavigation() {
                             </Popover.Positioner>
                         </Portal>
                     </Popover.Root>
-                    : <Button key={level1.label} variant="ghost" fontWeight="medium" onClick={() => navTo(level1)}>
+                    : <Button key={level1.label} variant="subtle" fontWeight="medium" onClick={() => navTo(level1)}>
                         {level1.label}
                     </Button>
             )}
@@ -143,6 +151,8 @@ function MobileNavigation() {
     const {open, onOpen, onClose} = useDisclosure();
     const [level1, setLevel1] = useState<number | null>(null);
     const [level2, setLevel2] = useState<number | null>(null);
+
+    const filteredNavItems = filterNavItems(navItems, useUserStore().permissions)
 
     const router = useRouter()
 
@@ -160,7 +170,7 @@ function MobileNavigation() {
             <Drawer.Trigger asChild>
                 <IconButton
                     aria-label="Open menu"
-                    variant="ghost"
+                    variant="subtle"
                     display={{base: "inline-flex", md: "none"}}
                     onClick={onOpen}
                 >
@@ -181,7 +191,7 @@ function MobileNavigation() {
                                 {/* BACK BUTTON */}
                                 {(level1 !== null || level2 !== null) &&
                                     <Button
-                                        variant="ghost"
+                                        variant="subtle"
                                         justifyContent="space-between"
                                         onClick={() => level2 !== null ? setLevel2(null) : setLevel1(null)}
                                     >
@@ -194,10 +204,10 @@ function MobileNavigation() {
 
                                 {/* LEVEL 1 */}
                                 {level1 === null &&
-                                    navItems.map((item, i) => (
+                                    filteredNavItems.map((item, i) => (
                                         <Button
                                             key={item.label}
-                                            variant="ghost"
+                                            variant="subtle"
                                             justifyContent="space-between"
                                             onClick={() => {
                                                 if (item.children) setLevel1(i)
@@ -211,10 +221,10 @@ function MobileNavigation() {
 
                                 {/* LEVEL 2 */}
                                 {level1 !== null && level2 === null &&
-                                    navItems[level1].children?.map((item, i) => (
+                                    filteredNavItems[level1].children?.map((item, i) => (
                                         <Button
                                             key={item.label}
-                                            variant="ghost"
+                                            variant="subtle"
                                             justifyContent="space-between"
                                             onClick={() => {
                                                 if (item.children) setLevel2(i)
@@ -228,11 +238,11 @@ function MobileNavigation() {
 
                                 {/* LEVEL 3 */}
                                 {level1 !== null && level2 !== null &&
-                                    navItems[level1].children?.[level2].children?.map(
+                                    filteredNavItems[level1].children?.[level2].children?.map(
                                         (item) => (
                                             <Button
                                                 key={item.href}
-                                                variant="ghost"
+                                                variant="subtle"
                                                 justifyContent="flex-start"
                                                 onClick={() => {
                                                     navTo(item);
@@ -246,8 +256,12 @@ function MobileNavigation() {
                                     )}
 
                                 <Box pt={4} borderTopWidth="1px" borderColor="border.subtle">
-                                    <Button variant="outline" w="full">
-                                        <User size={18}/> Профиль
+                                    <Button
+                                        variant="subtle"
+                                        w="full"
+                                        onClick={handleLogout}
+                                    >
+                                        <LogOut size={18}/> Выйти
                                     </Button>
                                 </Box>
                             </VStack>

@@ -1,10 +1,9 @@
 import {Header} from "@/components/navigation/Header";
 import RouteSecurity from "@/components/auth/RouteSecurity";
-import {managerPermissions} from "@/constants/roles";
 
-export default function MainLayout({children}: { children: React.ReactNode; }) {
+export default function EmployeeLayout({children}: { children: React.ReactNode; }) {
     return (
-        <RouteSecurity requiredRoles={managerPermissions} redirectOnReject={"/"}>
+        <RouteSecurity onlyAuthenticated redirectOnReject={"/auth"}>
             <>
                 <Header/>
                 {children}

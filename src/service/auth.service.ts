@@ -38,6 +38,8 @@ class AuthService {
         try {
             const payload: LogoutRequest = { refreshToken: TokensRepository.getRefreshToken() || '' }
             await this.authApiClient.logout(payload);
+            TokensRepository.clearAccessToken()
+            TokensRepository.clearRefreshToken()
             this.getUserState().clearAuth()
         } catch (e) {
             console.log("Error in logout")
@@ -50,7 +52,7 @@ class AuthService {
         const payload = parseJwt(accessToken)
         if (payload) {
             TokensRepository.setTokens(accessToken, refreshToken);
-            this.getUserState().setAuth(payload.sub, payload.email, payload.resource_access.account.roles);
+            this.getUserState().setAuth(payload.sub, payload.email, payload.realm_access.roles);
         } else {
             throw new Error("Unable to parse JWT token")
         }

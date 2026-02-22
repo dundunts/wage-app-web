@@ -1,13 +1,17 @@
+import {adminPermissions, managerPermissions} from "@/constants/roles";
+
 export interface NavItem {
     label: string;
     href?: string;
-    children?: NavItem[]
+    children?: NavItem[];
+    requiredPermissions?: string[];
 }
 
 export const navItems: NavItem[] = [
     {
         label: "Калькулятор",
-        href: "/calculator"
+        href: "/calculator",
+        requiredPermissions: managerPermissions
     },
     {
         label: "Статистика",
@@ -15,7 +19,8 @@ export const navItems: NavItem[] = [
     },
     {
         label: "Отчеты",
-        href: "/results"
+        href: "/results",
+        requiredPermissions: managerPermissions
     },
     {
         label: "Админ. панель",
@@ -29,5 +34,6 @@ export const navItems: NavItem[] = [
                 href: "/employee"
             },
         ],
+        requiredPermissions: adminPermissions
     },
 ];

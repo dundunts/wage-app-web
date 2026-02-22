@@ -82,7 +82,7 @@ export default function ResultDetailsPage({ params }: { params: Promise<{ id: st
         <Container maxW="4xl" py={8}>
             <Flex justify="space-between" align="center" mb={6}>
                 <Box>
-                    <Button variant="ghost" size="sm" mb={2} onClick={() => router.push("/results")}>
+                    <Button variant="subtle" size="sm" mb={2} onClick={() => router.push("/results")}>
                         ← Назад к списку
                     </Button>
                     <Heading size="xl">
