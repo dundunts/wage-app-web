@@ -41,7 +41,9 @@ export function Header() {
             position="sticky"
             top={0}
             zIndex={100}
-            bg="bg.surface"
+            bg="blackAlpha.800"   // прозрачность 80%
+            backdropFilter="auto"
+            backdropBlur="12px"
             borderBottomWidth="1px"
             borderColor="border.subtle"
         >
