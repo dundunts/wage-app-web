@@ -12,6 +12,74 @@ export interface DayStat {
     tips: number;
 }
 
+export interface DayEmployeeStat {
+    date: string;
+    // Здесь будут динамические ключи вида [employeeId: string]: number
+    [key: string]: string | number;
+}
+
+export function calculateEmployeesByDays(elements: PayrollElement[]) {
+    // Словарь для хранения имен: { "id-1": "Иван И.", "id-2": "Анна С." }
+    const employeesMap: Record<string, string> = {};
+
+    const data: DayEmployeeStat[] = elements.map((el) => {
+        const dayStat: DayEmployeeStat = { date: el.date };
+
+        el.payments.forEach((p) => {
+            const emp = p.employee;
+            const empId = emp.id;
+
+            // Запоминаем имя для легенды (используем simpleName или собираем из Имени/Фамилии)
+            if (!employeesMap[empId]) {
+                employeesMap[empId] = emp.simpleName || `${emp.firstName} ${emp.lastName[0]}.`;
+            }
+
+            const totalEmpPayment = p.percentFromRevenue + p.tips;
+
+            // Если у сотрудника несколько выплат в один день, суммируем их
+            if (typeof dayStat[empId] === 'number') {
+                (dayStat[empId] as number) += totalEmpPayment;
+            } else {
+                dayStat[empId] = totalEmpPayment;
+            }
+        });
+
+        return dayStat;
+    });
+
+    return { data, employeesMap };
+}
+
+// Вспомогательная функция для подготовки данных
+export function prepareChartData(elements: PayrollElement[]) {
+    const employeeNames: Record<string, string> = {};
+
+    const chartData = elements.map((el) => {
+        // Инициализируем объект дня датой
+        const dayEntry: any = { date: el.date };
+
+        el.payments.forEach((p) => {
+            const id = p.employee.id;
+            const fullName = p.employee.simpleName || `${p.employee.firstName} ${p.employee.lastName[0]}.`;
+
+            // Сохраняем маппинг ID -> Имя для легенды
+            employeeNames[id] = fullName;
+
+            // Суммируем выплату (процент + чаевые)
+            const amount = p.percentFromRevenue + p.tips;
+            dayEntry[id] = (dayEntry[id] || 0) + amount;
+        });
+
+        return dayEntry;
+    });
+
+    return {
+        chartData,
+        employeeIds: Object.keys(employeeNames),
+        employeeNames
+    };
+}
+
 function sumPayments(payments: PayrollPayment[]) {
     return payments.reduce(
         (acc, p) => {
