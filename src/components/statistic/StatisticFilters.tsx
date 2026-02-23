@@ -1,13 +1,13 @@
 "use client";
 
 import {Box, createListCollection, HStack, Portal, Select, Spinner, Tabs} from "@chakra-ui/react";
-import { useAllCompanies } from "@/hooks/useAllCompanies";
 import { useStatisticFilters } from "@/hooks/useStatisticFilter";
 import { PeriodType, StatisticScope } from "@/types/salary.types";
 import { StatisticDateRange } from "@/components/statistic/StatisticDateRange";
+import {useUserCompanies} from "@/hooks/useUserCompanies";
 
 export function StatisticFilters() {
-    const { companies, isLoading } = useAllCompanies();
+    const { companies, isLoading } = useUserCompanies();
     const defaultCompanyId = companies[0]?.id;
     const { filters, setFilter } = useStatisticFilters(defaultCompanyId);
 
@@ -62,16 +62,10 @@ export function StatisticFilters() {
                     collection={periodTypesCollection}
                     width="320px"
                     value={[filters.periodType]}
-                    // value={[Object.values(PeriodType).find(v => v.toString() === filters.periodType) || ""]}
                     onValueChange={(e) => {
                         const value = e.value[0];
                         console.log("Picked period type", value)
                         setFilter("periodType", value);
-
-                        // if (value !== PeriodType.CUSTOM) {
-                        //     setFilter("start", undefined);
-                        //     setFilter("end", undefined);
-                        // }
                     }}
                 >
                     <Select.HiddenSelect />
