@@ -105,7 +105,7 @@ export function StaffStatistic({ payroll }: Props) {
 }
 
 interface PayrollEmployeeChartProps {
-    data: any[];
+    data: unknown[];
     employeeIds: string[];
     namesMap: Record<string, string>;
 }
@@ -123,6 +123,7 @@ export const PayrollEmployeeChart = ({ data, employeeIds, namesMap }: PayrollEmp
                     <YAxis />
                     <Tooltip
                         // Форматируем ID в понятное имя в тултипе
+                        // @ts-ignore
                         formatter={(value: number, name: string) => [value.toFixed(2), namesMap[name]]}
                     />
                     <Legend
