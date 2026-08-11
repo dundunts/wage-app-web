@@ -7,10 +7,25 @@ ci="$repo_root/.github/workflows/ci.yaml"
 release="$repo_root/.github/workflows/release.yaml"
 wizard="$repo_root/scripts/setup-web-release.sh"
 tag_verifier="$repo_root/scripts/verify-docker-tag.sh"
+dockerfile="$repo_root/Dockerfile"
+dockerignore="$repo_root/.dockerignore"
+next_config="$repo_root/next.config.ts"
 
-for required in "$ci" "$release" "$wizard" "$tag_verifier"; do
+for required in "$ci" "$release" "$wizard" "$tag_verifier" "$dockerfile" "$dockerignore" "$next_config"; do
   [[ -f "$required" ]] || { echo "missing release contract file: $required" >&2; exit 1; }
 done
+
+grep -Fq 'output: "standalone"' "$next_config"
+grep -Fq 'COPY --from=builder --chown=nextjs:nextjs /app/.next/standalone ./' "$dockerfile"
+grep -Fq 'COPY --from=builder --chown=nextjs:nextjs /app/.next/static ./.next/static' "$dockerfile"
+grep -Fq 'CMD ["node", "server.js"]' "$dockerfile"
+if grep -Fq 'COPY --from=builder /app/node_modules' "$dockerfile"; then
+  echo "runtime image must not copy the complete development dependency tree" >&2
+  exit 1
+fi
+grep -Fxq 'node_modules' "$dockerignore"
+grep -Fxq '.next' "$dockerignore"
+grep -Fxq '.git' "$dockerignore"
 
 grep -Fq 'npm ci' "$ci"
 grep -Fq 'npm run lint' "$ci"
