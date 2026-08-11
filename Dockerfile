@@ -25,6 +25,9 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
+RUN addgroup --system --gid 10001 nextjs \
+    && adduser --system --uid 10001 --ingroup nextjs nextjs
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
@@ -38,6 +41,9 @@ COPY --from=builder /app/node_modules ./node_modules
 
 # Если используешь TypeScript, добавим tsconfig
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
+
+RUN chown -R nextjs:nextjs /app
+USER nextjs
 
 ENV NODE_ENV=production
 ENV PORT=3000

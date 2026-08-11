@@ -8,6 +8,8 @@ import axios, {
 import {apiBaseUrl} from "@/constants/urls";
 import {tokenService} from "@/auth/auth.tokens.service";
 
+type RetryableRequest = InternalAxiosRequestConfig & { _retry?: boolean };
+
 const baseUrl = apiBaseUrl;
 
 class AxiosInterceptor {
@@ -33,9 +35,9 @@ class AxiosInterceptor {
             resp => resp,
             async (error: AxiosError) => {
                 console.log("Axios interceptor. Error:", error)
-                const originalRequest = error.config as any;
+                const originalRequest = error.config as RetryableRequest | undefined;
 
-                if (error.response?.status === 401 && !originalRequest._retry) {
+                if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
                     originalRequest._retry = true;
 
                     try {

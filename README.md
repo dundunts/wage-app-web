@@ -91,3 +91,18 @@ Java / Kotlin Backend Developer
 Telegram: @turterDun
 
 Email: DunDunTs@yandex.ru
+
+## Immutable production releases
+
+Production publication starts only from an annotated `vX.Y.Z` or
+`vX.Y.Z-U<N>` tag whose commit belongs to `release/X.Y.Z`. The workflow tests
+and builds that source, publishes `dundunts/wage-app-web:<version>` and
+`git-<sha>` once, records their common digest, and opens an image-only GitOps
+pull request. It never receives Kubernetes credentials.
+
+An owner provisions the Docker Hub and narrowly scoped GitHub App credentials
+without exposing them to the terminal log or repository:
+
+```shell
+./scripts/setup-web-release.sh
+```
