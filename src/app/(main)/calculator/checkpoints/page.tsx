@@ -38,7 +38,7 @@ import ConfirmDeleteDialog from "@/components/dialog/components.dialog.confirmat
 import {SessionUpdateTimeDialog} from "@/components/session/session.update-time.dialog";
 import {SessionCloseDialog} from "@/components/session/session.close.dialog";
 
-export function CalcInShiftPage() {
+function CalcInShiftPage() {
     const searchParams = useSearchParams();
     const sessionId = searchParams.get("sessionId");
     const router = useRouter();

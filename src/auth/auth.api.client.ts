@@ -2,7 +2,7 @@ import {AxiosInstance, AxiosResponse} from "axios";
 import {LoginRequest, LogoutRequest, RefreshTokenRequest, TokensResponse} from "@/auth/auth.dto";
 import {axiosKeycloakClient} from "@/auth/auth.api.client.config";
 
-const keycloakClientId = process.env.NEXT_PUBLIC_KEYCLOAK_ID!
+const keycloakClientId = process.env.NEXT_PUBLIC_KEYCLOAK_ID ?? "mobile-client"
 
 export class AuthApiClient {
     private readonly client: AxiosInstance;

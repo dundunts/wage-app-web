@@ -1,6 +1,6 @@
 "use client";
 
-import {ReactNode, useEffect, useState} from "react";
+import {ReactNode, useSyncExternalStore} from "react";
 import {useRouter} from "next/navigation";
 import useUserStore from "@/store/userStore";
 
@@ -26,14 +26,11 @@ export default function RouteSecurity({
     const router = useRouter();
 
     const { isAuthenticated, permissions } = useUserStore();
-    const [initialized, setInitialized] = useState(false);
-
-    // Имитация состояния загрузки: ждём, пока userStore гидрируется из persist
-    useEffect(() => {
-        // Zustand persist восстанавливает стейт асинхронно
-        // Этот трюк гарантирует, что мы не проверяем доступ до гидрации
-        setInitialized(true);
-    }, []);
+    const initialized = useSyncExternalStore(
+        (onStoreChange) => useUserStore.persist?.onFinishHydration(onStoreChange) ?? (() => undefined),
+        () => useUserStore.persist?.hasHydrated() ?? false,
+        () => false,
+    );
 
     if (!initialized) {
         return <>{loadingComponent}</>;

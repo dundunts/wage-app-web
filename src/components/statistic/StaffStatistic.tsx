@@ -123,7 +123,7 @@ export const PayrollEmployeeChart = ({ data, employeeIds, namesMap }: PayrollEmp
                     <YAxis />
                     <Tooltip
                         // Форматируем ID в понятное имя в тултипе
-                        // @ts-ignore
+                        // @ts-expect-error Recharts formatter accepts the runtime numeric value.
                         formatter={(value: number, name: string) => [value.toFixed(2), namesMap[name]]}
                     />
                     <Legend

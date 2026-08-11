@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test:release": "bash tests/release-contract.sh && bash tests/verify-docker-tag.sh"
   },
   "dependencies": {
     "@chakra-ui/cli": "^3.31.0",
