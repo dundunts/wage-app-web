@@ -4,43 +4,68 @@ on:
   push:
     tags:
       - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing immutable annotated release tag to publish
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: web-release-${{ github.ref }}
+  # Version and source-SHA tags are a shared immutable namespace. Serialize all
+  # releases so two distinct version tags for one commit cannot race either.
+  group: web-release-publish
   cancel-in-progress: false
 
 jobs:
   publish-and-promote:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     steps:
+      - name: Validate release tag input before checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-U[1-9][0-9]*)?$ ]]
       - name: Check out complete source history
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
+          path: release-source
+          ref: refs/tags/${{ env.RELEASE_TAG }}
       - name: Validate immutable release tag and ancestry
         id: version
         shell: bash
         run: |
           set -euo pipefail
-          version=${GITHUB_REF_NAME#v}
+          cd release-source
+          release_tag=$RELEASE_TAG
+          version=${release_tag#v}
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-U[1-9][0-9]*)?$ ]]
-          [[ "$(git cat-file -t "refs/tags/$GITHUB_REF_NAME")" == tag ]]
+          git fetch --force origin "refs/tags/$release_tag:refs/tags/$release_tag"
+          [[ "$(git cat-file -t "refs/tags/$release_tag")" == tag ]]
+          source_sha=$(git rev-parse "$release_tag^{commit}")
+          [[ "$(git rev-parse HEAD)" == "$source_sha" ]]
           release_version=${version%%-U*}
-          git fetch origin "release/$release_version"
-          git merge-base --is-ancestor "$GITHUB_SHA" "origin/release/$release_version"
+          git fetch origin "refs/heads/release/$release_version:refs/remotes/origin/release/$release_version"
+          git merge-base --is-ancestor "$source_sha" "origin/release/$release_version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "release_version=$release_version" >> "$GITHUB_OUTPUT"
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
       - name: Set up Node.js 20
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "20"
           cache: npm
+          cache-dependency-path: release-source/package-lock.json
       - name: Install and verify release source once
         run: |
           set -euo pipefail
+          cd release-source
           npm ci
           bash tests/release-contract.sh
           bash tests/verify-docker-tag.sh
@@ -59,11 +84,13 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           IMAGE: docker.io/${{ secrets.DOCKER_USERNAME }}/wage-app-web
+          SOURCE_SHA: ${{ steps.version.outputs.source_sha }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
+          cd release-source
           bash scripts/verify-docker-tag.sh require-absent "$IMAGE" "$VERSION"
-          bash scripts/verify-docker-tag.sh require-absent "$IMAGE" "git-$GITHUB_SHA"
+          bash scripts/verify-docker-tag.sh require-absent "$IMAGE" "git-$SOURCE_SHA"
       - name: Define immutable image metadata
         id: metadata
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
@@ -71,16 +98,16 @@ jobs:
           images: docker.io/${{ secrets.DOCKER_USERNAME }}/wage-app-web
           tags: |
             type=raw,value=${{ steps.version.outputs.version }}
-            type=sha,prefix=git-,format=long
+            type=raw,value=git-${{ steps.version.outputs.source_sha }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.revision=${{ steps.version.outputs.source_sha }}
             org.opencontainers.image.version=${{ steps.version.outputs.version }}
       - name: Build and publish image once
         id: publish
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
-          context: .
+          context: ./release-source
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
@@ -91,13 +118,15 @@ jobs:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           DIGEST: ${{ steps.publish.outputs.digest }}
           IMAGE: docker.io/${{ secrets.DOCKER_USERNAME }}/wage-app-web
+          SOURCE_SHA: ${{ steps.version.outputs.source_sha }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
+          cd release-source
           [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
           docker buildx imagetools inspect "$IMAGE@$DIGEST" >/dev/null
           bash scripts/verify-docker-tag.sh require-digest "$IMAGE" "$VERSION" "$DIGEST"
-          bash scripts/verify-docker-tag.sh require-digest "$IMAGE" "git-$GITHUB_SHA" "$DIGEST"
+          bash scripts/verify-docker-tag.sh require-digest "$IMAGE" "git-$SOURCE_SHA" "$DIGEST"
       - name: Create narrowly scoped infrastructure token
         id: infra-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
@@ -120,7 +149,7 @@ jobs:
           GH_TOKEN: ${{ steps.infra-token.outputs.token }}
           DIGEST: ${{ steps.publish.outputs.digest }}
           IMAGE: docker.io/${{ secrets.DOCKER_USERNAME }}/wage-app-web
-          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_SHA: ${{ steps.version.outputs.source_sha }}
           VERSION: ${{ steps.version.outputs.version }}
         shell: bash
         run: |
