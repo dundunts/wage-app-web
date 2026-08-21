@@ -12,6 +12,7 @@ import {
     checkboxSlotRecipe as chakraCheckboxSlotRecipe,
     headingRecipe as chakraHeadingRecipe,
     inputRecipe as chakraInputRecipe,
+    selectSlotRecipe as chakraSelectSlotRecipe,
 } from "@chakra-ui/react/theme";
 
 const buttonRecipe = defineRecipe({
@@ -129,6 +130,51 @@ const checkboxSlotRecipe = defineSlotRecipe({
             },
         },
     ],
+} as SlotRecipeDefinition);
+
+const selectSlotRecipe = defineSlotRecipe({
+    ...chakraSelectSlotRecipe,
+    base: {
+        ...chakraSelectSlotRecipe.base,
+        label: {
+            ...chakraSelectSlotRecipe.base?.label,
+            color: "fg.muted",
+            fontWeight: "semibold",
+        },
+        trigger: {
+            ...chakraSelectSlotRecipe.base?.trigger,
+            borderRadius: "control",
+            borderColor: "border",
+            bg: "bg.raised",
+            color: "fg",
+            transitionDuration: "quiet",
+            transitionTimingFunction: "quiet",
+            _hover: {
+                borderColor: "border.emphasized",
+            },
+            _focusVisible: {
+                borderColor: "focus.ring",
+                outlineColor: "focus.ring",
+                outlineWidth: "2px",
+            },
+            _motionReduce: {
+                transitionDuration: "0ms",
+            },
+        },
+        content: {
+            ...chakraSelectSlotRecipe.base?.content,
+            borderColor: "border",
+            bg: "bg.raised",
+            color: "fg",
+            boxShadow: "panel",
+        },
+        item: {
+            ...chakraSelectSlotRecipe.base?.item,
+            _highlighted: {
+                bg: "accent.subtle",
+            },
+        },
+    },
 } as SlotRecipeDefinition);
 
 const config = defineConfig({
@@ -376,6 +422,32 @@ const config = defineConfig({
                         value: {_light: "{colors.ledgerLight.warning/36}", _dark: "{colors.ledger.amber/34}"},
                     },
                 },
+                chart: {
+                    primary: {
+                        value: {_light: "{colors.ledgerLight.accent}", _dark: "{colors.ledger.neon}"},
+                    },
+                    blue: {
+                        value: {_light: "{colors.ledgerLight.info}", _dark: "{colors.ledger.blue}"},
+                    },
+                    violet: {
+                        value: {_light: "{colors.purple.700}", _dark: "{colors.ledger.violet}"},
+                    },
+                    amber: {
+                        value: {_light: "{colors.ledgerLight.warning}", _dark: "{colors.ledger.amber}"},
+                    },
+                    neutral: {
+                        value: {_light: "{colors.ledgerLight.muted}", _dark: "{colors.ledger.muted}"},
+                    },
+                    axis: {
+                        value: {_light: "{colors.ledgerLight.muted}", _dark: "{colors.ledger.muted}"},
+                    },
+                    grid: {
+                        value: {_light: "{colors.ledgerLight.text/16}", _dark: "{colors.ledger.text/12}"},
+                    },
+                    cursor: {
+                        value: {_light: "{colors.ledgerLight.accent/7}", _dark: "{colors.ledger.neon/7}"},
+                    },
+                },
                 brand: {
                     contrast: {
                         value: {_light: "white", _dark: "white"},
@@ -431,6 +503,7 @@ const config = defineConfig({
         slotRecipes: {
             card: cardSlotRecipe,
             checkbox: checkboxSlotRecipe,
+            select: selectSlotRecipe,
         },
     },
 });

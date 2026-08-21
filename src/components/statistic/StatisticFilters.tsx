@@ -22,23 +22,29 @@ export function StatisticFilters() {
     })
 
     const periodTypesCollection = createListCollection({
-        items: Object.values(PeriodType)
-    })
+        items: [
+            {label: "Текущий период", value: PeriodType.CURRENT},
+            {label: "Предыдущий период", value: PeriodType.PREVIOUS},
+            {label: "Произвольный период", value: PeriodType.CUSTOM},
+        ],
+        itemToValue: (item) => item.value,
+        itemToString: (item) => item.label,
+    });
 
     return (
         <Box>
-            <HStack gap={4} flexWrap="wrap">
+            <HStack gap={4} align="start" flexWrap="wrap">
                 <Select.Root
                     collection={companiesCollection}
-                    width="320px"
+                    width={{base: "100%", md: "320px"}}
                     value={[filters.companyId]}
                     onValueChange={(e) => setFilter("companyId", e.value[0] || "")}
                 >
                     <Select.HiddenSelect />
-                    <Select.Label>Select framework</Select.Label>
+                    <Select.Label>Рабочая точка</Select.Label>
                     <Select.Control>
                         <Select.Trigger>
-                            <Select.ValueText placeholder="Select company" />
+                            <Select.ValueText placeholder="Выберите рабочую точку" />
                         </Select.Trigger>
                         <Select.IndicatorGroup>
                             <Select.Indicator />
@@ -60,19 +66,18 @@ export function StatisticFilters() {
 
                 <Select.Root
                     collection={periodTypesCollection}
-                    width="320px"
+                    width={{base: "100%", md: "320px"}}
                     value={[filters.periodType]}
                     onValueChange={(e) => {
                         const value = e.value[0];
-                        console.log("Picked period type", value)
                         setFilter("periodType", value);
                     }}
                 >
                     <Select.HiddenSelect />
-                    <Select.Label>Select period type</Select.Label>
+                    <Select.Label>Период</Select.Label>
                     <Select.Control>
                         <Select.Trigger>
-                            <Select.ValueText placeholder="Select period type" />
+                            <Select.ValueText placeholder="Выберите период" />
                         </Select.Trigger>
                         <Select.IndicatorGroup>
                             <Select.Indicator />
@@ -82,8 +87,8 @@ export function StatisticFilters() {
                         <Select.Positioner>
                             <Select.Content>
                                 {periodTypesCollection.items.map((pt) => (
-                                    <Select.Item item={pt.toString()} key={pt}>
-                                        {pt}
+                                    <Select.Item item={pt} key={pt.value}>
+                                        {pt.label}
                                         <Select.ItemIndicator />
                                     </Select.Item>
                                 ))}

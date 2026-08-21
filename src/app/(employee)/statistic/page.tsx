@@ -13,8 +13,8 @@ export default function StatisticPage() {
     const { data, isLoading } = useSalaryStatistic(filters);
 
     return (
-        <Box p={6}>
-            <Heading size="lg" mb={6}>
+        <Box w="100%" minW={0} maxW="7xl" mx="auto" p={{base: 4, md: 6}}>
+            <Heading as="h1" size="lg" mb={6}>
                 Статистика зарплат
             </Heading>
 
@@ -29,14 +29,14 @@ export default function StatisticPage() {
 
                 {!isLoading && !data && (
                     <Center py={10}>
-                        <Text color="gray.500">
+                        <Text color="fg.muted">
                             Нет данных за выбранный период
                         </Text>
                     </Center>
                 )}
 
                 {!isLoading && data && (
-                    <Text color="gray.500">
+                    <Text color="fg.muted" fontVariantNumeric="tabular-nums">
                         Данные загружены ({data.elements.length} элементов)
                     </Text>
                 )}

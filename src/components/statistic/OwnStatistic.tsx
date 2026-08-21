@@ -6,12 +6,13 @@ import {
     calculateSummary,
 } from "@/utils/payrollCalculations";
 import {
-    Box, FormatNumber,
+    Box,
+    FormatNumber,
     SimpleGrid,
     Stat,
-    StatLabel,
 } from "@chakra-ui/react";
 import { PayrollChart } from "./PayrollCharts";
+import {StatisticSummaryCard} from "./StatisticSummaryCard";
 import { useMemo } from "react";
 
 interface Props {
@@ -35,44 +36,32 @@ export function OwnStatistic({ payroll }: Props) {
 
     return (
         <Box>
-            <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
-                <Stat.Root>
-                    <Stat.Label>Сумма выплат</Stat.Label>
-                    <Stat.ValueText>
-                        <FormatNumber value={summary.total} style="currency" currency="RUB" maximumFractionDigits={2}/>
-                    </Stat.ValueText>
-                </Stat.Root>
+            <SimpleGrid as="section" aria-label="Сводка личной статистики" columns={{ base: 1, md: 3 }} gap={4}>
+                <StatisticSummaryCard label="Сумма выплат">
+                    <FormatNumber value={summary.total} style="currency" currency="RUB" maximumFractionDigits={2}/>
+                </StatisticSummaryCard>
 
-                <Stat.Root>
-                    <StatLabel>Средний доход за день</StatLabel>
-                    <Stat.ValueText>
-                        <FormatNumber value={summary.avgTotal} style="currency" currency="RUB" maximumFractionDigits={2}/>
-                    </Stat.ValueText>
-                </Stat.Root>
+                <StatisticSummaryCard label="Средний доход за день">
+                    <FormatNumber value={summary.avgTotal} style="currency" currency="RUB" maximumFractionDigits={2}/>
+                </StatisticSummaryCard>
 
-                <Stat.Root>
-                    <StatLabel>Кол-во дней</StatLabel>
-                    <Stat.ValueText alignItems="baseline">
-                        {summary.days} <Stat.ValueUnit>days</Stat.ValueUnit>
-                    </Stat.ValueText>
-                </Stat.Root>
+                <StatisticSummaryCard label="Количество дней">
+                    {summary.days} <Stat.ValueUnit>дн.</Stat.ValueUnit>
+                </StatisticSummaryCard>
 
-                <Stat.Root>
-                    <StatLabel>Средний % за день</StatLabel>
+                <StatisticSummaryCard label="Средний % за день">
                     <FormatNumber value={summary.avgPercent} style="currency" currency="RUB" maximumFractionDigits={2}/>
-                </Stat.Root>
+                </StatisticSummaryCard>
 
-                <Stat.Root>
-                    <StatLabel>Средние чаевые</StatLabel>
+                <StatisticSummaryCard label="Средние чаевые">
                     <FormatNumber value={summary.avgTips} style="currency" currency="RUB" maximumFractionDigits={2}/>
-                </Stat.Root>
+                </StatisticSummaryCard>
 
-                <Stat.Root>
-                    <StatLabel>Макс / Мин</StatLabel>
+                <StatisticSummaryCard label="Макс. / мин.">
                     <FormatNumber value={summary.max} style="currency" currency="RUB" maximumFractionDigits={2}/>
-                    /
+                    {" / "}
                     <FormatNumber value={summary.min} style="currency" currency="RUB" maximumFractionDigits={2}/>
-                </Stat.Root>
+                </StatisticSummaryCard>
             </SimpleGrid>
 
             <PayrollChart
