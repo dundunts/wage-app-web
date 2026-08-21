@@ -100,7 +100,7 @@ export default function ResultDetailsPage({ params }: { params: Promise<{ id: st
                 <Flex gap={3} direction={{base: "column", sm: "row"}}>
                     <Button
                         ref={deleteTriggerRef}
-                        colorPalette="red"
+                        colorPalette="danger"
                         variant="solid"
                         onClick={() => setDeleteDialogOpen(true)}
                     >

@@ -22,7 +22,7 @@ export default function StatisticPage() {
 
             <Box mt={8}>
                 {isLoading && (
-                    <Center py={10}>
+                    <Center role="status" aria-label="Статистика загружается" py={10}>
                         <Spinner size="lg" />
                     </Center>
                 )}

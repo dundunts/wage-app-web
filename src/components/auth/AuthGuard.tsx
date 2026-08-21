@@ -97,10 +97,10 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     // Это критично для next.js + zustand persist, чтобы серверный HTML не отличался от клиентского
     if (!isMounted || isChecking) {
         return (
-            <Center h="100vh">
+            <Center role="status" aria-label="Система загружается" h="100vh">
                 <VStack gap={4}>
-                    <Spinner size="xl" color="blue.500" />
-                    <Text color="gray.500">Загрузка системы...</Text>
+                    <Spinner size="xl" />
+                    <Text color="fg.muted">Загрузка системы...</Text>
                 </VStack>
             </Center>
         );

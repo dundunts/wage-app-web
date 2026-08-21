@@ -93,7 +93,7 @@ export const CompanyList = ({ data, isLoadingData, onRefresh }: CompanyListProps
 
     if (!data && isLoadingData) {
         return (
-            <Center h="300px">
+            <Center role="status" aria-label="Company загружаются" h="300px">
                 <Spinner size="xl" color="accent" />
             </Center>
         );
@@ -134,6 +134,8 @@ export const CompanyList = ({ data, isLoadingData, onRefresh }: CompanyListProps
                 {/* Оверлей загрузки при пагинации/обновлении */}
                 {isLoadingData && (
                     <Box
+                        role="status"
+                        aria-label="Company обновляются"
                         position="absolute"
                         inset="0"
                         bg="bg.panel/82"

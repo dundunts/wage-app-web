@@ -7,13 +7,85 @@ import {
 } from "@chakra-ui/react";
 import type {RecipeDefinition, SlotRecipeDefinition} from "@chakra-ui/react";
 import {
+    alertSlotRecipe as chakraAlertSlotRecipe,
+    badgeRecipe as chakraBadgeRecipe,
     buttonRecipe as chakraButtonRecipe,
     cardSlotRecipe as chakraCardSlotRecipe,
     checkboxSlotRecipe as chakraCheckboxSlotRecipe,
+    dialogSlotRecipe as chakraDialogSlotRecipe,
+    drawerSlotRecipe as chakraDrawerSlotRecipe,
     headingRecipe as chakraHeadingRecipe,
     inputRecipe as chakraInputRecipe,
+    menuSlotRecipe as chakraMenuSlotRecipe,
+    popoverSlotRecipe as chakraPopoverSlotRecipe,
     selectSlotRecipe as chakraSelectSlotRecipe,
+    spinnerRecipe as chakraSpinnerRecipe,
+    tableSlotRecipe as chakraTableSlotRecipe,
+    tabsSlotRecipe as chakraTabsSlotRecipe,
+    textareaRecipe as chakraTextareaRecipe,
+    toastSlotRecipe as chakraToastSlotRecipe,
+    tooltipSlotRecipe as chakraTooltipSlotRecipe,
 } from "@chakra-ui/react/theme";
+
+const reducedMotion = {
+    animationDuration: "0ms",
+    animationName: "none",
+    transitionDuration: "0ms",
+    transform: "none",
+} as const;
+
+const overlayBackdropStyles = {
+    bg: "overlay.backdrop",
+    backdropFilter: "blur(3px)",
+    _motionReduce: reducedMotion,
+} as const;
+
+const overlaySurfaceStyles = {
+    bg: "bg.panel",
+    color: "fg",
+    borderColor: "border.emphasized",
+    boxShadow: "panel",
+    _motionReduce: reducedMotion,
+} as const;
+
+function createStatusSemanticPalette(
+    lightToken: string,
+    darkToken: string,
+    darkContrastToken = "colors.ledger.canvas",
+) {
+    const token = (name: string, opacity?: number) =>
+        `{${name}${opacity === undefined ? "" : `/${opacity}`}}`;
+
+    return {
+        contrast: {
+            value: {
+                _light: "{colors.ledgerLight.onSolid}",
+                _dark: token(darkContrastToken),
+            },
+        },
+        fg: {
+            value: {_light: token(lightToken), _dark: token(darkToken)},
+        },
+        subtle: {
+            value: {_light: token(lightToken, 10), _dark: token(darkToken, 10)},
+        },
+        muted: {
+            value: {_light: token(lightToken, 18), _dark: token(darkToken, 16)},
+        },
+        emphasized: {
+            value: {_light: token(lightToken, 26), _dark: token(darkToken, 24)},
+        },
+        solid: {
+            value: {_light: token(lightToken), _dark: token(darkToken)},
+        },
+        focusRing: {
+            value: {_light: token(lightToken), _dark: token(darkToken)},
+        },
+        border: {
+            value: {_light: token(lightToken, 36), _dark: token(darkToken, 34)},
+        },
+    };
+}
 
 const buttonRecipe = defineRecipe({
     ...chakraButtonRecipe,
@@ -39,6 +111,9 @@ const buttonRecipe = defineRecipe({
             colorPalette: "brand",
             variant: "solid",
             css: {
+                _hover: {
+                    bg: "action.hover",
+                },
                 _active: {
                     bg: "action.hover",
                     borderColor: "accent.border",
@@ -93,6 +168,57 @@ const inputRecipe = defineRecipe({
                     },
                 },
             },
+        },
+    },
+} as RecipeDefinition);
+
+const textareaRecipe = defineRecipe({
+    ...chakraTextareaRecipe,
+    base: {
+        ...chakraTextareaRecipe.base,
+        "--focus-color": "colors.focus.ring",
+        borderRadius: "control",
+        bg: "bg.raised",
+        color: "fg",
+        transitionDuration: "quiet",
+        transitionTimingFunction: "quiet",
+        _motionReduce: reducedMotion,
+    },
+    variants: {
+        ...chakraTextareaRecipe.variants,
+        variant: {
+            ...chakraTextareaRecipe.variants?.variant,
+            outline: {
+                ...chakraTextareaRecipe.variants?.variant?.outline,
+                bg: "bg.raised",
+                borderColor: "border",
+                _hover: {borderColor: "border.emphasized"},
+                _focusVisible: {
+                    borderColor: "focus.ring",
+                    outlineColor: "focus.ring",
+                    outlineWidth: "2px",
+                },
+            },
+        },
+    },
+} as RecipeDefinition);
+
+const badgeRecipe = defineRecipe({
+    ...chakraBadgeRecipe,
+    base: {
+        ...chakraBadgeRecipe.base,
+        borderRadius: "full",
+        fontWeight: "semibold",
+    },
+} as RecipeDefinition);
+
+const spinnerRecipe = defineRecipe({
+    ...chakraSpinnerRecipe,
+    base: {
+        ...chakraSpinnerRecipe.base,
+        color: "accent",
+        _motionReduce: {
+            animationDuration: "0ms",
         },
     },
 } as RecipeDefinition);
@@ -177,6 +303,238 @@ const selectSlotRecipe = defineSlotRecipe({
     },
 } as SlotRecipeDefinition);
 
+const tableSlotRecipe = defineSlotRecipe({
+    ...chakraTableSlotRecipe,
+    base: {
+        ...chakraTableSlotRecipe.base,
+        root: {
+            ...chakraTableSlotRecipe.base?.root,
+            color: "fg",
+        },
+        header: {
+            ...chakraTableSlotRecipe.base?.header,
+            bg: "bg.subtle",
+        },
+        row: {
+            ...chakraTableSlotRecipe.base?.row,
+            borderColor: "border.muted",
+        },
+        columnHeader: {
+            ...chakraTableSlotRecipe.base?.columnHeader,
+            color: "fg.quiet",
+            fontWeight: "semibold",
+        },
+        body: {
+            ...chakraTableSlotRecipe.base?.body,
+            "& tr": {
+                transitionDuration: "quiet",
+                transitionProperty: "background",
+                _hover: {bg: "accent.subtle"},
+                _motionReduce: {transitionDuration: "0ms"},
+            },
+        },
+    },
+} as SlotRecipeDefinition);
+
+const tabsSlotRecipe = defineSlotRecipe({
+    ...chakraTabsSlotRecipe,
+    base: {
+        ...chakraTabsSlotRecipe.base,
+        root: {
+            ...chakraTabsSlotRecipe.base?.root,
+            "--tabs-indicator-bg": "colors.accent.subtle",
+        },
+        trigger: {
+            ...chakraTabsSlotRecipe.base?.trigger,
+            color: "fg.muted",
+            _focusVisible: {
+                outline: "2px solid",
+                outlineColor: "focus.ring",
+            },
+            _selected: {
+                color: "accent",
+            },
+        },
+    },
+} as SlotRecipeDefinition);
+
+const menuSlotRecipe = defineSlotRecipe({
+    ...chakraMenuSlotRecipe,
+    base: {
+        ...chakraMenuSlotRecipe.base,
+        content: {
+            ...chakraMenuSlotRecipe.base?.content,
+            bg: "bg.raised",
+            color: "fg",
+            borderWidth: "1px",
+            borderColor: "border.emphasized",
+            borderRadius: "control",
+            boxShadow: "panel",
+            _motionReduce: reducedMotion,
+        },
+        item: {
+            ...chakraMenuSlotRecipe.base?.item,
+            _highlighted: {
+                bg: "accent.subtle",
+                color: "fg",
+            },
+            _focusVisible: {
+                outline: "2px solid",
+                outlineColor: "focus.ring",
+            },
+        },
+        separator: {
+            ...chakraMenuSlotRecipe.base?.separator,
+            bg: "border.muted",
+        },
+    },
+} as SlotRecipeDefinition);
+
+const dialogSlotRecipe = defineSlotRecipe({
+    ...chakraDialogSlotRecipe,
+    base: {
+        ...chakraDialogSlotRecipe.base,
+        backdrop: {
+            ...chakraDialogSlotRecipe.base?.backdrop,
+            ...overlayBackdropStyles,
+        },
+        content: {
+            ...chakraDialogSlotRecipe.base?.content,
+            ...overlaySurfaceStyles,
+            borderWidth: "1px",
+            borderRadius: "panel",
+        },
+    },
+} as SlotRecipeDefinition);
+
+const drawerSlotRecipe = defineSlotRecipe({
+    ...chakraDrawerSlotRecipe,
+    base: {
+        ...chakraDrawerSlotRecipe.base,
+        backdrop: {
+            ...chakraDrawerSlotRecipe.base?.backdrop,
+            ...overlayBackdropStyles,
+        },
+        content: {
+            ...chakraDrawerSlotRecipe.base?.content,
+            ...overlaySurfaceStyles,
+        },
+    },
+} as SlotRecipeDefinition);
+
+const popoverSlotRecipe = defineSlotRecipe({
+    ...chakraPopoverSlotRecipe,
+    base: {
+        ...chakraPopoverSlotRecipe.base,
+        content: {
+            ...chakraPopoverSlotRecipe.base?.content,
+            "--popover-bg": "colors.bg.raised",
+            color: "fg",
+            borderWidth: "1px",
+            borderColor: "border.emphasized",
+            borderRadius: "panel",
+            boxShadow: "panel",
+            _motionReduce: reducedMotion,
+        },
+        arrowTip: {
+            ...chakraPopoverSlotRecipe.base?.arrowTip,
+            borderColor: "border.emphasized",
+        },
+    },
+} as SlotRecipeDefinition);
+
+const tooltipSlotRecipe = defineSlotRecipe({
+    ...chakraTooltipSlotRecipe,
+    base: {
+        ...chakraTooltipSlotRecipe.base,
+        content: {
+            ...chakraTooltipSlotRecipe.base?.content,
+            "--tooltip-bg": "colors.bg.raised",
+            color: "fg",
+            borderWidth: "1px",
+            borderColor: "border.emphasized",
+            borderRadius: "control",
+            boxShadow: "panel",
+            _motionReduce: reducedMotion,
+        },
+        arrowTip: {
+            ...chakraTooltipSlotRecipe.base?.arrowTip,
+            borderColor: "border.emphasized",
+        },
+    },
+} as SlotRecipeDefinition);
+
+const alertSlotRecipe = defineSlotRecipe({
+    ...chakraAlertSlotRecipe,
+    base: {
+        ...chakraAlertSlotRecipe.base,
+        root: {
+            ...chakraAlertSlotRecipe.base?.root,
+            bg: "bg.panel",
+            color: "fg",
+            borderWidth: "1px",
+            borderColor: "border",
+            borderRadius: "panel",
+        },
+    },
+    variants: {
+        ...chakraAlertSlotRecipe.variants,
+        status: {
+            ...chakraAlertSlotRecipe.variants?.status,
+            info: {root: {colorPalette: "info", borderColor: "info.border"}},
+            warning: {root: {colorPalette: "warning", borderColor: "warning.border"}},
+            success: {root: {colorPalette: "success", borderColor: "success.border"}},
+            error: {root: {colorPalette: "danger", borderColor: "danger.border"}},
+        },
+    },
+} as SlotRecipeDefinition);
+
+const toastSlotRecipe = defineSlotRecipe({
+    ...chakraToastSlotRecipe,
+    base: {
+        ...chakraToastSlotRecipe.base,
+        root: {
+            ...chakraToastSlotRecipe.base?.root,
+            bg: "bg.raised",
+            color: "fg",
+            borderWidth: "1px",
+            borderColor: "border.emphasized",
+            borderRadius: "panel",
+            boxShadow: "panel",
+            transitionDuration: "quiet",
+            "--toast-trigger-bg": "colors.bg.subtle",
+            "--toast-border-color": "colors.border.emphasized",
+            "&[data-type=loading], &[data-type=info]": {
+                borderColor: "info.border",
+                "& [data-part=indicator]": {color: "status.info"},
+            },
+            "&[data-type=success]": {
+                borderColor: "success.border",
+                "& [data-part=indicator]": {color: "status.success"},
+            },
+            "&[data-type=warning]": {
+                borderColor: "warning.border",
+                "& [data-part=indicator]": {color: "status.warning"},
+            },
+            "&[data-type=error]": {
+                borderColor: "danger.border",
+                "& [data-part=indicator]": {color: "status.danger"},
+            },
+            _motionReduce: reducedMotion,
+        },
+        actionTrigger: {
+            ...chakraToastSlotRecipe.base?.actionTrigger,
+            borderRadius: "control",
+            focusRingColor: "focus.ring",
+        },
+        closeTrigger: {
+            ...chakraToastSlotRecipe.base?.closeTrigger,
+            borderRadius: "control",
+            focusRingColor: "focus.ring",
+        },
+    },
+} as SlotRecipeDefinition);
+
 const config = defineConfig({
     globalCss: {
         "html, body": {
@@ -214,15 +572,18 @@ const config = defineConfig({
                     soft: {value: "#24211c"},
                     text: {value: "#f4f0e8"},
                     muted: {value: "#a9a39a"},
-                    quiet: {value: "#706b64"},
+                    quiet: {value: "#8f887e"},
                     neon: {value: "#32f5d2"},
                     teal: {value: "#0f766e"},
-                    tealHover: {value: "#11877e"},
+                    tealHover: {value: "#107b72"},
                     green: {value: "#5dd39e"},
                     blue: {value: "#75a7ff"},
                     amber: {value: "#e5b567"},
                     red: {value: "#ff7a7a"},
                     violet: {value: "#a98cff"},
+                    onAccent: {value: "#062d28"},
+                    onDanger: {value: "#2d080b"},
+                    onWarning: {value: "#2b1b00"},
                 },
                 ledgerLight: {
                     canvas: {value: "#f7f6f2"},
@@ -232,13 +593,15 @@ const config = defineConfig({
                     soft: {value: "#ebe8df"},
                     text: {value: "#1c1a17"},
                     muted: {value: "#5f5a52"},
-                    quiet: {value: "#71695f"},
+                    quiet: {value: "#6f675e"},
                     accent: {value: "#00796f"},
                     focus: {value: "#007f73"},
                     success: {value: "#21734d"},
                     info: {value: "#245eaa"},
                     warning: {value: "#855600"},
                     danger: {value: "#b42332"},
+                    violet: {value: "#6741b4"},
+                    onSolid: {value: "#ffffff"},
                 },
             },
             fonts: {
@@ -323,6 +686,11 @@ const config = defineConfig({
                         value: {_light: "{colors.ledgerLight.danger}", _dark: "{colors.ledger.red}"},
                     },
                 },
+                overlay: {
+                    backdrop: {
+                        value: {_light: "{colors.ledgerLight.text/42}", _dark: "{colors.ledger.canvas/76}"},
+                    },
+                },
                 accent: {
                     DEFAULT: {
                         value: {_light: "{colors.ledgerLight.accent}", _dark: "{colors.ledger.neon}"},
@@ -337,7 +705,7 @@ const config = defineConfig({
                         value: {_light: "{colors.ledgerLight.accent/8}", _dark: "{colors.ledger.neon/7}"},
                     },
                     contrast: {
-                        value: {_light: "white", _dark: "#062d28"},
+                        value: {_light: "{colors.ledgerLight.onSolid}", _dark: "{colors.ledger.onAccent}"},
                     },
                 },
                 action: {
@@ -348,7 +716,7 @@ const config = defineConfig({
                         value: {_light: "{colors.ledger.teal}", _dark: "{colors.ledger.tealHover}"},
                     },
                     contrast: {
-                        value: {_light: "white", _dark: "white"},
+                        value: {_light: "{colors.ledgerLight.onSolid}", _dark: "{colors.ledgerLight.onSolid}"},
                     },
                 },
                 focus: {
@@ -370,58 +738,24 @@ const config = defineConfig({
                         value: {_light: "{colors.ledgerLight.danger}", _dark: "{colors.ledger.red}"},
                     },
                 },
-                danger: {
-                    contrast: {
-                        value: {_light: "white", _dark: "#2d080b"},
-                    },
-                    fg: {
-                        value: {_light: "{colors.ledgerLight.danger}", _dark: "{colors.ledger.red}"},
-                    },
-                    subtle: {
-                        value: {_light: "{colors.ledgerLight.danger/10}", _dark: "{colors.ledger.red/10}"},
-                    },
-                    muted: {
-                        value: {_light: "{colors.ledgerLight.danger/18}", _dark: "{colors.ledger.red/16}"},
-                    },
-                    emphasized: {
-                        value: {_light: "{colors.ledgerLight.danger/26}", _dark: "{colors.ledger.red/24}"},
-                    },
-                    solid: {
-                        value: {_light: "{colors.ledgerLight.danger}", _dark: "{colors.ledger.red}"},
-                    },
-                    focusRing: {
-                        value: {_light: "{colors.ledgerLight.danger}", _dark: "{colors.ledger.red}"},
-                    },
-                    border: {
-                        value: {_light: "{colors.ledgerLight.danger/36}", _dark: "{colors.ledger.red/34}"},
-                    },
-                },
-                warning: {
-                    contrast: {
-                        value: {_light: "white", _dark: "#2b1b00"},
-                    },
-                    fg: {
-                        value: {_light: "{colors.ledgerLight.warning}", _dark: "{colors.ledger.amber}"},
-                    },
-                    subtle: {
-                        value: {_light: "{colors.ledgerLight.warning/10}", _dark: "{colors.ledger.amber/10}"},
-                    },
-                    muted: {
-                        value: {_light: "{colors.ledgerLight.warning/18}", _dark: "{colors.ledger.amber/16}"},
-                    },
-                    emphasized: {
-                        value: {_light: "{colors.ledgerLight.warning/26}", _dark: "{colors.ledger.amber/24}"},
-                    },
-                    solid: {
-                        value: {_light: "{colors.ledgerLight.warning}", _dark: "{colors.ledger.amber}"},
-                    },
-                    focusRing: {
-                        value: {_light: "{colors.ledgerLight.warning}", _dark: "{colors.ledger.amber}"},
-                    },
-                    border: {
-                        value: {_light: "{colors.ledgerLight.warning/36}", _dark: "{colors.ledger.amber/34}"},
-                    },
-                },
+                success: createStatusSemanticPalette(
+                    "colors.ledgerLight.success",
+                    "colors.ledger.green",
+                ),
+                info: createStatusSemanticPalette(
+                    "colors.ledgerLight.info",
+                    "colors.ledger.blue",
+                ),
+                danger: createStatusSemanticPalette(
+                    "colors.ledgerLight.danger",
+                    "colors.ledger.red",
+                    "colors.ledger.onDanger",
+                ),
+                warning: createStatusSemanticPalette(
+                    "colors.ledgerLight.warning",
+                    "colors.ledger.amber",
+                    "colors.ledger.onWarning",
+                ),
                 chart: {
                     primary: {
                         value: {_light: "{colors.ledgerLight.accent}", _dark: "{colors.ledger.neon}"},
@@ -430,7 +764,7 @@ const config = defineConfig({
                         value: {_light: "{colors.ledgerLight.info}", _dark: "{colors.ledger.blue}"},
                     },
                     violet: {
-                        value: {_light: "{colors.purple.700}", _dark: "{colors.ledger.violet}"},
+                        value: {_light: "{colors.ledgerLight.violet}", _dark: "{colors.ledger.violet}"},
                     },
                     amber: {
                         value: {_light: "{colors.ledgerLight.warning}", _dark: "{colors.ledger.amber}"},
@@ -450,7 +784,7 @@ const config = defineConfig({
                 },
                 brand: {
                     contrast: {
-                        value: {_light: "white", _dark: "white"},
+                        value: {_light: "{colors.ledgerLight.onSolid}", _dark: "{colors.ledgerLight.onSolid}"},
                     },
                     fg: {
                         value: {_light: "{colors.ledgerLight.accent}", _dark: "{colors.ledger.neon}"},
@@ -496,14 +830,26 @@ const config = defineConfig({
             },
         },
         recipes: {
+            badge: badgeRecipe,
             button: buttonRecipe,
             heading: headingRecipe,
             input: inputRecipe,
+            spinner: spinnerRecipe,
+            textarea: textareaRecipe,
         },
         slotRecipes: {
+            alert: alertSlotRecipe,
             card: cardSlotRecipe,
             checkbox: checkboxSlotRecipe,
+            dialog: dialogSlotRecipe,
+            drawer: drawerSlotRecipe,
+            menu: menuSlotRecipe,
+            popover: popoverSlotRecipe,
             select: selectSlotRecipe,
+            table: tableSlotRecipe,
+            tabs: tabsSlotRecipe,
+            toast: toastSlotRecipe,
+            tooltip: tooltipSlotRecipe,
         },
     },
 });

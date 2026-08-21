@@ -336,7 +336,7 @@ export function ShiftResultModal({
                                                                         }
                                                                     >
                                                                         {isEmployeesLoading ? (
-                                                                            <Spinner size="xs" />
+                                                                            <Spinner role="status" aria-label="Employee загружаются" size="xs" />
                                                                         ) : (
                                                                             <Select.ValueText placeholder="Сотрудник" />
                                                                         )}
@@ -402,7 +402,7 @@ export function ShiftResultModal({
                                                 <IconButton
                                                     type="button"
                                                     aria-label={`Удалить выплату сотрудника ${index + 1}`}
-                                                    colorPalette="red"
+                                                    colorPalette="danger"
                                                     variant="subtle"
                                                     size="sm"
                                                     onClick={() => remove(index)}

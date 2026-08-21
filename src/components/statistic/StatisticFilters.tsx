@@ -12,7 +12,7 @@ export function StatisticFilters() {
     const { filters, setFilter } = useStatisticFilters(defaultCompanyId);
 
     if (isLoading) {
-        return <Spinner />;
+        return <Spinner role="status" aria-label="Фильтры статистики загружаются" />;
     }
 
     const companiesCollection = createListCollection({

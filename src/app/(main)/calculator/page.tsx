@@ -120,7 +120,7 @@ export default function CalculatorCompanyPage() {
     // ⏳ loading
     if (loading) {
         return (
-            <Stack align="center" py={10}>
+            <Stack role="status" aria-label="Company загружаются" align="center" py={10}>
                 <Spinner size="lg" />
             </Stack>
         );

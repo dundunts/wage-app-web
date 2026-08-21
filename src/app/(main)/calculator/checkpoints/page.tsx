@@ -210,7 +210,7 @@ function CalcInShiftPage() {
     }
 
     if (isLoading) return (
-        <Stack align="center" py={10}>
+        <Stack role="status" aria-label="Checkpoint загружаются" align="center" py={10}>
             <Spinner size="xl" />
         </Stack>
     );

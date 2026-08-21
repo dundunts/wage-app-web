@@ -93,7 +93,7 @@ export default function EmployeeDetailPage({ params }: Props) {
 
     if (isLoading) {
         return (
-            <Center minH="400px">
+            <Center role="status" aria-label="Employee загружается" minH="400px">
                 <Spinner size="lg" />
             </Center>
         );
@@ -187,7 +187,7 @@ export default function EmployeeDetailPage({ params }: Props) {
                     <Button
                         ref={deleteTriggerRef}
                         variant="outline"
-                        colorPalette="red"
+                        colorPalette="danger"
                         onClick={() => setDeleteOpen(true)}
                     >
                         <Trash2 size={18} /> Удалить

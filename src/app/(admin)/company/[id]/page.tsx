@@ -93,7 +93,7 @@ export default function CompanyDetailsPage() {
 
     if (isLoading) {
         return (
-            <Center minH="calc(100dvh - 64px)">
+            <Center role="status" aria-label="Company загружается" minH="calc(100dvh - 64px)">
                 <Spinner size="xl" color="accent" />
             </Center>
         );

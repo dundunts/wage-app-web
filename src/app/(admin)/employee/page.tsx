@@ -177,7 +177,7 @@ export default function EmployeeListPage() {
                 _focusVisible={{outline: "2px solid", outlineColor: "focus.ring", outlineOffset: "2px"}}
             >
                 {isEmployeesLoading ? (
-                    <Center p={10}>
+                    <Center role="status" aria-label="Employee загружаются" p={10}>
                         <Spinner size="lg"/>
                     </Center>
                 ) : employees.length === 0 ? (

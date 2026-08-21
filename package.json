@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "theme:audit": "bash scripts/audit-theme.sh",
+    "theme:typegen": "chakra typegen ./src/theme/system.ts --strict",
     "test:release": "bash tests/release-contract.sh && bash tests/verify-docker-tag.sh"
   },
   "dependencies": {
