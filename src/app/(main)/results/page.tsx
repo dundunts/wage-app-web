@@ -17,6 +17,8 @@ import {salaryService} from "@/service/salary/salary.service";
 import {PeriodType} from "@/types/salary.types"; // Предполагаю наличие тостера
 import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
 import {feedback} from "@/feedback/feedback";
+import {downloadFile} from "@/utils/download-file";
+import {feedbackMessages} from "@/feedback/messages";
 
 export default function ResultsPage() {
     const [companies, setCompanies] = useState<Company[]>([]);
@@ -30,6 +32,7 @@ export default function ResultsPage() {
         trigger: HTMLButtonElement | null;
     } | null>(null);
     const [isDeletePending, setDeletePending] = useState(false);
+    const [isDownloadPending, setDownloadPending] = useState(false);
     const isEditDialogOpen = targetForEdit !== null
 
     // Инициализация хука фильтров (defaultCompanyId будет применен после загрузки компаний)
@@ -105,30 +108,31 @@ export default function ResultsPage() {
         }
     };
 
-    const handleDownload = async () => {
-        try {
-            const blob = await salaryService.downloadReportTable({
-                companyId: filters.companyId,
-                periodType: filters.periodType as PeriodType,
-                now: new Date().toISOString(),
-                start: filters.start || undefined,
-                end: filters.end || undefined,
-            });
+    const handleDownload = () => {
+        if (isDownloadPending) return;
 
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
+        const actionFeedback = feedback.beginAction("payrollExport").loading();
+        const downloadParameters = {
+            companyId: filters.companyId,
+            periodType: filters.periodType as PeriodType,
+            now: new Date().toISOString(),
+            start: filters.start || undefined,
+            end: filters.end || undefined,
+        };
+        const performDownload = async () => {
+            setDownloadPending(true);
+            try {
+                const blob = await salaryService.downloadReportTable(downloadParameters);
+                downloadFile(blob, "salary-report.xlsx");
+                actionFeedback.success();
+            } catch (error) {
+                actionFeedback.retryableError(error, performDownload);
+            } finally {
+                setDownloadPending(false);
+            }
+        };
 
-            link.href = url;
-            link.download = "salary-report.xlsx"; // имя файла
-
-            document.body.appendChild(link);
-            link.click();
-
-            link.remove();
-            window.URL.revokeObjectURL(url);
-        } catch (e) {
-            console.error(e);
-        }
+        void performDownload();
     };
 
     return (
@@ -143,7 +147,9 @@ export default function ResultsPage() {
                     <Button
                         colorPalette="gray"
                         onClick={handleDownload}
-                        disabled={!filters.companyId}
+                        loading={isDownloadPending}
+                        loadingText={feedbackMessages.payrollExport.loading}
+                        disabled={!filters.companyId || isDownloadPending}
                     >
                         Скачать Excel
                     </Button>

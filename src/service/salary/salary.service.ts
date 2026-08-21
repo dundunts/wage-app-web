@@ -1,6 +1,5 @@
 import {Payroll, PeriodType} from "@/types/salary.types";
 import {salaryApiClient, SalaryApiClient} from "@/api/salary/salary.api.client";
-import {axiosBackendClient} from "@/api/config/api";
 
 interface GetOwnSalaryParams {
     companyId: string;
@@ -45,14 +44,9 @@ export class SalaryService {
     }
 
     async downloadReportTable(params: GetStaffSalaryParams) {
-        try {
-            const mappedParams = {...params, now: new Date().toISOString().slice(0, 10)}
-            const response = await this.apiClient.downloadStaffExcelTable(mappedParams)
-            return response.data;
-        } catch (e) {
-            console.error("ShiftResult service", e)
-            return Promise.reject(e)
-        }
+        const mappedParams = {...params, now: new Date().toISOString().slice(0, 10)}
+        const response = await this.apiClient.downloadStaffExcelTable(mappedParams)
+        return response.data;
     }
 }
 

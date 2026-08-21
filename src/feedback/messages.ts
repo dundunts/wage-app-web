@@ -29,6 +29,13 @@ export const feedbackMessages = {
         information: "Удаление результата смены",
         loading: "Результат смены удаляется",
     },
+    payrollExport: {
+        success: "Excel-отчёт скачан",
+        error: "Excel-отчёт не скачан",
+        warning: "Экспорт Excel требует внимания",
+        information: "Экспорт Excel",
+        loading: "Excel-отчёт формируется",
+    },
     login: {
         success: "Вход выполнен",
         error: "Войти не удалось",
@@ -53,6 +60,10 @@ export const feedbackMessages = {
 } as const;
 
 export type FeedbackActionKey = keyof typeof feedbackMessages;
+
+export const feedbackActionLabels = {
+    retry: "Повторить",
+} as const;
 
 export const applicationErrorDescriptions: Record<ApplicationErrorCategory, string> = {
     invalidRequest: "Проверьте введённые данные",

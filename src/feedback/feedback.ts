@@ -4,6 +4,7 @@ import {
     actionErrorDescriptions,
     applicationErrorDescriptions,
     type FeedbackActionKey,
+    feedbackActionLabels,
     feedbackMessages,
 } from "@/feedback/messages";
 
@@ -28,6 +29,7 @@ interface FinalFeedback {
 
 export interface LoadingFeedback extends FinalFeedback {
     dismiss(): void;
+    retryableError(error: unknown, onRetry: () => void | Promise<void>): void;
 }
 
 export interface ActionFeedback extends FinalFeedback {
@@ -121,9 +123,33 @@ class FeedbackFacade {
                     description,
                 });
 
+                const showLoading = () => toaster.update(id, {
+                    title: feedbackMessages[action].loading,
+                    type: "loading",
+                    duration: Infinity,
+                    closable: false,
+                    description: undefined,
+                    action: undefined,
+                });
+
                 return {
                     ...finalFeedback(update),
                     dismiss: () => toaster.dismiss(id),
+                    retryableError: (error, onRetry) => {
+                        const description = errorDetails(error);
+                        if (description === null) return;
+                        toaster.update(id, {
+                            ...finalToastOptions(action, "error"),
+                            description,
+                            action: {
+                                label: feedbackActionLabels.retry,
+                                onClick: () => {
+                                    showLoading();
+                                    void onRetry();
+                                },
+                            },
+                        });
+                    },
                 };
             },
         };

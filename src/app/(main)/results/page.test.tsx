@@ -6,7 +6,9 @@ import {Provider} from "@/components/ui/provider";
 import {toaster} from "@/components/ui/toaster";
 import {companyService} from "@/service/company/company.service";
 import {shiftResultService} from "@/service/results/shiftResult.service";
+import {salaryService} from "@/service/salary/salary.service";
 import {CalculationSource} from "@/types/shiftResult.types";
+import {downloadFile} from "@/utils/download-file";
 
 const searchParams = new URLSearchParams("companyId=company-1");
 const navigation = vi.hoisted(() => ({push: vi.fn()}));
@@ -30,6 +32,10 @@ vi.mock("@/service/results/shiftResult.service", () => ({
 
 vi.mock("@/service/salary/salary.service", () => ({
     salaryService: {downloadReportTable: vi.fn()},
+}));
+
+vi.mock("@/utils/download-file", () => ({
+    downloadFile: vi.fn(),
 }));
 
 const company = {
@@ -181,5 +187,80 @@ describe("Shift Result list deletion", () => {
         expect(await screen.findByText("Результат смены удалён")).toBeVisible();
         expect(shiftResultService.delete).toHaveBeenCalledTimes(2);
         expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+});
+
+describe("Payroll Excel download", () => {
+    beforeEach(() => {
+        toaster.remove();
+        vi.mocked(companyService.getForUser).mockReset();
+        vi.mocked(companyService.getForUser).mockResolvedValue([company]);
+        vi.mocked(shiftResultService.getPageByPeriod).mockReset();
+        vi.mocked(shiftResultService.getPageByPeriod).mockResolvedValue(resultsPage);
+        vi.mocked(salaryService.downloadReportTable).mockReset();
+        vi.mocked(downloadFile).mockReset();
+    });
+
+    afterEach(() => vi.restoreAllMocks());
+
+    it("keeps loading visible, prevents repetition, and resolves to a downloaded file", async () => {
+        const user = userEvent.setup();
+        const blob = new Blob(["payroll"]);
+        let resolveDownload!: (value: Blob) => void;
+        vi.mocked(salaryService.downloadReportTable).mockReturnValue(new Promise((resolve) => {
+            resolveDownload = resolve;
+        }));
+        renderPage();
+        const download = await screen.findByRole("button", {name: "Скачать Excel"});
+
+        await user.click(download);
+
+        expect(await screen.findByRole("status")).toHaveTextContent("Excel-отчёт формируется");
+        expect(screen.getByRole("button", {name: "Excel-отчёт формируется"})).toBeDisabled();
+        await user.click(screen.getByRole("button", {name: "Excel-отчёт формируется"}));
+        expect(salaryService.downloadReportTable).toHaveBeenCalledOnce();
+
+        resolveDownload(blob);
+
+        expect(await screen.findByText("Excel-отчёт скачан")).toBeVisible();
+        expect(downloadFile).toHaveBeenCalledOnce();
+        expect(downloadFile).toHaveBeenCalledWith(blob, "salary-report.xlsx");
+        await waitFor(() => expect(download).toBeEnabled());
+    });
+
+    it("shows a safe failure and retries one request with the same parameters", async () => {
+        const user = userEvent.setup();
+        const failure = new Error("backend export detail must stay hidden");
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        const blob = new Blob(["payroll retry"]);
+        let resolveRetry!: (value: Blob) => void;
+        vi.mocked(salaryService.downloadReportTable)
+            .mockRejectedValueOnce(failure)
+            .mockReturnValueOnce(new Promise((resolve) => {
+                resolveRetry = resolve;
+            }));
+        renderPage();
+
+        await user.click(await screen.findByRole("button", {name: "Скачать Excel"}));
+
+        expect(await screen.findByText("Excel-отчёт не скачан")).toBeVisible();
+        expect(screen.getByText("Не удалось выполнить действие. Попробуйте ещё раз")).toBeVisible();
+        expect(screen.queryByText(/backend export detail/)).not.toBeInTheDocument();
+        expect(consoleError).toHaveBeenCalledOnce();
+        expect(consoleError).toHaveBeenCalledWith("[feedback:payrollExport]", failure);
+        const firstParameters = vi.mocked(salaryService.downloadReportTable).mock.calls[0][0];
+
+        await user.dblClick(screen.getByRole("button", {name: "Повторить"}));
+
+        expect(salaryService.downloadReportTable).toHaveBeenCalledTimes(2);
+        expect(vi.mocked(salaryService.downloadReportTable).mock.calls[1][0]).toBe(firstParameters);
+        expect(screen.queryByRole("button", {name: "Повторить"})).not.toBeInTheDocument();
+        expect(screen.getByRole("button", {name: "Excel-отчёт формируется"})).toBeDisabled();
+
+        resolveRetry(blob);
+
+        expect(await screen.findByText("Excel-отчёт скачан")).toBeVisible();
+        expect(downloadFile).toHaveBeenCalledOnce();
+        expect(downloadFile).toHaveBeenCalledWith(blob, "salary-report.xlsx");
     });
 });
