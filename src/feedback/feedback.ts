@@ -1,6 +1,7 @@
-import {toaster} from "@/components/ui/toaster";
+import {toaster} from "@/feedback/toast-store";
 import {normalizeApiError} from "@/feedback/api-error";
 import {
+    actionErrorDescriptions,
     applicationErrorDescriptions,
     type FeedbackActionKey,
     feedbackMessages,
@@ -54,18 +55,32 @@ class FeedbackFacade {
 
         const errorDetails = (error: unknown) => {
             const normalized = normalizeApiError(error);
+            if (
+                normalized.category === "sessionExpired"
+                && action !== "login"
+                && action !== "logout"
+                && action !== "sessionExpired"
+            ) {
+                return null;
+            }
             if (!errorLogged) {
                 console.error(`[feedback:${action}]`, normalized.original);
                 errorLogged = true;
             }
-            return applicationErrorDescriptions[normalized.category];
+            const contextualDescriptions = actionErrorDescriptions[action];
+            return contextualDescriptions?.[normalized.category]
+                ?? contextualDescriptions?.default
+                ?? applicationErrorDescriptions[normalized.category];
         };
 
         const finalFeedback = (
             present: (tone: FinalFeedbackTone, description?: string) => void,
         ): FinalFeedback => ({
             success: () => present("success"),
-            error: (error) => present("error", errorDetails(error)),
+            error: (error) => {
+                const description = errorDetails(error);
+                if (description !== null) present("error", description);
+            },
             warning: () => present("warning"),
             information: () => present("information"),
         });

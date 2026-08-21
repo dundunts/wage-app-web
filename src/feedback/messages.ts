@@ -29,6 +29,27 @@ export const feedbackMessages = {
         information: "Удаление результата смены",
         loading: "Результат смены удаляется",
     },
+    login: {
+        success: "Вход выполнен",
+        error: "Войти не удалось",
+        warning: "Вход требует внимания",
+        information: "Вход в систему",
+        loading: "Выполняется вход",
+    },
+    logout: {
+        success: "Вы вышли из системы",
+        error: "Вы вышли из системы",
+        warning: "Выход требует внимания",
+        information: "Выход из системы",
+        loading: "Выполняется выход",
+    },
+    sessionExpired: {
+        success: "Сессия обновлена",
+        error: "Сессия завершена",
+        warning: "Сессия требует внимания",
+        information: "Состояние сессии изменилось",
+        loading: "Сессия обновляется",
+    },
 } as const;
 
 export type FeedbackActionKey = keyof typeof feedbackMessages;
@@ -42,4 +63,16 @@ export const applicationErrorDescriptions: Record<ApplicationErrorCategory, stri
     serverFailure: "Сервис временно недоступен. Попробуйте позже",
     connectivity: "Не удалось связаться с сервером. Проверьте подключение к интернету",
     unknown: "Не удалось выполнить действие. Попробуйте ещё раз",
+};
+
+export const actionErrorDescriptions: Partial<Record<
+    FeedbackActionKey,
+    Partial<Record<ApplicationErrorCategory | "default", string>>
+>> = {
+    login: {
+        sessionExpired: "Неверное имя пользователя или пароль",
+    },
+    logout: {
+        default: "Данные входа удалены на этом устройстве, но завершить сеанс на сервере не удалось",
+    },
 };

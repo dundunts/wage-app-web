@@ -8,9 +8,9 @@ import {Controller, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useRouter, useSearchParams} from "next/navigation";
 import {authService} from "@/service/auth.service";
-import {toaster} from "@/components/ui/toaster";
+import {feedback} from "@/feedback/feedback";
 import {loginSchema, LoginSchemaType} from "@/schemas/auth.schema";
-import {Checkbox} from "@/components/ui/checkbox"; // Chakra v3 Toaster
+import {Checkbox} from "@/components/ui/checkbox";
 
 // Обертка для Suspense, так как useSearchParams требует этого в Next.js
 function LoginForm() {
@@ -36,33 +36,18 @@ function LoginForm() {
 
     const onSubmit = async (data: LoginSchemaType) => {
         setIsLoading(true);
+        const loginFeedback = feedback.beginAction("login");
 
-        // Вызываем сервис (он сам обновит Zustand store и LocalStorage внутри)
-        const success = await authService.login(
-            data.username,
-            data.password,
-            data.rememberMe
-        );
-
-        if (success) {
-            toaster.create({
-                title: "Успешный вход",
-                description: "Перенаправляем...",
-                type: "success",
-            });
-
-            // Небольшая задержка для UX или мгновенный редирект
+        try {
+            await authService.login(data.username, data.password, data.rememberMe);
+            loginFeedback.success();
             router.push(redirectUrl);
-            router.refresh(); // Обновляем роутер, чтобы пересчитались серверные компоненты (если есть)
-        } else {
-            toaster.create({
-                title: "Ошибка входа",
-                description: "Неверный логин или пароль",
-                type: "error",
-            });
+            router.refresh();
+        } catch (error) {
+            loginFeedback.error(error);
+        } finally {
+            setIsLoading(false);
         }
-
-        setIsLoading(false);
     };
 
     return (

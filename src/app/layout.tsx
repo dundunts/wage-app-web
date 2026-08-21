@@ -6,12 +6,14 @@ import AuthInitializer from "@/components/auth/AuthInitializer";
 import {Suspense} from "react";
 import AuthGuard from "@/components/auth/AuthGuard";
 import RouteSecurity from "@/components/auth/RouteSecurity";
+import SessionExpiryBoundary from "@/components/auth/SessionExpiryBoundary";
 
 export default function RootLayout({children}: { children: React.ReactNode; }) {
     return (
         <html lang="en" suppressHydrationWarning>
         <body>
         <Provider defaultTheme={'dark'}>
+            <SessionExpiryBoundary/>
             <AuthInitializer/>
             {children}
         </Provider>
