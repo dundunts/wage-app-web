@@ -10,16 +10,15 @@ import {
     Input,
     Stack,
     Field,
-    HStack,
-    Text
 } from "@chakra-ui/react";
 import { Company, CompanyPayload } from "@/types/company.types";
 import { companySchema, CompanyFormValues } from "@/schemas/company.schema";
+import {feedbackMessages} from "@/feedback/messages";
 
 interface CompanyFormModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (data: CompanyPayload) => Promise<void>;
+    onSubmit: (data: CompanyPayload) => Promise<boolean>;
     initialData?: Company | null;
     isLoading?: boolean;
 }
@@ -72,8 +71,10 @@ export const CompanyFormModal = ({
             ...data,
             employeeWageCoefficientFromRevenue: Math.round(data.employeeWageCoefficientFromRevenue * 100)
         };
-        await onSubmit(payload);
-        onClose();
+        const succeeded = await onSubmit(payload);
+        if (succeeded) {
+            onClose();
+        }
     };
 
     return (
@@ -133,6 +134,10 @@ export const CompanyFormModal = ({
                             type="submit"
                             form="company-form"
                             loading={isLoading}
+                            loadingText={feedbackMessages[
+                                isEditMode ? "companyUpdate" : "companyCreate"
+                            ].loading}
+                            disabled={isLoading}
                             colorPalette="blue"
                         >
                             {isEditMode ? "Сохранить" : "Создать"}

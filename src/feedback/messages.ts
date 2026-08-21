@@ -1,6 +1,27 @@
 import type {ApplicationErrorCategory} from "@/feedback/api-error";
 
 export const feedbackMessages = {
+    companyCreate: {
+        success: "Компания создана",
+        error: "Компания не создана",
+        warning: "Создание компании требует внимания",
+        information: "Создание компании",
+        loading: "Компания создаётся",
+    },
+    companyUpdate: {
+        success: "Компания обновлена",
+        error: "Компания не обновлена",
+        warning: "Изменение компании требует внимания",
+        information: "Изменение компании",
+        loading: "Компания обновляется",
+    },
+    companyDelete: {
+        success: "Компания удалена",
+        error: "Компания не удалена",
+        warning: "Удаление компании требует внимания",
+        information: "Удаление компании",
+        loading: "Компания удаляется",
+    },
     shiftSessionOpen: {
         success: "Смена открыта",
         error: "Смена не открыта",

@@ -24,7 +24,9 @@ import {Company, CompanyPayload} from "@/types/company.types";
 import {companyService} from "@/service/company/company.service";
 import {CompanyFormModal} from "./company-form-modal";
 import {Page} from "@/types/common.types";
-import {DeleteConfirmModal} from "@/components/dialog/delete-confirm-modal";
+import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
+import {feedback} from "@/feedback/feedback";
+import {feedbackMessages} from "@/feedback/messages";
 
 interface CompanyListProps {
     data: Page<Company> | null;
@@ -45,28 +47,35 @@ export const CompanyList = ({ data, isLoadingData, onRefresh }: CompanyListProps
     // --- Хендлеры действий ---
 
     const handleCreate = async (payload: CompanyPayload) => {
+        if (isActionLoading) return false;
+
+        const actionFeedback = feedback.beginAction("companyCreate");
         setActionLoading(true);
         try {
             await companyService.create(payload);
+            actionFeedback.success();
             onRefresh(); // Обновляем таблицу
+            return true;
         } catch (error) {
-            console.error(error);
-            alert("Ошибка при создании компании");
+            actionFeedback.error(error);
+            return false;
         } finally {
             setActionLoading(false);
         }
     };
 
     const handleDelete = async () => {
-        if (!companyToDelete) return;
+        if (!companyToDelete || isActionLoading) return;
+
+        const actionFeedback = feedback.beginAction("companyDelete");
         setActionLoading(true);
         try {
             await companyService.delete(companyToDelete.id);
+            actionFeedback.success();
             onRefresh(); // Обновляем таблицу
             setCompanyToDelete(null);
         } catch (error) {
-            console.error(error);
-            alert("Ошибка при удалении компании");
+            actionFeedback.error(error);
         } finally {
             setActionLoading(false);
         }
@@ -208,12 +217,21 @@ export const CompanyList = ({ data, isLoadingData, onRefresh }: CompanyListProps
                 isLoading={isActionLoading}
             />
 
-            <DeleteConfirmModal
-                isOpen={!!companyToDelete}
-                onClose={() => setCompanyToDelete(null)}
+            <ConfirmationDialog
+                open={companyToDelete !== null}
+                title="Удалить компанию?"
+                description={`Компания «${companyToDelete?.title ?? ""}» будет удалена без возможности восстановления.`}
+                confirmLabel="Удалить"
+                cancelLabel="Отмена"
+                pendingLabel={feedbackMessages.companyDelete.loading}
+                severity="danger"
+                pending={isActionLoading}
+                onCancel={() => {
+                    if (!isActionLoading) {
+                        setCompanyToDelete(null);
+                    }
+                }}
                 onConfirm={handleDelete}
-                title={`Удалить "${companyToDelete?.title}"?`}
-                isLoading={isActionLoading}
             />
         </Box>
     );

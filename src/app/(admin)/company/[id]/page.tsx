@@ -1,7 +1,7 @@
 // @/app/(admin)/company/[id]/page.tsx
 "use client";
 
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import {useParams, useRouter} from "next/navigation";
 import {Box, Button, Card, Center, Flex, Heading, HStack, Separator, Spinner, Stack, Text} from "@chakra-ui/react";
 import {ArrowLeft, Edit, Trash2} from "lucide-react";
@@ -9,7 +9,9 @@ import {ArrowLeft, Edit, Trash2} from "lucide-react";
 import {Company, CompanyPayload} from "@/types/company.types";
 import {companyService} from "@/service/company/company.service";
 import {CompanyFormModal} from "@/components/company/company-form-modal";
-import {DeleteConfirmModal} from "@/components/dialog/delete-confirm-modal";
+import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
+import {feedback} from "@/feedback/feedback";
+import {feedbackMessages} from "@/feedback/messages";
 
 export default function CompanyDetailsPage() {
     const { id } = useParams<{ id: string }>();
@@ -24,6 +26,7 @@ export default function CompanyDetailsPage() {
     const [isEditOpen, setEditOpen] = useState(false);
     const [isDeleteOpen, setDeleteOpen] = useState(false);
     const [isActionLoading, setActionLoading] = useState(false);
+    const deleteTriggerRef = useRef<HTMLButtonElement>(null);
 
     // --- Загрузка данных ---
     const fetchCompanyData = useCallback(async () => {
@@ -50,29 +53,35 @@ export default function CompanyDetailsPage() {
     // --- Хендлеры действий ---
 
     const handleUpdate = async (payload: CompanyPayload) => {
-        if (!company) return;
+        if (!company || isActionLoading) return false;
+
+        const actionFeedback = feedback.beginAction("companyUpdate");
         setActionLoading(true);
         try {
             await companyService.update(company.id, payload);
+            actionFeedback.success();
             await fetchCompanyData(); // Обновляем данные на странице
-            setEditOpen(false);
+            return true;
         } catch (err) {
-            console.error(err);
-            alert("Ошибка при обновлении компании");
+            actionFeedback.error(err);
+            return false;
         } finally {
             setActionLoading(false);
         }
     };
 
     const handleDelete = async () => {
-        if (!company) return;
+        if (!company || isActionLoading) return;
+
+        const actionFeedback = feedback.beginAction("companyDelete");
         setActionLoading(true);
         try {
             await companyService.delete(company.id);
+            actionFeedback.success();
+            setDeleteOpen(false);
             router.push("/company"); // Редирект к списку
         } catch (err) {
-            console.error(err);
-            alert("Ошибка при удалении компании");
+            actionFeedback.error(err);
         } finally {
             setActionLoading(false);
         }
@@ -130,6 +139,7 @@ export default function CompanyDetailsPage() {
                         Изменить
                     </Button>
                     <Button
+                        ref={deleteTriggerRef}
                         colorPalette="red"
                         variant="solid"
                         onClick={() => setDeleteOpen(true)}
@@ -190,13 +200,22 @@ export default function CompanyDetailsPage() {
                 isLoading={isActionLoading}
             />
 
-            <DeleteConfirmModal
-                isOpen={isDeleteOpen}
-                onClose={() => setDeleteOpen(false)}
+            <ConfirmationDialog
+                open={isDeleteOpen}
+                title="Удалить компанию?"
+                description={`Компания «${company.title}» будет удалена без возможности восстановления.`}
+                confirmLabel="Удалить"
+                cancelLabel="Отмена"
+                pendingLabel={feedbackMessages.companyDelete.loading}
+                severity="danger"
+                pending={isActionLoading}
+                finalFocusEl={() => deleteTriggerRef.current}
+                onCancel={() => {
+                    if (!isActionLoading) {
+                        setDeleteOpen(false);
+                    }
+                }}
                 onConfirm={handleDelete}
-                title={`Удалить "${company.title}"?`}
-                description="Вы уверены? Данные о компании будут безвозвратно удалены из системы."
-                isLoading={isActionLoading}
             />
         </Box>
     );
