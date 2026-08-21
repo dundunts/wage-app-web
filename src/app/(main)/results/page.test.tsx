@@ -9,6 +9,7 @@ import {shiftResultService} from "@/service/results/shiftResult.service";
 import {salaryService} from "@/service/salary/salary.service";
 import {CalculationSource} from "@/types/shiftResult.types";
 import {downloadFile} from "@/utils/download-file";
+import {ApplicationError} from "@/feedback/api-error";
 
 const searchParams = new URLSearchParams("companyId=company-1");
 const navigation = vi.hoisted(() => ({push: vi.fn()}));
@@ -77,17 +78,20 @@ async function openDeleteDialog(user: ReturnType<typeof userEvent.setup>) {
     return actions;
 }
 
+beforeEach(() => {
+    toaster.remove();
+    vi.mocked(companyService.getForUser).mockReset();
+    vi.mocked(companyService.getForUser).mockResolvedValue([company]);
+    vi.mocked(shiftResultService.getPageByPeriod).mockReset();
+    vi.mocked(shiftResultService.getPageByPeriod).mockResolvedValue(resultsPage);
+});
+
+afterEach(() => vi.restoreAllMocks());
+
 describe("Shift Result list deletion", () => {
     beforeEach(() => {
-        toaster.remove();
-        vi.mocked(companyService.getForUser).mockReset();
-        vi.mocked(companyService.getForUser).mockResolvedValue([company]);
-        vi.mocked(shiftResultService.getPageByPeriod).mockReset();
-        vi.mocked(shiftResultService.getPageByPeriod).mockResolvedValue(resultsPage);
         vi.mocked(shiftResultService.delete).mockReset();
     });
-
-    afterEach(() => vi.restoreAllMocks());
 
     it("cancels without a request and returns focus to the row actions", async () => {
         const user = userEvent.setup();
@@ -192,16 +196,9 @@ describe("Shift Result list deletion", () => {
 
 describe("Payroll Excel download", () => {
     beforeEach(() => {
-        toaster.remove();
-        vi.mocked(companyService.getForUser).mockReset();
-        vi.mocked(companyService.getForUser).mockResolvedValue([company]);
-        vi.mocked(shiftResultService.getPageByPeriod).mockReset();
-        vi.mocked(shiftResultService.getPageByPeriod).mockResolvedValue(resultsPage);
         vi.mocked(salaryService.downloadReportTable).mockReset();
         vi.mocked(downloadFile).mockReset();
     });
-
-    afterEach(() => vi.restoreAllMocks());
 
     it("keeps loading visible, prevents repetition, and resolves to a downloaded file", async () => {
         const user = userEvent.setup();
@@ -262,5 +259,25 @@ describe("Payroll Excel download", () => {
         expect(await screen.findByText("Excel-отчёт скачан")).toBeVisible();
         expect(downloadFile).toHaveBeenCalledOnce();
         expect(downloadFile).toHaveBeenCalledWith(blob, "salary-report.xlsx");
+    });
+
+    it("dismisses persistent export loading when global session expiry takes over", async () => {
+        const user = userEvent.setup();
+        let rejectDownload!: (error: unknown) => void;
+        vi.mocked(salaryService.downloadReportTable).mockReturnValue(new Promise((_, reject) => {
+            rejectDownload = reject;
+        }));
+        renderPage();
+        const download = await screen.findByRole("button", {name: "Скачать Excel"});
+
+        await user.click(download);
+        expect(await screen.findByRole("status")).toHaveTextContent("Excel-отчёт формируется");
+
+        rejectDownload(new ApplicationError("sessionExpired", new Error("refresh failed"), 401));
+
+        await waitFor(() => expect(screen.queryByText("Excel-отчёт формируется")).not.toBeInTheDocument());
+        expect(screen.queryByText("Excel-отчёт не скачан")).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", {name: "Повторить"})).not.toBeInTheDocument();
+        expect(download).toBeEnabled();
     });
 });

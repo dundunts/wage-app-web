@@ -137,7 +137,10 @@ class FeedbackFacade {
                     dismiss: () => toaster.dismiss(id),
                     retryableError: (error, onRetry) => {
                         const description = errorDetails(error);
-                        if (description === null) return;
+                        if (description === null) {
+                            toaster.dismiss(id);
+                            return;
+                        }
                         toaster.update(id, {
                             ...finalToastOptions(action, "error"),
                             description,

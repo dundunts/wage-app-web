@@ -44,7 +44,10 @@ export class SalaryService {
     }
 
     async downloadReportTable(params: GetStaffSalaryParams) {
-        const mappedParams = {...params, now: new Date().toISOString().slice(0, 10)}
+        const mappedParams = {
+            ...params,
+            now: (params.now ?? new Date().toISOString()).slice(0, 10),
+        }
         const response = await this.apiClient.downloadStaffExcelTable(mappedParams)
         return response.data;
     }
