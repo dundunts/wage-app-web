@@ -22,14 +22,6 @@ export const checkpointDialogForms: Record<CheckpointType, CheckpointForm> = {
                 destination: CheckpointCalcDestination.REVENUE
             },
             {
-                label: "Чай (нал)",
-                destination: CheckpointCalcDestination.TIPS
-            },
-            {
-                label: "Чай (по QR)",
-                destination: CheckpointCalcDestination.TIPS
-            },
-            {
                 label: "Кредит. карты (з)",
                 destination: CheckpointCalcDestination.REVENUE
             },
@@ -40,6 +32,14 @@ export const checkpointDialogForms: Record<CheckpointType, CheckpointForm> = {
             {
                 label: "Рубли (з)",
                 destination: CheckpointCalcDestination.REVENUE
+            },
+            {
+                label: "Чай (нал)",
+                destination: CheckpointCalcDestination.TIPS
+            },
+            {
+                label: "Чай (по QR)",
+                destination: CheckpointCalcDestination.TIPS
             },
         ]
     }
