@@ -9,7 +9,10 @@ import {ShiftResultDraft} from "@/types/draft.types";
 import {PageHeader} from "@/components/page/PageHeader";
 import {EmptyState} from "@/components/page/EmptyState";
 import {calculationService} from "@/service/calculation/calculation.service";
-import {formatEmployeeName} from "@/utils/employee.utils";
+import {feedback} from "@/feedback/feedback";
+import {feedbackMessages} from "@/feedback/messages";
+
+type PendingAction = "confirm" | "discard" | null;
 
 export default function DraftPage() {
     const searchParams = useSearchParams();
@@ -23,6 +26,8 @@ export default function DraftPage() {
     const [isLoading, setLoading] = useState(true)
 
     const [error, setError] = useState("")
+
+    const [pendingAction, setPendingAction] = useState<PendingAction>(null)
 
     useEffect(() => {
         loadData()
@@ -46,17 +51,34 @@ export default function DraftPage() {
     }
 
     async function handleBackToCheckpoints() {
-        if (resultDraft) {
-            await calculationService.deleteDraft(resultDraft.id);
-        }
+        if (!resultDraft || pendingAction) return;
 
-        router.replace(`/calculator/checkpoints?sessionId=${sessionId}`)
+        setPendingAction("discard")
+        const actionFeedback = feedback.beginAction("shiftResultDraftDiscard")
+        try {
+            await calculationService.deleteDraft(resultDraft.id);
+            actionFeedback.success()
+            router.replace(`/calculator/checkpoints?sessionId=${sessionId}`)
+        } catch (error) {
+            actionFeedback.error(error)
+        } finally {
+            setPendingAction(null)
+        }
     }
 
     async function handleAcceptResults() {
-        if (resultDraft) {
+        if (!resultDraft || pendingAction) return;
+
+        setPendingAction("confirm")
+        const actionFeedback = feedback.beginAction("shiftResultDraftConfirm")
+        try {
             const res = await calculationService.confirmDraft(resultDraft.id)
+            actionFeedback.success()
             router.replace(`/results/${res.resultId}`)
+        } catch (error) {
+            actionFeedback.error(error)
+        } finally {
+            setPendingAction(null)
         }
     }
 
@@ -97,10 +119,22 @@ export default function DraftPage() {
                     </Text>
 
                     <Stack direction={{base: "column", md: "row"}}>
-                        <Button variant="outline" onClick={handleBackToCheckpoints}>
+                        <Button
+                            variant="outline"
+                            onClick={handleBackToCheckpoints}
+                            disabled={pendingAction !== null}
+                            loading={pendingAction === "discard"}
+                            loadingText={feedbackMessages.shiftResultDraftDiscard.loading}
+                        >
                             <ArrowLeft/> Назад
                         </Button>
-                        <Button colorPalette="teal" onClick={handleAcceptResults}>
+                        <Button
+                            colorPalette="teal"
+                            onClick={handleAcceptResults}
+                            disabled={pendingAction !== null}
+                            loading={pendingAction === "confirm"}
+                            loadingText={feedbackMessages.shiftResultDraftConfirm.loading}
+                        >
                             <Check/> Завершить смену
                         </Button>
                     </Stack>

@@ -16,22 +16,12 @@ export class CalculationService {
     }
 
     async confirmDraft(draftId: string): Promise<ConfirmDraftResponse> {
-        try {
-            const response = await this.apiClient.confirmDraft(draftId)
-            return response.data
-        } catch (e) {
-            console.error("Calculation service", e)
-            return Promise.reject(e)
-        }
+        const response = await this.apiClient.confirmDraft(draftId)
+        return response.data
     }
 
     async deleteDraft(draftId: string): Promise<void> {
-        try {
-            await this.apiClient.deleteDraft(draftId)
-        } catch (e) {
-            console.error("Calculation service", e)
-            return Promise.reject(e)
-        }
+        await this.apiClient.deleteDraft(draftId)
     }
 }
 

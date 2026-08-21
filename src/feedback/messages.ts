@@ -8,6 +8,20 @@ export const feedbackMessages = {
         information: "Сохранение результата смены",
         loading: "Результат смены сохраняется",
     },
+    shiftResultDraftConfirm: {
+        success: "Результат смены создан",
+        error: "Результат смены не создан",
+        warning: "Подтверждение результата смены требует внимания",
+        information: "Подтверждение результата смены",
+        loading: "Результат смены создаётся",
+    },
+    shiftResultDraftDiscard: {
+        success: "Черновик результата смены удалён",
+        error: "Черновик результата смены не удалён",
+        warning: "Удаление черновика результата смены требует внимания",
+        information: "Удаление черновика результата смены",
+        loading: "Черновик результата смены удаляется",
+    },
 } as const;
 
 export type FeedbackActionKey = keyof typeof feedbackMessages;
