@@ -200,7 +200,7 @@ function VariantA() {
                                         _hover={{bg: PALETTE.tealSoft, color: PALETTE.text}}
                                     >
                                         {item}
-                                        {index === 0 && <Box position="absolute" h="2px" bg={PALETTE.teal} left={3} right={3} bottom="-12px" boxShadow={`0 0 12px ${PALETTE.teal}`}/>} 
+                                        {index === 0 && <Box position="absolute" h="2px" bg={PALETTE.teal} left={3} right={3} bottom="-12px" boxShadow={`0 0 12px ${PALETTE.teal}`}/>}
                                     </Button>
                                 ))}
                             </HStack>
