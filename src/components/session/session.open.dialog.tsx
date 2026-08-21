@@ -15,6 +15,7 @@ import {Company} from "@/types/company.types";
 import {sessionService} from "@/service/session/session.service";
 import {toLocalDateTimeInputValue} from "@/utils/date.utils";
 import {feedback} from "@/feedback/feedback";
+import {feedbackMessages} from "@/feedback/messages";
 
 interface Props {
     company: Company;
@@ -106,7 +107,7 @@ export function SessionOpenDialog({ company }: Props) {
                                     colorPalette="blue"
                                     onClick={submit}
                                     loading={isPending}
-                                    loadingText="Смена открывается"
+                                    loadingText={feedbackMessages.shiftSessionOpen.loading}
                                     disabled={isPending}
                                 >
                                     Открыть

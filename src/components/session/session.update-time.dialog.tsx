@@ -3,6 +3,7 @@ import {Button, Dialog, Field, Input, Stack, Text} from "@chakra-ui/react";
 import {useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
+import {feedbackMessages} from "@/feedback/messages";
 
 // Схема валидации: строго формат HH:mm
 const updateTimeSchema = z.object({
@@ -94,7 +95,7 @@ export function SessionUpdateTimeDialog({
                         type="submit"
                         form="update-time-form"
                         loading={isLoading}
-                        loadingText="Время сохраняется"
+                        loadingText={feedbackMessages.shiftSessionUpdateTime.loading}
                         disabled={isLoading}
                     >
                         Сохранить

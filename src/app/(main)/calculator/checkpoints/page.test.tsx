@@ -90,7 +90,7 @@ describe("Shift Session time update", () => {
         await user.click(screen.getByRole("button", {name: "Сохранить"}));
 
         expect(screen.getByText("Расчёт за день")).toBeVisible();
-        const pending = screen.getByRole("button", {name: "Время сохраняется"});
+        const pending = screen.getByRole("button", {name: "Время смены обновляется"});
         expect(pending).toBeDisabled();
         expect(screen.getByRole("button", {name: "Отмена"})).toBeDisabled();
         await user.click(pending);

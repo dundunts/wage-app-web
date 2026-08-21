@@ -38,6 +38,7 @@ import ConfirmDeleteDialog from "@/components/dialog/components.dialog.confirmat
 import {SessionUpdateTimeDialog} from "@/components/session/session.update-time.dialog";
 import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
 import {feedback} from "@/feedback/feedback";
+import {feedbackMessages} from "@/feedback/messages";
 
 function CalcInShiftPage() {
     const searchParams = useSearchParams();
@@ -361,7 +362,7 @@ function CalcInShiftPage() {
                 description="После закрытия редактирование чекпоинтов будет недоступно, и начнётся финальный пересчёт."
                 confirmLabel="Закрыть смену"
                 cancelLabel="Отмена"
-                pendingLabel="Смена закрывается"
+                pendingLabel={feedbackMessages.shiftSessionClose.loading}
                 severity="danger"
                 pending={isClosingSession}
                 finalFocusEl={() => closeSessionTriggerRef.current}
