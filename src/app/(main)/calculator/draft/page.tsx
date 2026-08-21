@@ -31,7 +31,7 @@ export default function DraftPage() {
         loadData()
     }, []);
     
-    async function loadData() {
+    async function loadData(reportFailure = false) {
         if (!sessionId) return;
         
         setLoading(true)
@@ -44,6 +44,9 @@ export default function DraftPage() {
         } catch (e) {
             console.error("Error while loading data", e)
             setError("Не удалось загрузить Shift Result Draft")
+            if (reportFailure) {
+                feedback.beginAction("shiftResultDraftLoad").error(e)
+            }
         } finally {
             setLoading(false)
         }
@@ -104,9 +107,9 @@ export default function DraftPage() {
                     <Text color="accent" fontSize="xs" fontWeight="bold" letterSpacing="wide" textTransform="uppercase">
                         Этап 3 · Shift Result Draft
                     </Text>
-                    <Heading size="md">Shift Result Draft не загружен</Heading>
+                    <Heading as="h1" size="md">Shift Result Draft не загружен</Heading>
                     <Text color="status.danger">{error}</Text>
-                    <Button alignSelf="flex-start" variant="outline" onClick={() => void loadData()}>
+                    <Button alignSelf="flex-start" variant="outline" onClick={() => void loadData(true)}>
                         Повторить
                     </Button>
                 </Stack>
@@ -123,7 +126,7 @@ export default function DraftPage() {
                     <Text color="accent" fontSize="xs" fontWeight="bold" letterSpacing="wide" textTransform="uppercase">
                         Этап 3 · Shift Result Draft
                     </Text>
-                    <Heading size="lg">Проверьте расчёт за день</Heading>
+                    <Heading as="h1" size="lg">Проверьте расчёт за день</Heading>
                     <Text mt={1} color="fg.muted" fontSize="sm">
                         Подтвердите рассчитанные Payment или вернитесь к Checkpoint для корректировки.
                     </Text>

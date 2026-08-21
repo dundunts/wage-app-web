@@ -187,9 +187,7 @@ function DesktopNavigation() {
                         <Portal>
                             <Popover.Positioner>
                                 <Popover.Content
-                                    layerStyle="panel"
                                     p={4}
-                                    bg="bg.raised"
                                     width="max-content"
                                     minW="12rem"
                                 >
@@ -310,7 +308,7 @@ function MobileNavigation({
             <Portal>
                 <Drawer.Backdrop/>
                 <Drawer.Positioner>
-                    <Drawer.Content bg="bg.panel">
+                    <Drawer.Content>
                         <Drawer.Header>
                             <Drawer.Title>Навигация</Drawer.Title>
                         </Drawer.Header>

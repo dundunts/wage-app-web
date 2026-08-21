@@ -83,9 +83,7 @@ export const CompanyFormModal = ({
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner p={{base: 4, md: 6}}>
-                <Dialog.Content
-                    layerStyle="panel"
-                >
+                <Dialog.Content>
                     <Dialog.Header>
                         <Dialog.Title>
                             {isEditMode ? "Редактирование компании" : "Создание компании"}

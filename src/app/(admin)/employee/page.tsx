@@ -116,7 +116,7 @@ export default function EmployeeListPage() {
                     <Text color="accent" fontSize="xs" fontWeight="bold" letterSpacing="0.1em">
                         УПРАВЛЕНИЕ КОМАНДОЙ
                     </Text>
-                    <Heading size="lg">Работники</Heading>
+                    <Heading as="h1" size="lg">Работники</Heading>
                     <Text color="fg.muted" fontSize="sm">
                         Состав выбранной компании и назначенные должности
                     </Text>
@@ -142,7 +142,7 @@ export default function EmployeeListPage() {
                     <Select.HiddenSelect />
                     <Select.Label color="fg.muted">Компания</Select.Label>
                     <Select.Control>
-                        <Select.Trigger bg="bg.raised" borderColor="border">
+                        <Select.Trigger>
                             <Select.ValueText placeholder="Выберите компанию" />
                         </Select.Trigger>
                         <Select.IndicatorGroup>
@@ -151,7 +151,7 @@ export default function EmployeeListPage() {
                     </Select.Control>
                     <Portal>
                         <Select.Positioner>
-                            <Select.Content bg="bg.raised" borderColor="border.emphasized">
+                            <Select.Content>
                                 {companiesCollection.items.map((company) => (
                                     <Select.Item item={company} key={company.id}>
                                         {company.title}
@@ -239,7 +239,7 @@ export default function EmployeeListPage() {
                                             </Menu.Trigger>
                                             <Portal>
                                                 <Menu.Positioner>
-                                                    <Menu.Content bg="bg.raised" borderColor="border.emphasized">
+                                                    <Menu.Content>
                                                         <Menu.Item
                                                             value="details"
                                                             onClick={() => router.push(`/employee/${employee.id}`)}

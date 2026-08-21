@@ -248,7 +248,7 @@ function CalcInShiftPage() {
                     <Text color="accent" fontSize="xs" fontWeight="bold" letterSpacing="wide" textTransform="uppercase">
                         Этап 2 · Checkpoint
                     </Text>
-                    <Heading size="lg">Расчёт за день</Heading>
+                    <Heading as="h1" size="lg">Расчёт за день</Heading>
                     <Text mt={1} color="fg.muted" fontSize="sm">
                         Фиксируйте Revenue, Restaurant Tips и состав команды по ходу Shift Session.
                     </Text>

@@ -52,7 +52,7 @@ export function ShiftCheckpointCard(
                                     key={e.id}
                                     px={2}
                                     py={1}
-                                    borderRadius="md"
+                                    borderRadius="control"
                                     bg="bg.subtle"
                                     fontSize="sm"
                                 >

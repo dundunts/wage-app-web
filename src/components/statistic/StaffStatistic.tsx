@@ -8,13 +8,13 @@ import {
     prepareChartData,
 } from "@/utils/payrollCalculations";
 import type {DayEmployeeStat} from "@/utils/payrollCalculations";
-import {Accordion, Box, Heading, SimpleGrid, Text,} from "@chakra-ui/react";
-import {useId, useMemo} from "react";
+import {Accordion, Box, SimpleGrid, Text,} from "@chakra-ui/react";
+import {useMemo} from "react";
 import {Bar, BarChart, ResponsiveContainer, Tooltip} from "recharts";
 import {chartPalette, getChartSeriesStyle} from "@/theme/chart";
 import {
     StatisticChartAxes,
-    StatisticChartLegend,
+    StatisticChartFrame,
     StatisticChartTooltip,
 } from "@/components/statistic/PayrollCharts";
 import {StatisticSummaryCard} from "@/components/statistic/StatisticSummaryCard";
@@ -112,8 +112,6 @@ export const PayrollEmployeeChart = ({
     employeeIds,
     labelsByDataKey,
 }: PayrollEmployeeChartProps) => {
-    const titleId = useId();
-    const descriptionId = useId();
     const legendItems = employeeIds.map((id, index) => {
         const seriesStyle = getChartSeriesStyle(index);
 
@@ -126,38 +124,19 @@ export const PayrollEmployeeChart = ({
     });
 
     return (
-        <Box
-            as="figure"
-            aria-labelledby={titleId}
-            aria-describedby={descriptionId}
-            mt={6}
-            minW={0}
-            w="100%"
-            overflow="hidden"
-            borderWidth="1px"
-            borderColor="border"
-            borderRadius="panel"
-            bg="bg.panel"
-            p={{base: 3, md: 5}}
-            fontFamily="body"
-            fontVariantNumeric="tabular-nums"
+        <StatisticChartFrame
+            title="Выплаты сотрудникам по дням"
+            description="Столбчатая диаграмма выплат сотрудникам по датам. Серии перечислены в легенде."
+            legendItems={legendItems}
+            height={{base: "19rem", md: "24rem"}}
         >
-            <Heading id={titleId} size="sm">
-                Выплаты сотрудникам по дням
-            </Heading>
-            <Text id={descriptionId} color="fg.muted" fontSize="xs" mt={1} mb={3}>
-                Столбчатая диаграмма выплат сотрудникам по датам. Серии перечислены в легенде.
-            </Text>
-            <StatisticChartLegend items={legendItems} />
-
-            <Box h={{base: "19rem", md: "24rem"}} minW={0} mt={2}>
-                <ResponsiveContainer
-                    width="100%"
-                    height="100%"
-                    minWidth={0}
-                    minHeight={304}
-                    initialDimension={{width: 640, height: 384}}
-                >
+            <ResponsiveContainer
+                width="100%"
+                height="100%"
+                minWidth={0}
+                minHeight={304}
+                initialDimension={{width: 640, height: 384}}
+            >
                     <BarChart data={data} accessibilityLayer margin={{top: 12, right: 8, left: 4, bottom: 0}}>
                         <StatisticChartAxes />
                         <Tooltip<number, string>
@@ -186,8 +165,7 @@ export const PayrollEmployeeChart = ({
                             );
                         })}
                     </BarChart>
-                </ResponsiveContainer>
-            </Box>
-        </Box>
+            </ResponsiveContainer>
+        </StatisticChartFrame>
     );
 };

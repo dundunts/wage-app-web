@@ -1,4 +1,5 @@
-import {Box, Flex, Grid, Text} from "@chakra-ui/react";
+import {Badge, Box, Flex, Grid, Stack, Text} from "@chakra-ui/react";
+import {TriangleAlert} from "lucide-react";
 import {ShiftResultPayment} from "@/types/shiftResult.types";
 
 const moneyFormatter = new Intl.NumberFormat("ru-RU", {
@@ -13,7 +14,12 @@ const hoursFormatter = new Intl.NumberFormat("ru-RU", {
     maximumFractionDigits: 1,
 });
 
-export function PaymentCard({payment}: {payment: ShiftResultPayment}) {
+interface PaymentCardProps {
+    payment: ShiftResultPayment;
+    requiresAttention?: boolean;
+}
+
+export function PaymentCard({payment, requiresAttention = false}: PaymentCardProps) {
     const employeeName = `${payment.employee.lastName} ${payment.employee.firstName}`;
 
     return (
@@ -23,7 +29,7 @@ export function PaymentCard({payment}: {payment: ShiftResultPayment}) {
             p={{base: 4, md: 5}}
             bg="bg.raised"
             borderWidth="1px"
-            borderColor="border"
+            borderColor={requiresAttention ? "status.warning" : "border"}
             borderRadius="panel"
         >
             <Flex
@@ -33,7 +39,19 @@ export function PaymentCard({payment}: {payment: ShiftResultPayment}) {
                 gap={2}
                 mb={4}
             >
-                <Text fontWeight="bold" fontSize="lg">{employeeName}</Text>
+                <Stack gap={1} align="flex-start">
+                    <Text fontWeight="bold" fontSize="lg">{employeeName}</Text>
+                    {requiresAttention && (
+                        <Badge
+                            variant="outline"
+                            colorPalette="warning"
+                            aria-label="Требует внимания: ручная корректировка"
+                        >
+                            <TriangleAlert size={12} aria-hidden="true" />
+                            Ручная корректировка
+                        </Badge>
+                    )}
+                </Stack>
                 <Text fontWeight="bold" fontVariantNumeric="tabular-nums">
                     Итого: {moneyFormatter.format(payment.percentFromRevenue + payment.tips)}
                 </Text>

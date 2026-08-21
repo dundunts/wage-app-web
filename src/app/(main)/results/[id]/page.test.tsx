@@ -161,6 +161,7 @@ describe("Shift Result and Payment presentation", () => {
 
         expect(await screen.findByText("Ручной расчёт")).toBeVisible();
         const payment = screen.getByRole("article", {name: "Выплата: Иванов Иван"});
+        expect(within(payment).getByLabelText("Требует внимания: ручная корректировка")).toBeVisible();
         expect(within(payment).getByText(/1\s?234,50\s₽/)).toBeVisible();
         expect(within(payment).getByText(/300,25\s₽/)).toBeVisible();
         expect(within(payment).getByText(/1\s?534,75\s₽/)).toBeVisible();

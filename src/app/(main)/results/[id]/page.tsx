@@ -130,7 +130,11 @@ export default function ResultDetailsPage({ params }: { params: Promise<{ id: st
                             <Heading size="md" mb={4}>Детализация выплат</Heading>
                             <Stack gap={4}>
                                 {data.payments.map((payment) => (
-                                    <PaymentCard key={payment.id} payment={payment} />
+                                    <PaymentCard
+                                        key={payment.id}
+                                        payment={payment}
+                                        requiresAttention={data.calculationSource === CalculationSource.MANUAL_OVERRIDE}
+                                    />
                                 ))}
                             </Stack>
                         </Box>

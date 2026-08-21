@@ -153,9 +153,6 @@ export function CheckpointDialog(
                     onSubmit={handleSubmit}
                     maxW="500px"
                     maxH="calc(100dvh - 2rem)"
-                    bg="bg.raised"
-                    borderWidth="1px"
-                    borderColor="border.emphasized"
                 >
                     <Dialog.Header>
                         <Dialog.Title>

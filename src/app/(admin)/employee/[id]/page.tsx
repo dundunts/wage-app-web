@@ -24,7 +24,6 @@ import {
     ArrowLeft,
     Building2,
     ChevronRight,
-    Info,
     Pencil,
     Trash2,
     TriangleAlert,
@@ -104,20 +103,6 @@ export default function EmployeeDetailPage({ params }: Props) {
     const assignedCompanies = companies.filter((c) =>
         employee.companyIds.includes(c.id)
     );
-    const accountStatus = employee.userId
-        ? {
-            color: "status.info",
-            icon: <Info size={18} aria-hidden="true"/>,
-            title: "Аккаунт связан",
-            description: "Для сотрудника указан User ID. Должность не определяет системные права.",
-        }
-        : {
-            color: "status.warning",
-            icon: <TriangleAlert size={18} aria-hidden="true"/>,
-            title: "Аккаунт не связан",
-            description: "User ID не указан. Сотрудник может учитываться без учётной записи.",
-        };
-
     return (
         <Box p={{base: 4, md: 6}} maxW="1000px" mx="auto">
             {/* Breadcrumbs */}
@@ -160,7 +145,7 @@ export default function EmployeeDetailPage({ params }: Props) {
                         <Text color="fg.quiet" fontSize="xs" fontWeight="bold" letterSpacing="0.08em">
                             КАРТОЧКА РАБОТНИКА
                         </Text>
-                        <Heading size="lg">
+                        <Heading as="h1" size="lg">
                             {employee.lastName} {employee.firstName}{" "}
                             {employee.patronymic}
                         </Heading>
@@ -195,7 +180,7 @@ export default function EmployeeDetailPage({ params }: Props) {
                 </Flex>
             </Flex>
 
-            <Grid templateColumns={{ base: "1fr", md: "2fr 1fr" }} gap={6}>
+            <Grid templateColumns="1fr" gap={6}>
                 <Card.Root>
                     <Card.Header pb={0}>
                         <Heading size="sm" display="flex" alignItems="center" gap={2}>
@@ -265,22 +250,6 @@ export default function EmployeeDetailPage({ params }: Props) {
                     </Card.Body>
                 </Card.Root>
 
-                <Card.Root bg="bg.raised" alignSelf="start">
-                    <Card.Body>
-                        <HStack
-                            color={accountStatus.color}
-                            align="flex-start"
-                            gap={3}
-                            mb={3}
-                        >
-                            {accountStatus.icon}
-                            <Text fontWeight="bold">{accountStatus.title}</Text>
-                        </HStack>
-                        <Text fontSize="sm" color="fg.muted">
-                            {accountStatus.description}
-                        </Text>
-                    </Card.Body>
-                </Card.Root>
             </Grid>
 
             {/* Dialogs */}

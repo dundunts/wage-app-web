@@ -64,12 +64,9 @@ export function ConfirmationDialog({
             }}
         >
             <Portal>
-                <Dialog.Backdrop backdropFilter="blur(3px)" />
+                <Dialog.Backdrop />
                 <Dialog.Positioner p={{base: 4, md: 6}}>
-                    <Dialog.Content
-                        layerStyle="panel"
-                        borderColor="border.emphasized"
-                    >
+                    <Dialog.Content>
                         <Dialog.Header>
                             <Dialog.Title color={severityPresentation[severity].color}>
                                 {title}

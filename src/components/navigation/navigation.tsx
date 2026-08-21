@@ -26,7 +26,7 @@ export const navItems: NavItem[] = [
         label: "Админ. панель",
         children: [
             {
-                label: "Предприятия",
+                label: "Компании",
                 href: "/company"
             },
             {

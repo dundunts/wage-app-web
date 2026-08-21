@@ -1,7 +1,7 @@
 "use client";
 
 import {Box, Heading, HStack, Text} from "@chakra-ui/react";
-import {useId} from "react";
+import {useId, type ReactNode} from "react";
 import {
     Bar,
     BarChart,
@@ -57,6 +57,52 @@ export function StatisticChartLegend({items}: {items: ChartLegendItem[]}) {
                 </HStack>
             ))}
         </HStack>
+    );
+}
+
+interface StatisticChartFrameProps {
+    children: ReactNode;
+    description: string;
+    height: {base: string; md: string};
+    legendItems: ChartLegendItem[];
+    title: string;
+}
+
+export function StatisticChartFrame({
+    children,
+    description,
+    height,
+    legendItems,
+    title,
+}: StatisticChartFrameProps) {
+    const titleId = useId();
+    const descriptionId = useId();
+
+    return (
+        <Box
+            as="figure"
+            aria-labelledby={titleId}
+            aria-describedby={descriptionId}
+            mt={6}
+            minW={0}
+            w="100%"
+            overflow="hidden"
+            layerStyle="panel"
+            p={{base: 3, md: 5}}
+            fontFamily="body"
+            fontVariantNumeric="tabular-nums"
+        >
+            <Heading id={titleId} size="sm">
+                {title}
+            </Heading>
+            <Text id={descriptionId} color="fg.muted" fontSize="xs" mt={1} mb={3}>
+                {description}
+            </Text>
+            <StatisticChartLegend items={legendItems} />
+            <Box h={height} minW={0} mt={2}>
+                {children}
+            </Box>
+        </Box>
     );
 }
 
@@ -132,45 +178,24 @@ export function StatisticChartAxes() {
 }
 
 export function PayrollChart({days, type, title}: Props) {
-    const titleId = useId();
-    const descriptionId = useId();
     const description = type === "line"
         ? "Линейный график суммы выплат по датам. Основная серия: сумма выплат."
         : "Столбчатая диаграмма суммы выплат по датам. Основная серия: сумма выплат.";
 
     return (
-        <Box
-            as="figure"
-            aria-labelledby={titleId}
-            aria-describedby={descriptionId}
-            mt={6}
-            minW={0}
-            w="100%"
-            overflow="hidden"
-            borderWidth="1px"
-            borderColor="border"
-            borderRadius="panel"
-            bg="bg.panel"
-            p={{base: 3, md: 5}}
-            fontFamily="body"
-            fontVariantNumeric="tabular-nums"
+        <StatisticChartFrame
+            title={title}
+            description={description}
+            legendItems={[{id: "total", label: "Сумма выплат", color: chartPalette.primary}]}
+            height={{base: "17rem", md: "20rem"}}
         >
-            <Heading id={titleId} size="sm">
-                {title}
-            </Heading>
-            <Text id={descriptionId} color="fg.muted" fontSize="xs" mt={1} mb={3}>
-                {description}
-            </Text>
-            <StatisticChartLegend items={[{id: "total", label: "Сумма выплат", color: chartPalette.primary}]} />
-
-            <Box h={{base: "17rem", md: "20rem"}} minW={0} mt={2}>
-                <ResponsiveContainer
-                    width="100%"
-                    height="100%"
-                    minWidth={0}
-                    minHeight={272}
-                    initialDimension={{width: 640, height: 320}}
-                >
+            <ResponsiveContainer
+                width="100%"
+                height="100%"
+                minWidth={0}
+                minHeight={272}
+                initialDimension={{width: 640, height: 320}}
+            >
                     {type === "line" ? (
                         <LineChart data={days} accessibilityLayer margin={{top: 12, right: 8, left: 4, bottom: 0}}>
                             <StatisticChartAxes />
@@ -206,8 +231,7 @@ export function PayrollChart({days, type, title}: Props) {
                             />
                         </BarChart>
                     )}
-                </ResponsiveContainer>
-            </Box>
-        </Box>
+            </ResponsiveContainer>
+        </StatisticChartFrame>
     );
 }

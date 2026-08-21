@@ -100,9 +100,11 @@ semantic status border/indicator. Поэтому статус не переда�
 Loading presentation использует accent spinner; окружающий экран должен
 добавлять `role="status"` и понятный label/text, когда загрузка блокирует контент.
 
-Выбирайте стандартный recipe variant (`solid`, `outline`, `subtle`) и semantic
-`colorPalette` (`brand`, `success`, `info`, `warning`, `danger`). Локальный стиль
-допустим для layout, но не должен дублировать цвет, shadow или radius темы.
+Для продуктовых действий доступны именованные recipe variants: `primary`,
+`secondary`, `destructive`. Стандартные variants (`solid`, `outline`, `subtle`)
+с semantic `colorPalette` (`brand`, `success`, `info`, `warning`, `danger`)
+остаются для системных комбинаций. Локальный стиль допустим для layout, но не
+должен дублировать цвет, shadow или radius темы.
 
 ## Charts
 

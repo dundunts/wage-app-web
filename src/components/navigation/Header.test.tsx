@@ -135,7 +135,7 @@ describe("Navigation", () => {
         expect(admin).not.toHaveAttribute("aria-current");
 
         await user.click(admin);
-        expect(await screen.findByRole("button", {name: "Предприятия"})).toHaveAttribute(
+        expect(await screen.findByRole("button", {name: "Компании"})).toHaveAttribute(
             "aria-current",
             "page",
         );

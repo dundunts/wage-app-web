@@ -105,6 +105,44 @@ const buttonRecipe = defineRecipe({
             transform: "none",
         },
     },
+    variants: {
+        ...chakraButtonRecipe.variants,
+        variant: {
+            ...chakraButtonRecipe.variants?.variant,
+            primary: {
+                bg: "action.solid",
+                color: "action.contrast",
+                borderColor: "transparent",
+                _hover: {
+                    bg: "action.hover",
+                    transform: "translateY(-1px)",
+                },
+                _active: {
+                    bg: "action.hover",
+                    borderColor: "accent.border",
+                    boxShadow: "accent",
+                },
+                _motionReduce: reducedMotion,
+            },
+            secondary: {
+                bg: "bg.subtle",
+                color: "fg",
+                borderWidth: "1px",
+                borderColor: "border",
+                _hover: {
+                    bg: "accent.subtle",
+                    borderColor: "accent.border",
+                },
+            },
+            destructive: {
+                bg: "danger.solid",
+                color: "danger.contrast",
+                borderColor: "transparent",
+                _hover: {opacity: 0.9},
+                _active: {opacity: 0.82},
+            },
+        },
+    },
     compoundVariants: [
         ...(chakraButtonRecipe.compoundVariants ?? []),
         {

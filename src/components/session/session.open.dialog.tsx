@@ -80,9 +80,6 @@ export function SessionOpenDialog({ company }: Props) {
                     <Dialog.Positioner p={{base: 3, sm: 4}}>
                     <Dialog.Content
                         maxW="400px"
-                        bg="bg.raised"
-                        borderWidth="1px"
-                        borderColor="border.emphasized"
                     >
                         <Dialog.Header>
                             <Dialog.Title>Открытие сессии</Dialog.Title>

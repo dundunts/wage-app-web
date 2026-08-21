@@ -124,16 +124,11 @@ export const EmployeeModal = ({
             onOpenChange={(e) => !e.open && !isSubmitting && onClose()}
         >
             <Portal>
-                <Dialog.Backdrop backdropFilter="blur(3px)"/>
+                <Dialog.Backdrop/>
                 <Dialog.Positioner p={{base: 3, md: 6}}>
                     <Dialog.Content
                         as="form"
                         onSubmit={handleSubmit(onSubmit)}
-                        bg="bg.panel"
-                        borderWidth="1px"
-                        borderColor="border.emphasized"
-                        borderRadius="panel"
-                        boxShadow="panel"
                         maxW="3xl"
                     >
                         <Dialog.Header>
@@ -218,7 +213,7 @@ export const EmployeeModal = ({
                                                 </Select.IndicatorGroup>
                                             </Select.Control>
                                             <Select.Positioner>
-                                                <Select.Content bg="bg.raised" borderColor="border.emphasized">
+                                                <Select.Content>
                                                     {positionsCollection.items.map((position) => (
                                                         <Select.Item item={position} key={position}>
                                                             {position}

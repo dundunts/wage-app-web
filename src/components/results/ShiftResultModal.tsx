@@ -190,7 +190,7 @@ export function ShiftResultModal({
         >
             <Dialog.Backdrop />
             <Dialog.Positioner>
-                <Dialog.Content bg="bg.panel" borderWidth="1px" borderColor="border" borderRadius="panel">
+                <Dialog.Content>
                     <form noValidate onSubmit={handleSubmit(onSubmit)}>
                         <Dialog.Header>
                             <Dialog.Title>

@@ -62,9 +62,6 @@ export function SessionUpdateTimeDialog({
                 <Dialog.Positioner p={{base: 3, sm: 4}}>
             <Dialog.Content
                 maxW="440px"
-                bg="bg.raised"
-                borderWidth="1px"
-                borderColor="border.emphasized"
             >
                 <Dialog.Header>
                     <Dialog.Title>Изменить начало смены</Dialog.Title>

@@ -73,11 +73,12 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("Employee detail deletion", () => {
-    it("describes an unlinked account without treating Position as a permission", async () => {
+    it("shows stored employee identifiers without inventing account semantics", async () => {
         await renderPage();
 
-        expect(await screen.findByText("Аккаунт не связан")).toBeVisible();
-        expect(screen.getByText("User ID не указан. Сотрудник может учитываться без учётной записи.")).toBeVisible();
+        expect(await screen.findByRole("heading", {name: "Иванов Иван Иванович"})).toBeVisible();
+        expect(screen.getByText("USER ID")).toBeVisible();
+        expect(screen.queryByText(/Аккаунт (связан|не связан)/)).not.toBeInTheDocument();
         expect(screen.queryByText(/в соответствии с ролью/i)).not.toBeInTheDocument();
     });
 

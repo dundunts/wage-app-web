@@ -183,11 +183,7 @@ export const CompanyList = ({ data, isLoadingData, onRefresh }: CompanyListProps
                                             </Menu.Trigger>
                                             <Portal>
                                                 <Menu.Positioner>
-                                                    <Menu.Content
-                                                        layerStyle="panel"
-                                                        bg="bg.raised"
-                                                        borderRadius="control"
-                                                    >
+                                                    <Menu.Content>
                                                         <Menu.Item value="details" asChild>
                                                             <Link href={`/company/${company.id}`}>
                                                                 <Eye style={{ marginRight: "8px", width: "16px" }} />
