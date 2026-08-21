@@ -22,6 +22,13 @@ export const feedbackMessages = {
         information: "Удаление черновика результата смены",
         loading: "Черновик результата смены удаляется",
     },
+    shiftResultDelete: {
+        success: "Результат смены удалён",
+        error: "Результат смены не удалён",
+        warning: "Удаление результата смены требует внимания",
+        information: "Удаление результата смены",
+        loading: "Результат смены удаляется",
+    },
 } as const;
 
 export type FeedbackActionKey = keyof typeof feedbackMessages;

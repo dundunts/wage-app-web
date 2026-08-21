@@ -1,6 +1,7 @@
 // @/app/results/_components/ResultsTable.tsx
 "use client";
 
+import {useRef} from "react";
 import {
     Table,
     Box,
@@ -19,11 +20,12 @@ interface ResultsTableProps {
     data: ShiftResultDetailed[];
     isLoading: boolean;
     onEdit: (data: ShiftResultDetailed) => void;
-    onDelete: (id: string) => void;
+    onDelete: (id: string, trigger: HTMLButtonElement | null) => void;
 }
 
 export function ResultsTable({ data, isLoading, onEdit, onDelete }: ResultsTableProps) {
     const router = useRouter();
+    const actionTriggers = useRef(new Map<string, HTMLButtonElement>());
 
     if (isLoading) {
         return <Flex justify="center" p={10}><Spinner size="xl" /></Flex>;
@@ -75,7 +77,18 @@ export function ResultsTable({ data, isLoading, onEdit, onDelete }: ResultsTable
                             <Table.Cell textAlign="end">
                                 <Menu.Root>
                                     <Menu.Trigger asChild>
-                                        <IconButton variant="subtle" size="sm" aria-label="Опции">
+                                        <IconButton
+                                            ref={(element) => {
+                                                if (element) {
+                                                    actionTriggers.current.set(result.id, element);
+                                                } else {
+                                                    actionTriggers.current.delete(result.id);
+                                                }
+                                            }}
+                                            variant="subtle"
+                                            size="sm"
+                                            aria-label="Опции"
+                                        >
                                             <HiDotsVertical />
                                         </IconButton>
                                     </Menu.Trigger>
@@ -87,7 +100,14 @@ export function ResultsTable({ data, isLoading, onEdit, onDelete }: ResultsTable
                                             <Menu.Item value="edit" onClick={() => onEdit(result)}>
                                                 Изменить
                                             </Menu.Item>
-                                            <Menu.Item value="delete" color="fg.error" onClick={() => onDelete(result.id)}>
+                                            <Menu.Item
+                                                value="delete"
+                                                color="fg.error"
+                                                onClick={() => onDelete(
+                                                    result.id,
+                                                    actionTriggers.current.get(result.id) ?? null,
+                                                )}
+                                            >
                                                 Удалить
                                             </Menu.Item>
                                         </Menu.Content>

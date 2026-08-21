@@ -49,12 +49,7 @@ export class ShiftResultService {
     }
 
     async delete(resultId: string): Promise<void> {
-        try {
-            await this.apiClient.delete(resultId)
-        } catch (e) {
-            console.error("ShiftResult service", e)
-            return Promise.reject(e)
-        }
+        await this.apiClient.delete(resultId)
     }
 }
 
