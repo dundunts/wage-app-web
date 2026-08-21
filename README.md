@@ -86,6 +86,16 @@ Frontend-приложение для системы **расчёта зараб�
 - [Краткий обзор проекта](docs/project-overview.md)
 - [Доменный словарь](CONTEXT.md)
 
+### Запуск в VS Code
+
+1. Установите зависимости командой `npm install`.
+2. Откройте **Run and Debug** и нажмите `F5`.
+3. Выберите один из профилей:
+   - `Web: production backend (default)` — подключается к production API и Keycloak. Все изменения данных в этом профиле реальные.
+   - `Web: local backend` — использует backend на `localhost:8085` и Keycloak на `localhost:8080`.
+
+Первым в списке и исходным профилем идёт production. VS Code может запомнить последний выбранный профиль. При запуске VS Code поднимет Next.js с отладчиком и откроет `http://localhost:3000` в Chrome.
+
 ---
 
 ## 👨‍💻 Автор
