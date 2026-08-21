@@ -1,18 +1,21 @@
 "use client";
 
 import {
-    Box,
     Button,
-    Dialog, HStack,
+    Dialog,
+    Field,
+    HStack,
     Input,
-    Text,
-    useDisclosure, VStack,
+    useDisclosure,
+    VStack,
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {Company} from "@/types/company.types";
 import {sessionService} from "@/service/session/session.service";
 import {toLocalDateTimeInputValue} from "@/utils/date.utils";
+import {feedback} from "@/feedback/feedback";
+import {feedbackMessages} from "@/feedback/messages";
 
 interface Props {
     company: Company;
@@ -29,15 +32,27 @@ export function SessionOpenDialog({ company }: Props) {
     }
 
     const [dateTime, setDateTime] = useState(getInitDate(company.defaultShiftStartTime));
+    const [isPending, setIsPending] = useState(false);
     const router = useRouter();
 
     const submit = async () => {
-        sessionService.open({
-            companyId: company.id,
-            startWorkAt: dateTime,
-        }).then(session => router.push(
-            `/calculator/checkpoints?sessionId=${session.id}`
-        ))
+        if (isPending) return;
+
+        const action = feedback.beginAction("shiftSessionOpen");
+        setIsPending(true);
+        try {
+            const session = await sessionService.open({
+                companyId: company.id,
+                startWorkAt: dateTime,
+            });
+            action.success();
+            onClose();
+            router.push(`/calculator/checkpoints?sessionId=${session.id}`);
+        } catch (error) {
+            action.error(error);
+        } finally {
+            setIsPending(false);
+        }
     };
 
     return (
@@ -51,8 +66,10 @@ export function SessionOpenDialog({ company }: Props) {
 
             <Dialog.Root
                 open={open}
+                closeOnEscape={!isPending}
+                closeOnInteractOutside={!isPending}
                 onOpenChange={(details) => {
-                    if (!details.open) {
+                    if (!details.open && !isPending) {
                         onClose();
                     }
                 }}
@@ -66,16 +83,14 @@ export function SessionOpenDialog({ company }: Props) {
 
                         <Dialog.Body>
                             <VStack align="stretch" gap={4}>
-                                <Box>
-                                    <Text fontSize="sm" mb={2} color="fg.muted">
-                                        Дата и время начала
-                                    </Text>
+                                <Field.Root>
+                                    <Field.Label>Дата и время начала</Field.Label>
                                     <Input
                                         type="datetime-local"
                                         value={toLocalDateTimeInputValue(dateTime)}
                                         onChange={(e) => setDateTime(new Date(e.target.value))}
                                     />
-                                </Box>
+                                </Field.Root>
                             </VStack>
                         </Dialog.Body>
 
@@ -83,13 +98,17 @@ export function SessionOpenDialog({ company }: Props) {
                             <HStack justify="flex-end" gap={2}>
                                 <Button
                                     variant="subtle"
-                                    onClick={onOpen}
+                                    onClick={onClose}
+                                    disabled={isPending}
                                 >
                                     Отмена
                                 </Button>
                                 <Button
                                     colorPalette="blue"
                                     onClick={submit}
+                                    loading={isPending}
+                                    loadingText={feedbackMessages.shiftSessionOpen.loading}
+                                    disabled={isPending}
                                 >
                                     Открыть
                                 </Button>

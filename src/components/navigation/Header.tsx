@@ -21,10 +21,8 @@ import {NavItem, navItems} from "@/components/navigation/navigation";
 import {useRouter} from "next/navigation";
 import {authService} from "@/service/auth.service";
 import useUserStore from "@/store/userStore";
-
-function handleLogout() {
-    authService.logout()
-}
+import {feedback} from "@/feedback/feedback";
+import {feedbackMessages} from "@/feedback/messages";
 
 function filterNavItems(items: NavItem[], permissions: string[]): NavItem[] {
     return items.filter(item => {
@@ -35,6 +33,25 @@ function filterNavItems(items: NavItem[], permissions: string[]): NavItem[] {
 }
 
 export function Header() {
+    const router = useRouter();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    const handleLogout = async () => {
+        if (isLoggingOut) return;
+
+        setIsLoggingOut(true);
+        const logoutFeedback = feedback.beginAction("logout");
+        try {
+            await authService.logout();
+            logoutFeedback.success();
+        } catch (error) {
+            logoutFeedback.error(error);
+        } finally {
+            setIsLoggingOut(false);
+            router.replace("/auth");
+        }
+    };
+
     return (
         <Box
             as="header"
@@ -61,18 +78,36 @@ export function Header() {
                 <DesktopNavigation/>
 
                 <HStack>
-                    <Button
-                        variant="subtle"
-                        display={{base: "none", md: "inline-flex"}}
-                        onClick={handleLogout}
-                    >
-                        <LogOut size={18}/> Выйти
-                    </Button>
+                    <LogoutButton onLogout={handleLogout} isLoggingOut={isLoggingOut}/>
 
-                    <MobileNavigation/>
+                    <MobileNavigation onLogout={handleLogout} isLoggingOut={isLoggingOut}/>
                 </HStack>
             </Flex>
         </Box>
+    );
+}
+
+function LogoutButton({
+                          onLogout,
+                          isLoggingOut,
+                          mobile = false,
+                      }: {
+    onLogout: () => Promise<void>;
+    isLoggingOut: boolean;
+    mobile?: boolean;
+}) {
+    return (
+        <Button
+            variant="subtle"
+            display={mobile ? undefined : {base: "none", md: "inline-flex"}}
+            w={mobile ? "full" : undefined}
+            onClick={onLogout}
+            loading={isLoggingOut}
+            loadingText={feedbackMessages.logout.loading}
+            disabled={isLoggingOut}
+        >
+            <LogOut size={18}/> Выйти
+        </Button>
     );
 }
 
@@ -149,7 +184,13 @@ function DesktopNavigation() {
     );
 }
 
-function MobileNavigation() {
+function MobileNavigation({
+                              onLogout,
+                              isLoggingOut,
+                          }: {
+    onLogout: () => Promise<void>;
+    isLoggingOut: boolean;
+}) {
     const {open, onOpen, onClose} = useDisclosure();
     const [level1, setLevel1] = useState<number | null>(null);
     const [level2, setLevel2] = useState<number | null>(null);
@@ -258,13 +299,11 @@ function MobileNavigation() {
                                     )}
 
                                 <Box pt={4} borderTopWidth="1px" borderColor="border.subtle">
-                                    <Button
-                                        variant="subtle"
-                                        w="full"
-                                        onClick={handleLogout}
-                                    >
-                                        <LogOut size={18}/> Выйти
-                                    </Button>
+                                    <LogoutButton
+                                        onLogout={onLogout}
+                                        isLoggingOut={isLoggingOut}
+                                        mobile
+                                    />
                                 </Box>
                             </VStack>
                         </Drawer.Body>

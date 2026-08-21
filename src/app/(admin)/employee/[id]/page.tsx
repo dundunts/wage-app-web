@@ -1,7 +1,7 @@
 // @/app/(admin)/employee/[id]/page.tsx
 "use client";
 
-import {use, useEffect, useState} from "react";
+import {use, useCallback, useEffect, useRef, useState} from "react";
 import {useRouter} from "next/navigation";
 import {
     Badge,
@@ -22,9 +22,10 @@ import {ArrowLeft, Building2, ChevronRight, Pencil, Trash2, User,} from "lucide-
 import {employeeService} from "@/service/employee/employee.service";
 import {useAllCompanies} from "@/hooks/useAllCompanies";
 import {Employee, EmployeePosition} from "@/types/employee.types";
-import {DeleteConfirmModal} from "@/components/dialog/delete-confirm-modal";
-import {toaster} from "@/components/ui/toaster";
+import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
 import {EmployeeModal} from "@/components/dialog/employee-modal";
+import {feedback} from "@/feedback/feedback";
+import {feedbackMessages} from "@/feedback/messages";
 
 interface Props {
     params: Promise<{ id: string }>;
@@ -42,44 +43,37 @@ export default function EmployeeDetailPage({ params }: Props) {
     const [isEditOpen, setEditOpen] = useState(false);
     const [isDeleteOpen, setDeleteOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const deleteTriggerRef = useRef<HTMLButtonElement>(null);
 
-    const fetchEmployeeData = async () => {
+    const fetchEmployeeData = useCallback(async () => {
         try {
             setIsLoading(true);
             const data = await employeeService.getById(id);
             setEmployee(data);
         } catch (error) {
-            console.error(error);
-            toaster.create({
-                title: "Ошибка",
-                description: "Не удалось загрузить данные сотрудника",
-                type: "error",
-            });
+            feedback.beginAction("employeeDetailLoad").error(error);
             router.push("/employee");
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [id, router]);
 
     useEffect(() => {
         fetchEmployeeData();
-    }, [id]);
+    }, [fetchEmployeeData]);
 
     const handleDelete = async () => {
+        if (isDeleting) return;
+
+        const actionFeedback = feedback.beginAction("employeeDelete");
         try {
             setIsDeleting(true);
             await employeeService.delete(id);
-            toaster.create({
-                title: "Сотрудник удалён",
-                type: "success",
-            });
+            actionFeedback.success();
+            setDeleteOpen(false);
             router.push("/employee");
-        } catch {
-            toaster.create({
-                title: "Ошибка",
-                description: "Не удалось удалить сотрудника",
-                type: "error",
-            });
+        } catch (error) {
+            actionFeedback.error(error);
         } finally {
             setIsDeleting(false);
         }
@@ -156,6 +150,7 @@ export default function EmployeeDetailPage({ params }: Props) {
                         <Pencil size={18} /> Изменить
                     </Button>
                     <Button
+                        ref={deleteTriggerRef}
                         variant="outline"
                         colorPalette="red"
                         onClick={() => setDeleteOpen(true)}
@@ -264,13 +259,22 @@ export default function EmployeeDetailPage({ params }: Props) {
                 onSuccess={fetchEmployeeData}
             />
 
-            <DeleteConfirmModal
-                isOpen={isDeleteOpen}
-                onClose={() => setDeleteOpen(false)}
+            <ConfirmationDialog
+                open={isDeleteOpen}
+                title="Удалить сотрудника?"
+                description={`Сотрудник «${employee.lastName} ${employee.firstName} ${employee.patronymic}» будет удалён без возможности восстановления.`}
+                confirmLabel="Удалить"
+                cancelLabel="Отмена"
+                pendingLabel={feedbackMessages.employeeDelete.loading}
+                severity="danger"
+                pending={isDeleting}
+                finalFocusEl={() => deleteTriggerRef.current}
+                onCancel={() => {
+                    if (!isDeleting) {
+                        setDeleteOpen(false);
+                    }
+                }}
                 onConfirm={handleDelete}
-                isLoading={isDeleting}
-                title="Удаление сотрудника"
-                description={`Вы действительно хотите удалить сотрудника ${employee.lastName}?`}
             />
         </Box>
     );

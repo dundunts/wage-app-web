@@ -1,8 +1,8 @@
 // @/app/results/page.tsx
 "use client";
 
-import {useEffect, useState, useTransition} from "react";
-import {Button, Container, Flex, Heading} from "@chakra-ui/react"; // Note: useDialog is conceptual, implementing basic confirm below
+import {useEffect, useState} from "react";
+import {Button, Container, Flex, Heading} from "@chakra-ui/react";
 import {companyService} from "@/service/company/company.service";
 import {shiftResultService} from "@/service/results/shiftResult.service";
 import {Company} from "@/types/company.types";
@@ -10,19 +10,28 @@ import {Page} from "@/types/common.types"; // (Assuming Page is exported from co
 import {useShiftResultFilters} from "../../../hooks/useShiftResultFilters";
 import {ResultsFilters} from "../../../components/results/ResultsFilters";
 import {ResultsTable} from "../../../components/results/ResultsTable";
-import {toaster} from "@/components/ui/toaster";
 import {ShiftResultDetailed} from "@/types/shiftResult.types";
 import {ShiftResultModal} from "@/components/results/ShiftResultModal";
 import {salaryService} from "@/service/salary/salary.service";
 import {PeriodType} from "@/types/salary.types"; // Предполагаю наличие тостера
+import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
+import {feedback} from "@/feedback/feedback";
+import {downloadFile} from "@/utils/download-file";
+import {feedbackMessages} from "@/feedback/messages";
 
 export default function ResultsPage() {
     const [companies, setCompanies] = useState<Company[]>([]);
     const [resultsPage, setResultsPage] = useState<Page<ShiftResultDetailed> | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [isPending, startTransition] = useTransition();
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
     const [targetForEdit, setTargetForEdit] = useState<ShiftResultDetailed | null>(null)
+    const [resultsRevision, setResultsRevision] = useState(0);
+    const [deleteTarget, setDeleteTarget] = useState<{
+        id: string;
+        trigger: HTMLButtonElement | null;
+    } | null>(null);
+    const [isDeletePending, setDeletePending] = useState(false);
+    const [isDownloadPending, setDownloadPending] = useState(false);
     const isEditDialogOpen = targetForEdit !== null
 
     // Инициализация хука фильтров (defaultCompanyId будет применен после загрузки компаний)
@@ -57,64 +66,72 @@ export default function ResultsPage() {
                 size: filters.size
             })
                 .then(setResultsPage)
-                .catch((e) => {
-                    toaster.create({ title: "Ошибка загрузки данных", type: "error" });
+                .catch((error) => {
+                    feedback.beginAction("shiftResultListLoad").error(error);
                 })
                 .finally(() => setIsLoading(false));
         }
 
         init()
-    }, [filters, companies]);
+    }, [filters, resultsRevision]);
 
     const handleSaveSuccess = () => {
-        // Перезагружаем данные
-        // Можно вызвать рефетч функции, которая загружает таблицу
-        // Для простоты:
-        window.location.reload();
+        setResultsRevision((revision) => revision + 1);
     };
 
     // Обработчик удаления
-    const handleDelete = async (id: string) => {
-        const confirmed = window.confirm("Вы уверены, что хотите удалить результат?"); // Для простоты пока нативный, позже заменим на Chakra Dialog
-        if (!confirmed) return;
-
-        startTransition(async () => {
-            try {
-                await shiftResultService.delete(id);
-                toaster.create({ title: "Удалено успешно", type: "success" });
-                // Перезагрузка данных (триггер эффекта)
-                // В идеале использовать React Query invalidate, но здесь просто перезапросим
-                window.location.reload();
-            } catch (e) {
-                toaster.create({ title: "Ошибка удаления", type: "error" });
-            }
-        });
+    const openDeleteDialog = (id: string, trigger: HTMLButtonElement | null) => {
+        setDeleteTarget({id, trigger});
     };
 
-    const handleDownload = async () => {
-        try {
-            const blob = await salaryService.downloadReportTable({
-                companyId: filters.companyId,
-                periodType: filters.periodType as PeriodType,
-                now: new Date().toISOString(),
-                start: filters.start || undefined,
-                end: filters.end || undefined,
-            });
-
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
-
-            link.href = url;
-            link.download = "salary-report.xlsx"; // имя файла
-
-            document.body.appendChild(link);
-            link.click();
-
-            link.remove();
-            window.URL.revokeObjectURL(url);
-        } catch (e) {
-            console.error(e);
+    const closeDeleteDialog = () => {
+        if (!isDeletePending) {
+            setDeleteTarget(null);
         }
+    };
+
+    const handleDelete = async () => {
+        if (!deleteTarget || isDeletePending) return;
+
+        const actionFeedback = feedback.beginAction("shiftResultDelete");
+        setDeletePending(true);
+        try {
+            await shiftResultService.delete(deleteTarget.id);
+            actionFeedback.success();
+            setDeleteTarget(null);
+            setResultsRevision((revision) => revision + 1);
+        } catch (error) {
+            actionFeedback.error(error);
+        } finally {
+            setDeletePending(false);
+        }
+    };
+
+    const handleDownload = () => {
+        if (isDownloadPending) return;
+
+        const actionFeedback = feedback.beginAction("payrollExport").loading();
+        const downloadParameters = {
+            companyId: filters.companyId,
+            periodType: filters.periodType as PeriodType,
+            now: new Date().toISOString(),
+            start: filters.start || undefined,
+            end: filters.end || undefined,
+        };
+        const performDownload = async () => {
+            setDownloadPending(true);
+            try {
+                const blob = await salaryService.downloadReportTable(downloadParameters);
+                downloadFile(blob, "salary-report.xlsx");
+                actionFeedback.success();
+            } catch (error) {
+                actionFeedback.retryableError(error, performDownload);
+            } finally {
+                setDownloadPending(false);
+            }
+        };
+
+        void performDownload();
     };
 
     return (
@@ -129,7 +146,9 @@ export default function ResultsPage() {
                     <Button
                         colorPalette="gray"
                         onClick={handleDownload}
-                        disabled={!filters.companyId}
+                        loading={isDownloadPending}
+                        loadingText={feedbackMessages.payrollExport.loading}
+                        disabled={!filters.companyId || isDownloadPending}
                     >
                         Скачать Excel
                     </Button>
@@ -144,9 +163,23 @@ export default function ResultsPage() {
 
             <ResultsTable
                 data={resultsPage?.content || []}
-                isLoading={isLoading || isPending}
+                isLoading={isLoading}
                 onEdit={data => setTargetForEdit(data)}
-                onDelete={handleDelete}
+                onDelete={openDeleteDialog}
+            />
+
+            <ConfirmationDialog
+                open={deleteTarget !== null}
+                title="Удалить результат смены?"
+                description="Результат смены будет удалён без возможности восстановления."
+                confirmLabel="Удалить"
+                cancelLabel="Отмена"
+                pendingLabel={feedbackMessages.shiftResultDelete.loading}
+                severity="danger"
+                pending={isDeletePending}
+                finalFocusEl={() => deleteTarget?.trigger ?? null}
+                onCancel={closeDeleteDialog}
+                onConfirm={handleDelete}
             />
 
             {/* Пагинация (упрощенная) */}

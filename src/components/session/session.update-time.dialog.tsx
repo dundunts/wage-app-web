@@ -3,6 +3,7 @@ import {Button, Dialog, Field, Input, Stack, Text} from "@chakra-ui/react";
 import {useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
+import {feedbackMessages} from "@/feedback/messages";
 
 // Схема валидации: строго формат HH:mm
 const updateTimeSchema = z.object({
@@ -15,7 +16,7 @@ interface SessionUpdateTimeDialogProps {
     open: boolean;
     onClose: () => void;
     currentStartTime: string; // HH:mm
-    onSave: (time: string) => void;
+    onSave: (time: string) => void | Promise<void>;
     isLoading?: boolean;
 }
 
@@ -46,11 +47,16 @@ export function SessionUpdateTimeDialog({
     }, [open, currentStartTime, reset]);
 
     const onSubmit = (data: UpdateTimeFormValues) => {
-        onSave(data.startWorkTime);
+        void onSave(data.startWorkTime);
     };
 
     return (
-        <Dialog.Root open={open} onOpenChange={(e) => !e.open && onClose()}>
+        <Dialog.Root
+            open={open}
+            closeOnEscape={!isLoading}
+            closeOnInteractOutside={!isLoading}
+            onOpenChange={(e) => !e.open && !isLoading && onClose()}
+        >
             <Dialog.Content>
                 <Dialog.Header>
                     <Dialog.Title>Изменить начало смены</Dialog.Title>
@@ -89,11 +95,13 @@ export function SessionUpdateTimeDialog({
                         type="submit"
                         form="update-time-form"
                         loading={isLoading}
+                        loadingText={feedbackMessages.shiftSessionUpdateTime.loading}
+                        disabled={isLoading}
                     >
                         Сохранить
                     </Button>
                 </Dialog.Footer>
-                <Dialog.CloseTrigger onClick={onClose} />
+                <Dialog.CloseTrigger onClick={onClose} disabled={isLoading} />
             </Dialog.Content>
         </Dialog.Root>
     );

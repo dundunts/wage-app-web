@@ -5,12 +5,13 @@ import {useCallback, useEffect, useMemo, useState} from "react";
 import {useRouter} from "next/navigation";
 import {Eye, MoreVertical, Plus, Trash2, UserX,} from "lucide-react";
 
-import {DeleteConfirmModal} from "@/components/dialog/delete-confirm-modal";
+import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
 import {useAllCompanies} from "@/hooks/useAllCompanies";
 import {employeeService,} from "@/service/employee/employee.service";
 import {CompanyEmployeeInfo} from "@/types/employee.types";
-import {toaster} from "@/components/ui/toaster";
 import {EmployeeModal} from "@/components/dialog/employee-modal";
+import {feedback} from "@/feedback/feedback";
+import {feedbackMessages} from "@/feedback/messages";
 import {
     Box,
     Button,
@@ -36,8 +37,7 @@ export default function EmployeeListPage() {
 
     // Dialog state
     const [isCreateOpen, setCreateOpen] = useState(false);
-    const [isDeleteOpen, setDeleteOpen] = useState(false);
-    const [employeeToDelete, setEmployeeToDelete] = useState<string | null>(null);
+    const [employeeToDelete, setEmployeeToDelete] = useState<CompanyEmployeeInfo | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
     // Default company
@@ -67,12 +67,7 @@ export default function EmployeeListPage() {
             );
             setEmployees(companyData?.data || []);
         } catch (e) {
-            console.error(e);
-            toaster.create({
-                title: "Ошибка",
-                description: "Не удалось загрузить список сотрудников",
-                type: "error",
-            });
+            feedback.beginAction("employeeListLoad").error(e);
         } finally {
             setIsEmployeesLoading(false);
         }
@@ -88,32 +83,20 @@ export default function EmployeeListPage() {
         return `${emp.lastName} ${f} ${p}`;
     };
 
-    const handleDeleteClick = (id: string) => {
-        setEmployeeToDelete(id);
-        setDeleteOpen(true);
-    };
-
     const confirmDelete = async () => {
-        if (!employeeToDelete) return;
+        if (!employeeToDelete || isDeleting) return;
 
+        const actionFeedback = feedback.beginAction("employeeDelete");
         try {
             setIsDeleting(true);
-            await employeeService.delete(employeeToDelete);
-            toaster.create({
-                title: "Сотрудник удалён",
-                type: "success",
-            });
+            await employeeService.delete(employeeToDelete.id);
+            actionFeedback.success();
             fetchEmployees();
-            setDeleteOpen(false);
-        } catch {
-            toaster.create({
-                title: "Ошибка",
-                description: "Не удалось удалить сотрудника",
-                type: "error",
-            });
+            setEmployeeToDelete(null);
+        } catch (error) {
+            actionFeedback.error(error);
         } finally {
             setIsDeleting(false);
-            setEmployeeToDelete(null);
         }
     };
 
@@ -222,7 +205,7 @@ export default function EmployeeListPage() {
                                     <Table.Cell>
                                         <Menu.Root>
                                             <Menu.Trigger asChild>
-                                                <Button variant="subtle" size="sm">
+                                                <Button variant="subtle" size="sm" aria-label="Опции">
                                                     <MoreVertical size={16}/>
                                                 </Button>
                                             </Menu.Trigger>
@@ -243,7 +226,7 @@ export default function EmployeeListPage() {
                                                     value="delete"
                                                     color="red.500"
                                                     onClick={() =>
-                                                        handleDeleteClick(employee.id)
+                                                        setEmployeeToDelete(employee)
                                                     }
                                                 >
                                                     <Trash2 size={16}/>
@@ -267,13 +250,23 @@ export default function EmployeeListPage() {
                 initialData={null}
             />
 
-            <DeleteConfirmModal
-                isOpen={isDeleteOpen}
-                onClose={() => setDeleteOpen(false)}
+            <ConfirmationDialog
+                open={employeeToDelete !== null}
+                title="Удалить сотрудника?"
+                description={`Сотрудник «${employeeToDelete
+                    ? `${employeeToDelete.lastName} ${employeeToDelete.firstName} ${employeeToDelete.patronymic}`
+                    : ""}» будет удалён без возможности восстановления.`}
+                confirmLabel="Удалить"
+                cancelLabel="Отмена"
+                pendingLabel={feedbackMessages.employeeDelete.loading}
+                severity="danger"
+                pending={isDeleting}
+                onCancel={() => {
+                    if (!isDeleting) {
+                        setEmployeeToDelete(null);
+                    }
+                }}
                 onConfirm={confirmDelete}
-                isLoading={isDeleting}
-                title="Удаление работника"
-                description="Вы уверены? Это действие нельзя отменить."
             />
         </Box>
     );

@@ -1,7 +1,7 @@
 // @/app/results/[id]/page.tsx
 "use client";
 
-import {use, useEffect, useState} from "react";
+import {use, useEffect, useRef, useState} from "react";
 import {useRouter} from "next/navigation";
 import {
     Badge,
@@ -21,7 +21,9 @@ import {shiftResultService} from "@/service/results/shiftResult.service";
 import {ShiftResultDetailed} from "@/types/shiftResult.types";
 import {companyService} from "@/service/company/company.service";
 import {Company} from "@/types/company.types";
-import {toaster} from "@/components/ui/toaster";
+import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
+import {feedback} from "@/feedback/feedback";
+import {feedbackMessages} from "@/feedback/messages";
 
 // В Next.js 16 params - это Promise
 export default function ResultDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -32,6 +34,9 @@ export default function ResultDetailsPage({ params }: { params: Promise<{ id: st
     const [data, setData] = useState<ShiftResultDetailed | null>(null);
     const [companies, setCompanies] = useState<Company[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [isDeletePending, setDeletePending] = useState(false);
+    const deleteTriggerRef = useRef<HTMLButtonElement>(null);
 
     // Состояния модалок
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -47,7 +52,7 @@ export default function ResultDetailsPage({ params }: { params: Promise<{ id: st
                 setData(resultRes.shiftResult);
                 setCompanies(companiesRes);
             } catch (e) {
-                toaster.create({ title: "Ошибка загрузки", type: "error" });
+                feedback.beginAction("shiftResultDetailLoad").error(e);
             } finally {
                 setIsLoading(false);
             }
@@ -56,14 +61,19 @@ export default function ResultDetailsPage({ params }: { params: Promise<{ id: st
     }, [id]);
 
     const handleDelete = async () => {
-        if (!confirm("Удалить этот результат безвозвратно?")) return;
+        if (isDeletePending) return;
 
+        const actionFeedback = feedback.beginAction("shiftResultDelete");
+        setDeletePending(true);
         try {
             await shiftResultService.delete(id);
-            toaster.create({ title: "Удалено", type: "success" });
+            actionFeedback.success();
+            setDeleteDialogOpen(false);
             router.push("/results");
-        } catch(e) {
-            toaster.create({ title: "Ошибка удаления", type: "error" });
+        } catch(error) {
+            actionFeedback.error(error);
+        } finally {
+            setDeletePending(false);
         }
     };
 
@@ -93,7 +103,12 @@ export default function ResultDetailsPage({ params }: { params: Promise<{ id: st
                     <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
                         Изменить
                     </Button>
-                    <Button colorPalette="red" variant="solid" onClick={handleDelete}>
+                    <Button
+                        ref={deleteTriggerRef}
+                        colorPalette="red"
+                        variant="solid"
+                        onClick={() => setDeleteDialogOpen(true)}
+                    >
                         Удалить
                     </Button>
                 </Flex>
@@ -143,6 +158,24 @@ export default function ResultDetailsPage({ params }: { params: Promise<{ id: st
                     </Stack>
                 </Card.Body>
             </Card.Root>
+
+            <ConfirmationDialog
+                open={isDeleteDialogOpen}
+                title="Удалить результат смены?"
+                description="Результат смены будет удалён без возможности восстановления."
+                confirmLabel="Удалить"
+                cancelLabel="Отмена"
+                pendingLabel={feedbackMessages.shiftResultDelete.loading}
+                severity="danger"
+                pending={isDeletePending}
+                finalFocusEl={() => deleteTriggerRef.current}
+                onCancel={() => {
+                    if (!isDeletePending) {
+                        setDeleteDialogOpen(false);
+                    }
+                }}
+                onConfirm={handleDelete}
+            />
 
             {/* Модальное окно редактирования */}
             {/*{isEditModalOpen && (*/}

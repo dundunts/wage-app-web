@@ -8,6 +8,7 @@ import {
     Button,
     createListCollection,
     Dialog,
+    Field as ChakraField,
     Flex,
     Grid,
     IconButton,
@@ -23,7 +24,9 @@ import {CompanyEmployeeInfo} from "@/types/employee.types";
 import {SaveShiftResultPayload, ShiftResultDetailed} from "@/types/shiftResult.types";
 import {employeeService} from "@/service/employee/employee.service";
 import {shiftResultService} from "@/service/results/shiftResult.service"; // Проверь путь импорта
-import {toaster} from "@/components/ui/toaster";
+import {feedback} from "@/feedback/feedback";
+import {Field} from "@/components/ui/field";
+import {feedbackMessages} from "@/feedback/messages";
 
 interface InitialData {
     result: ShiftResultDetailed;
@@ -60,7 +63,14 @@ export function ShiftResultModal({
     const [isEmployeesLoading, setIsEmployeesLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const { control, register, handleSubmit, watch, reset } = useForm<FormValues>({
+    const {
+        control,
+        register,
+        handleSubmit,
+        watch,
+        reset,
+        formState: {errors},
+    } = useForm<FormValues>({
         defaultValues: {
             companyId: "",
             date: new Date().toISOString().split("T")[0],
@@ -132,14 +142,14 @@ export function ShiftResultModal({
         employeeService.getCoworkersForCompany(selectedCompanyId)
             .then(setEmployees)
             .catch((e) => {
-                console.error("Err loading employees", e);
-                toaster.create({ title: "Ошибка загрузки сотрудников", type: "error" });
+                feedback.beginAction("shiftResultEmployeesLoad").error(e);
             })
             .finally(() => setIsEmployeesLoading(false));
     }, [selectedCompanyId]);
 
     const onSubmit = async (data: FormValues) => {
         setIsSubmitting(true);
+        const actionFeedback = feedback.beginAction("shiftResultSave");
         try {
             const payload: SaveShiftResultPayload = {
                 companyId: data.companyId,
@@ -154,11 +164,11 @@ export function ShiftResultModal({
             };
 
             await shiftResultService.save(payload);
-            toaster.create({ title: "Сохранено успешно", type: "success" });
+            actionFeedback.success();
             onSuccess();
             onClose();
         } catch (error) {
-            toaster.create({ title: "Ошибка сохранения", type: "error" });
+            actionFeedback.error(error);
         } finally {
             setIsSubmitting(false);
         }
@@ -167,14 +177,16 @@ export function ShiftResultModal({
     return (
         <Dialog.Root
             open={isOpen}
-            onOpenChange={(details) => !details.open && onClose()}
+            closeOnEscape={!isSubmitting}
+            closeOnInteractOutside={!isSubmitting}
+            onOpenChange={(details) => !details.open && !isSubmitting && onClose()}
             size="xl"
             scrollBehavior="inside" // Важно для длинных списков, чтобы модалка скроллилась внутри
         >
             <Dialog.Backdrop />
             <Dialog.Positioner>
                 <Dialog.Content>
-                    <form onSubmit={handleSubmit(onSubmit)}>
+                    <form noValidate onSubmit={handleSubmit(onSubmit)}>
                         <Dialog.Header>
                             <Dialog.Title>
                                 {initialData ? "Редактировать результат" : "Создать результат смены"}
@@ -215,10 +227,18 @@ export function ShiftResultModal({
                                         />
                                     </Box>
 
-                                    <Box flex={1}>
-                                        <Text fontSize="sm" mb={1} fontWeight="medium">Дата</Text>
-                                        <Input type="date" {...register("date", { required: true })} />
-                                    </Box>
+                                    <Field
+                                        flex={1}
+                                        label="Дата"
+                                        required
+                                        invalid={!!errors.date}
+                                        errorText={errors.date?.message}
+                                    >
+                                        <Input
+                                            type="date"
+                                            {...register("date", {required: "Укажите дату"})}
+                                        />
+                                    </Field>
                                 </Flex>
 
                                 <hr />
@@ -256,37 +276,62 @@ export function ShiftResultModal({
                                                 alignItems="start" // Changed to start so errors don't misalign grid if added later
                                             >
                                                 {/* Выбор сотрудника (Chakra UI Select + Controller) */}
-                                                <Controller
-                                                    control={control}
-                                                    name={`payments.${index}.employeeId`}
-                                                    rules={{ required: true }}
-                                                    render={({ field }) => (
-                                                        <Select.Root
-                                                            collection={employeeCollection}
-                                                            value={field.value ? [field.value] : []}
-                                                            onValueChange={(e) => field.onChange(e.value[0])}
-                                                            disabled={isEmployeesLoading}
-                                                            size="sm"
-                                                        >
-                                                            <Select.Trigger>
-                                                                {isEmployeesLoading ? (
-                                                                    <Spinner size="xs" />
-                                                                ) : (
-                                                                    <Select.ValueText placeholder="Сотрудник" />
-                                                                )}
-                                                            </Select.Trigger>
-                                                            <Select.Positioner>
-                                                                <Select.Content>
-                                                                    {employeeCollection.items.map((emp) => (
-                                                                        <Select.Item item={emp} key={emp.value}>
-                                                                            {emp.label}
-                                                                        </Select.Item>
-                                                                    ))}
-                                                                </Select.Content>
-                                                            </Select.Positioner>
-                                                        </Select.Root>
-                                                    )}
-                                                />
+                                                <ChakraField.Root
+                                                    required
+                                                    invalid={!!errors.payments?.[index]?.employeeId}
+                                                >
+                                                    <ChakraField.Label
+                                                        htmlFor={`payment-employee-${index}`}
+                                                        srOnly
+                                                    >
+                                                        Сотрудник {index + 1}
+                                                    </ChakraField.Label>
+                                                    <Controller
+                                                        control={control}
+                                                        name={`payments.${index}.employeeId`}
+                                                        rules={{required: "Выберите сотрудника"}}
+                                                        render={({field}) => (
+                                                            <Select.Root
+                                                                collection={employeeCollection}
+                                                                value={field.value ? [field.value] : []}
+                                                                onValueChange={(e) => field.onChange(e.value[0])}
+                                                                disabled={isEmployeesLoading}
+                                                                invalid={!!errors.payments?.[index]?.employeeId}
+                                                                size="sm"
+                                                            >
+                                                                <Select.Trigger
+                                                                    id={`payment-employee-${index}`}
+                                                                    ref={field.ref}
+                                                                    aria-describedby={
+                                                                        errors.payments?.[index]?.employeeId
+                                                                            ? `payment-employee-${index}-error`
+                                                                            : undefined
+                                                                    }
+                                                                >
+                                                                    {isEmployeesLoading ? (
+                                                                        <Spinner size="xs" />
+                                                                    ) : (
+                                                                        <Select.ValueText placeholder="Сотрудник" />
+                                                                    )}
+                                                                </Select.Trigger>
+                                                                <Select.Positioner>
+                                                                    <Select.Content>
+                                                                        {employeeCollection.items.map((emp) => (
+                                                                            <Select.Item item={emp} key={emp.value}>
+                                                                                {emp.label}
+                                                                            </Select.Item>
+                                                                        ))}
+                                                                    </Select.Content>
+                                                                </Select.Positioner>
+                                                            </Select.Root>
+                                                        )}
+                                                    />
+                                                    <ChakraField.ErrorText
+                                                        id={`payment-employee-${index}-error`}
+                                                    >
+                                                        {errors.payments?.[index]?.employeeId?.message}
+                                                    </ChakraField.ErrorText>
+                                                </ChakraField.Root>
 
                                                 <Input
                                                     type="number"
@@ -335,9 +380,14 @@ export function ShiftResultModal({
 
                         <Dialog.Footer>
                             <Dialog.ActionTrigger asChild>
-                                <Button variant="outline" onClick={onClose}>Отмена</Button>
+                                <Button variant="outline" onClick={onClose} disabled={isSubmitting}>Отмена</Button>
                             </Dialog.ActionTrigger>
-                            <Button type="submit" loading={isSubmitting}>
+                            <Button
+                                type="submit"
+                                loading={isSubmitting}
+                                loadingText={feedbackMessages.shiftResultSave.loading}
+                                disabled={isSubmitting}
+                            >
                                 {initialData ? "Сохранить изменения" : "Создать"}
                             </Button>
                         </Dialog.Footer>

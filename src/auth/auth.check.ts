@@ -3,6 +3,7 @@
 import {tokenService} from "@/auth/auth.tokens.service";
 import useUserStore from "@/store/userStore";
 import {parseJwt} from "@/utils/jwtUtils";
+import {sessionExpiryHandler} from "@/auth/session-expiry";
 
 export async function checkAuth() {
     const refresh = tokenService.getRefreshToken();
@@ -26,7 +27,7 @@ export async function checkAuth() {
                 setAuth(accessPayload.sub, accessPayload.email, accessPayload.resource_access.account.roles);
             }
         } catch (err) {
-            clearAuth();
+            sessionExpiryHandler.handle(err);
         }
     }
 }
