@@ -48,6 +48,14 @@ describe("Authentication login", () => {
 
     afterEach(() => vi.restoreAllMocks());
 
+    it("exposes the authentication screen with a top-level heading", () => {
+        renderPage();
+
+        expect(
+            screen.getByRole("heading", {name: "Вход в систему", level: 1}),
+        ).toBeVisible();
+    });
+
     it("shows safe invalid-credentials feedback without backend detail", async () => {
         const user = userEvent.setup();
         const backendError = new Error("invalid_grant: Account 4f7e is disabled");
