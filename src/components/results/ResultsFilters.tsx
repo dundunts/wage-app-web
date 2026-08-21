@@ -1,10 +1,18 @@
-// @/app/results/_components/ResultsFilters.tsx
 "use client";
 
-import {Box, Flex, Select, Input, Text, createListCollection} from "@chakra-ui/react";
-import { Company } from "@/types/company.types";
-import {PeriodType} from "@/types/enums";
+import {useMemo} from "react";
+import {
+    Box,
+    createListCollection,
+    Grid,
+    Input,
+    Portal,
+    Select,
+} from "@chakra-ui/react";
+import {Field} from "@/components/ui/field";
 import {ShiftResultFilters} from "@/hooks/useShiftResultFilters";
+import {Company} from "@/types/company.types";
+import {PeriodType} from "@/types/enums";
 
 interface ResultsFiltersProps {
     companies: Company[];
@@ -17,80 +25,143 @@ interface ResultsFiltersProps {
     onFilterChange: (key: keyof ShiftResultFilters, value: string) => void;
 }
 
+const periodOptions = [
+    {label: "Предыдущий", value: PeriodType.PREVIOUS},
+    {label: "Текущий", value: PeriodType.CURRENT},
+    {label: "Выбор дат", value: PeriodType.CUSTOM},
+];
+
 export function ResultsFilters({
-                                   companies,
-                                   filters,
-                                   onFilterChange,
-                               }: ResultsFiltersProps) {
+    companies,
+    filters,
+    onFilterChange,
+}: ResultsFiltersProps) {
     const isCustomPeriod = filters.periodType === PeriodType.CUSTOM;
+    const companiesCollection = useMemo(() => createListCollection({
+        items: companies.map((company) => ({label: company.title, value: company.id})),
+    }), [companies]);
+    const periodsCollection = useMemo(() => createListCollection({
+        items: periodOptions,
+    }), []);
 
     if (companies.length === 0) {
-        return <Text color="red.500">Нет доступных компаний</Text>;
+        return (
+            <Box
+                role="status"
+                color="status.warning"
+                bg="bg.panel"
+                borderWidth="1px"
+                borderColor="border"
+                borderRadius="panel"
+                p={4}
+            >
+                Нет доступных компаний
+            </Box>
+        );
     }
 
-    const companiesCollection = createListCollection({
-        items: companies.map(c => ({ label: c.title, value: c.id }))
-    })
-
     return (
-        <Flex gap={4} wrap="wrap" align="end" mb={6}>
-            {/* Выбор компании */}
-            <Box minW="200px">
-                <Text fontSize="sm" mb={1} fontWeight="medium">Компания</Text>
-                <Select.Root
-                    collection={companiesCollection} // В Chakra v3 используется collection, но для простоты нативного select:
-                    value={[filters.companyId]}
-                    onValueChange={(e) => onFilterChange("companyId", e.value[0])}
-                >
-                    {/* Note: Chakra v3 Select is complex. Using NativeSelect for simplicity or assuming wrapper.
-                 Below is generic NativeSelect approach for v3 compatibility via standard HTML select wrap
-                 if specific UI kit not provided. I will use standard Select logic. */}
-                    <select
-                        style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                        value={filters.companyId}
-                        onChange={(e) => onFilterChange("companyId", e.target.value)}
+        <Grid
+            as="section"
+            aria-label="Фильтры результатов смен"
+            gap={4}
+            templateColumns={{base: "1fr", md: "repeat(2, minmax(0, 1fr))", xl: "1.2fr 1fr 1fr 1fr"}}
+            alignItems="end"
+            mb={6}
+            p={{base: 4, md: 5}}
+            bg="bg.panel"
+            borderWidth="1px"
+            borderColor="border"
+            borderRadius="panel"
+            boxShadow="panel"
+        >
+            <Select.Root
+                collection={companiesCollection}
+                value={filters.companyId ? [filters.companyId] : []}
+                onValueChange={(details) => onFilterChange("companyId", details.value[0] ?? "")}
+                width="full"
+            >
+                <Select.HiddenSelect />
+                <Select.Label>Компания</Select.Label>
+                <Select.Control>
+                    <Select.Trigger
+                        bg="bg.raised"
+                        borderColor="border"
+                        focusRingColor="focus.ring"
+                        _hover={{borderColor: "border.emphasized"}}
                     >
-                        {companies.map((c) => (
-                            <option key={c.id} value={c.id}>{c.title}</option>
-                        ))}
-                    </select>
-                </Select.Root>
-            </Box>
+                        <Select.ValueText placeholder="Выберите компанию" />
+                    </Select.Trigger>
+                    <Select.IndicatorGroup>
+                        <Select.Indicator />
+                    </Select.IndicatorGroup>
+                </Select.Control>
+                <Portal>
+                    <Select.Positioner>
+                        <Select.Content>
+                            {companiesCollection.items.map((company) => (
+                                <Select.Item item={company} key={company.value}>
+                                    {company.label}
+                                    <Select.ItemIndicator />
+                                </Select.Item>
+                            ))}
+                        </Select.Content>
+                    </Select.Positioner>
+                </Portal>
+            </Select.Root>
 
-            {/* Тип периода */}
-            <Box minW="150px">
-                <Text fontSize="sm" mb={1} fontWeight="medium">Период</Text>
-                <select
-                    style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}
-                    value={filters.periodType}
-                    onChange={(e) => onFilterChange("periodType", e.target.value)}
-                >
-                    <option value={PeriodType.PREVIOUS}>Предыдущий</option>
-                    <option value={PeriodType.CURRENT}>Текущий</option>
-                    <option value={PeriodType.CUSTOM}>Выбор дат</option>
-                </select>
-            </Box>
+            <Select.Root
+                collection={periodsCollection}
+                value={[filters.periodType]}
+                onValueChange={(details) => onFilterChange("periodType", details.value[0] ?? "")}
+                width="full"
+            >
+                <Select.HiddenSelect />
+                <Select.Label>Период</Select.Label>
+                <Select.Control>
+                    <Select.Trigger
+                        bg="bg.raised"
+                        borderColor="border"
+                        focusRingColor="focus.ring"
+                        _hover={{borderColor: "border.emphasized"}}
+                    >
+                        <Select.ValueText placeholder="Выберите период" />
+                    </Select.Trigger>
+                    <Select.IndicatorGroup>
+                        <Select.Indicator />
+                    </Select.IndicatorGroup>
+                </Select.Control>
+                <Portal>
+                    <Select.Positioner>
+                        <Select.Content>
+                            {periodsCollection.items.map((period) => (
+                                <Select.Item item={period} key={period.value}>
+                                    {period.label}
+                                    <Select.ItemIndicator />
+                                </Select.Item>
+                            ))}
+                        </Select.Content>
+                    </Select.Positioner>
+                </Portal>
+            </Select.Root>
 
-            {/* Даты (активны только если Custom) */}
-            <Box>
-                <Text fontSize="sm" mb={1} fontWeight="medium">Начало</Text>
+            <Field label="Начало">
                 <Input
                     type="date"
-                    value={filters.start}
+                    value={filters.start ?? ""}
                     disabled={!isCustomPeriod}
-                    onChange={(e) => onFilterChange("start", e.target.value)}
+                    onChange={(event) => onFilterChange("start", event.target.value)}
                 />
-            </Box>
+            </Field>
 
-            <Box>
-                <Text fontSize="sm" mb={1} fontWeight="medium">Конец</Text>
+            <Field label="Конец">
                 <Input
                     type="date"
-                    value={filters.end}
+                    value={filters.end ?? ""}
                     disabled={!isCustomPeriod}
-                    onChange={(e) => onFilterChange("end", e.target.value)}
+                    onChange={(event) => onFilterChange("end", event.target.value)}
                 />
-            </Box>
-        </Flex>
+            </Field>
+        </Grid>
     );
 }

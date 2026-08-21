@@ -19,7 +19,7 @@ import { useRouter } from "next/navigation";
 interface ResultsTableProps {
     data: ShiftResultDetailed[];
     isLoading: boolean;
-    onEdit: (data: ShiftResultDetailed) => void;
+    onEdit: (data: ShiftResultDetailed, trigger: HTMLButtonElement | null) => void;
     onDelete: (id: string, trigger: HTMLButtonElement | null) => void;
 }
 
@@ -28,26 +28,64 @@ export function ResultsTable({ data, isLoading, onEdit, onDelete }: ResultsTable
     const actionTriggers = useRef(new Map<string, HTMLButtonElement>());
 
     if (isLoading) {
-        return <Flex justify="center" p={10}><Spinner size="xl" /></Flex>;
+        return (
+            <Flex
+                role="status"
+                aria-label="Результаты смен загружаются"
+                justify="center"
+                p={10}
+                bg="bg.panel"
+                borderWidth="1px"
+                borderColor="border"
+                borderRadius="panel"
+            >
+                <Spinner size="xl" color="accent" />
+            </Flex>
+        );
     }
 
     if (data.length === 0) {
-        return <Box p={4} textAlign="center">Результаты не найдены</Box>;
+        return (
+            <Box
+                role="status"
+                p={6}
+                textAlign="center"
+                color="fg.muted"
+                bg="bg.panel"
+                borderWidth="1px"
+                borderColor="border"
+                borderRadius="panel"
+            >
+                Результаты не найдены
+            </Box>
+        );
     }
 
     return (
-        <Box borderWidth="1px" borderRadius="lg" overflow="hidden">
-            <Table.Root interactive>
+        <Box
+            role="region"
+            aria-label="Таблица результатов смен"
+            tabIndex={0}
+            borderWidth="1px"
+            borderColor="border"
+            borderRadius="panel"
+            overflowX="auto"
+            bg="bg.panel"
+            boxShadow="panel"
+            focusRing="outside"
+            focusRingColor="focus.ring"
+        >
+            <Table.Root interactive size="sm" minW="44rem">
                 <Table.Header>
-                    <Table.Row>
-                        <Table.ColumnHeader>Дата</Table.ColumnHeader>
-                        <Table.ColumnHeader>Выплаты (Работник - Всего)</Table.ColumnHeader>
-                        <Table.ColumnHeader textAlign="end">Действия</Table.ColumnHeader>
+                    <Table.Row bg="bg.subtle">
+                        <Table.ColumnHeader color="fg.muted">Дата</Table.ColumnHeader>
+                        <Table.ColumnHeader color="fg.muted">Выплаты (сотрудник — итого)</Table.ColumnHeader>
+                        <Table.ColumnHeader color="fg.muted" textAlign="end">Действия</Table.ColumnHeader>
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
                     {data.map((result) => (
-                        <Table.Row key={result.id}>
+                        <Table.Row key={result.id} _hover={{bg: "accent.subtle"}}>
                             {/* Дата */}
                             <Table.Cell>
                                 {new Date(result.date).toLocaleDateString("ru-RU")}
@@ -62,9 +100,16 @@ export function ResultsTable({ data, isLoading, onEdit, onDelete }: ResultsTable
                                             `${payment.employee.lastName} ${payment.employee.firstName}`;
 
                                         return (
-                                            <HStack key={payment.id} fontSize="sm">
+                                            <HStack key={payment.id} fontSize="sm" justify="space-between" gap={4}>
                                                 <Text fontWeight="medium">{name}:</Text>
-                                                <Badge colorPalette="green" variant="subtle">
+                                                <Badge
+                                                    variant="outline"
+                                                    bg="bg.raised"
+                                                    color="fg"
+                                                    borderColor="border.emphasized"
+                                                    fontVariantNumeric="tabular-nums"
+                                                    whiteSpace="nowrap"
+                                                >
                                                     {total.toLocaleString("ru-RU", { style: 'currency', currency: 'RUB' })}
                                                 </Badge>
                                             </HStack>
@@ -87,7 +132,7 @@ export function ResultsTable({ data, isLoading, onEdit, onDelete }: ResultsTable
                                             }}
                                             variant="subtle"
                                             size="sm"
-                                            aria-label="Опции"
+                                            aria-label={`Действия для смены ${new Date(result.date).toLocaleDateString("ru-RU")}`}
                                         >
                                             <HiDotsVertical />
                                         </IconButton>
@@ -97,7 +142,13 @@ export function ResultsTable({ data, isLoading, onEdit, onDelete }: ResultsTable
                                             <Menu.Item value="details" onClick={() => router.push(`/results/${result.id}`)}>
                                                 Подробнее
                                             </Menu.Item>
-                                            <Menu.Item value="edit" onClick={() => onEdit(result)}>
+                                            <Menu.Item
+                                                value="edit"
+                                                onClick={() => onEdit(
+                                                    result,
+                                                    actionTriggers.current.get(result.id) ?? null,
+                                                )}
+                                            >
                                                 Изменить
                                             </Menu.Item>
                                             <Menu.Item

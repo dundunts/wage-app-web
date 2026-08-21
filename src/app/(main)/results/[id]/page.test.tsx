@@ -5,7 +5,6 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import ResultDetailsPage from "@/app/(main)/results/[id]/page";
 import {Provider} from "@/components/ui/provider";
 import {toaster} from "@/feedback/toast-store";
-import {companyService} from "@/service/company/company.service";
 import {shiftResultService} from "@/service/results/shiftResult.service";
 import {CalculationSource} from "@/types/shiftResult.types";
 
@@ -15,10 +14,6 @@ vi.mock("next/navigation", () => ({
     useRouter: () => navigation,
 }));
 
-vi.mock("@/service/company/company.service", () => ({
-    companyService: {getForUser: vi.fn()},
-}));
-
 vi.mock("@/service/results/shiftResult.service", () => ({
     shiftResultService: {
         getDetailed: vi.fn(),
@@ -26,19 +21,29 @@ vi.mock("@/service/results/shiftResult.service", () => ({
     },
 }));
 
-const company = {
-    id: "company-1",
-    title: "Компания",
-    employeeWageCoefficientFromRevenue: 0.4,
-    defaultShiftStartTime: "09:00",
-};
-
 const result = {
     id: "result-1",
     date: new Date("2026-08-21"),
     sessionId: null,
     calculationSource: CalculationSource.MANUAL_OVERRIDE,
     payments: [],
+};
+
+const resultWithPayment = {
+    ...result,
+    payments: [{
+        id: "payment-1",
+        employee: {
+            id: "employee-1",
+            firstName: "Иван",
+            lastName: "Иванов",
+            patronymic: "Иванович",
+            simpleName: null,
+        },
+        percentFromRevenue: 1234.5,
+        tips: 300.25,
+        workSeconds: 30600,
+    }],
 };
 
 function renderPage() {
@@ -69,8 +74,6 @@ describe("Shift Result detail deletion", () => {
     beforeEach(() => {
         toaster.remove();
         navigation.push.mockReset();
-        vi.mocked(companyService.getForUser).mockReset();
-        vi.mocked(companyService.getForUser).mockResolvedValue([company]);
         vi.mocked(shiftResultService.getDetailed).mockReset();
         vi.mocked(shiftResultService.getDetailed).mockResolvedValue({
             shiftResult: result,
@@ -145,5 +148,22 @@ describe("Shift Result detail deletion", () => {
         expect(within(dialog).getByRole("button", {name: "Отмена"})).toBeEnabled();
         expect(consoleError).toHaveBeenCalledOnce();
         expect(consoleError).toHaveBeenCalledWith("[feedback:shiftResultDelete]", failure);
+    });
+});
+
+describe("Shift Result and Payment presentation", () => {
+    it("exposes a labelled Payment with comparable money, hours, and calculation source", async () => {
+        vi.mocked(shiftResultService.getDetailed).mockResolvedValue({
+            shiftResult: resultWithPayment,
+            session: null,
+        });
+        renderPage();
+
+        expect(await screen.findByText("Ручной расчёт")).toBeVisible();
+        const payment = screen.getByRole("article", {name: "Выплата: Иванов Иван"});
+        expect(within(payment).getByText(/1\s?234,50\s₽/)).toBeVisible();
+        expect(within(payment).getByText(/300,25\s₽/)).toBeVisible();
+        expect(within(payment).getByText(/1\s?534,75\s₽/)).toBeVisible();
+        expect(within(payment).getByText("8,5 ч")).toBeVisible();
     });
 });

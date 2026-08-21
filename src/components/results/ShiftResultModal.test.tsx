@@ -52,6 +52,15 @@ describe("ShiftResultModal save flow", () => {
 
     afterEach(() => vi.restoreAllMocks());
 
+    it("associates the Company and Payment employee Select controls with their labels", async () => {
+        const user = userEvent.setup();
+        renderModal();
+
+        expect(screen.getByRole("combobox", {name: "Компания"})).toBeVisible();
+        await user.click(screen.getByRole("button", {name: /Добавить/}));
+        expect(screen.getByRole("combobox", {name: "Сотрудник 1"})).toBeVisible();
+    });
+
     it("shows the agreed success feedback and completes the dialog flow", async () => {
         const user = userEvent.setup();
         vi.mocked(shiftResultService.save).mockResolvedValue({resultId: "result-1"});
