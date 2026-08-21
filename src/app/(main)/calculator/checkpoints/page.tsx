@@ -34,7 +34,6 @@ import {employeeService} from "@/service/employee/employee.service";
 // Components
 import {ShiftCheckpointCard} from "@/components/shift/shift.checkpoint.components.card";
 import {CheckpointDialog} from "@/components/shift/shift.checkpoint.components.dialog";
-import ConfirmDeleteDialog from "@/components/dialog/components.dialog.confirmation.delete";
 import {SessionUpdateTimeDialog} from "@/components/session/session.update-time.dialog";
 import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
 import {feedback} from "@/feedback/feedback";
@@ -51,6 +50,9 @@ function CalcInShiftPage() {
     const [availableEmployees, setAvailableEmployees] = useState<CompanyEmployeeInfo[]>([]);
     const [isUpdatingTime, setIsUpdatingTime] = useState(false);
     const [isClosingSession, setIsClosingSession] = useState(false);
+    const [isCreatingCheckpoint, setIsCreatingCheckpoint] = useState(false);
+    const [isUpdatingCheckpoint, setIsUpdatingCheckpoint] = useState(false);
+    const [isDeletingCheckpoint, setIsDeletingCheckpoint] = useState(false);
     const closeSessionTriggerRef = useRef<HTMLButtonElement>(null);
 
     // Dialog states
@@ -76,10 +78,10 @@ function CalcInShiftPage() {
         loadData();
     }, []);
 
-    async function loadData() {
+    async function loadData(showLoading = true) {
         if (!sessionId) return;
 
-        setLoading(true);
+        if (showLoading) setLoading(true);
         try {
             const sessionData = await sessionService.getAvailableById(sessionId);
 
@@ -96,59 +98,71 @@ function CalcInShiftPage() {
             console.error(e);
             setError("Не удалось загрузить данные сессии");
         } finally {
-            setLoading(false);
+            if (showLoading) setLoading(false);
         }
     }
 
     // --- Checkpoint Handlers ---
 
-    function handleCreateCheckpoint(payload: CheckpointPayload) {
-        if (!session) return;
-        setLoading(true);
+    async function handleCreateCheckpoint(payload: CheckpointPayload) {
+        if (!session || isCreatingCheckpoint) return;
+        const action = feedback.beginAction("checkpointCreate");
+        setIsCreatingCheckpoint(true);
 
         const createPayload: CreateRegularCheckpointPayload = {
             ...payload,
             sessionId: session.id
         };
 
-        checkpointService.create(createPayload)
-            .then(() => {
-                loadData();
-                onCloseCreateDialog();
-            })
-            .catch(() => setError("Ошибка при создании чекпоинта"))
-            .finally(() => setLoading(false));
+        try {
+            await checkpointService.create(createPayload);
+            action.success();
+            onCloseCreateDialog();
+            void loadData(false);
+        } catch (error) {
+            action.error(error);
+        } finally {
+            setIsCreatingCheckpoint(false);
+        }
     }
 
-    function handleUpdateCheckpoint(payload: CheckpointPayload) {
-        if (!targetForEdit) return;
-        setLoading(true);
+    async function handleUpdateCheckpoint(payload: CheckpointPayload) {
+        if (!targetForEdit || isUpdatingCheckpoint) return;
+        const action = feedback.beginAction("checkpointUpdate");
+        setIsUpdatingCheckpoint(true);
 
         const updatePayload: UpdateShiftCheckpointPayload = {
             ...payload,
             id: targetForEdit.id
         };
 
-        checkpointService.update(updatePayload)
-            .then(() => {
-                loadData();
-                setTargetForEdit(null);
-            })
-            .catch(() => setError("Ошибка при обновлении чекпоинта"))
-            .finally(() => setLoading(false));
+        try {
+            await checkpointService.update(updatePayload);
+            action.success();
+            setTargetForEdit(null);
+            void loadData(false);
+        } catch (error) {
+            action.error(error);
+        } finally {
+            setIsUpdatingCheckpoint(false);
+        }
     }
 
-    function handleDeleteCheckpoint() {
-        if (!targetIdForRemove) return;
-        setLoading(true);
+    async function handleDeleteCheckpoint() {
+        if (!targetIdForRemove || isDeletingCheckpoint) return;
+        const action = feedback.beginAction("checkpointDelete");
+        setIsDeletingCheckpoint(true);
 
-        checkpointService.delete(targetIdForRemove)
-            .then(() => {
-                loadData();
-                setTargetIdForRemove(null);
-            })
-            .catch(() => setError("Ошибка при удалении чекпоинта"))
-            .finally(() => setLoading(false));
+        try {
+            await checkpointService.delete(targetIdForRemove);
+            action.success();
+            setTargetIdForRemove(null);
+            void loadData(false);
+        } catch (error) {
+            action.error(error);
+        } finally {
+            setIsDeletingCheckpoint(false);
+        }
     }
 
     // --- Session Handlers (NEW) ---
@@ -325,6 +339,8 @@ function CalcInShiftPage() {
             <CheckpointDialog
                 companyEmployees={availableEmployees}
                 open={isCreateDialogOpened}
+                pending={isCreatingCheckpoint}
+                pendingLabel={feedbackMessages.checkpointCreate.loading}
                 onClose={onCloseCreateDialog}
                 onSave={handleCreateCheckpoint}
             />
@@ -335,15 +351,26 @@ function CalcInShiftPage() {
                     origin={targetForEdit}
                     companyEmployees={availableEmployees}
                     open={!!targetForEdit}
+                    pending={isUpdatingCheckpoint}
+                    pendingLabel={feedbackMessages.checkpointUpdate.loading}
                     onClose={() => setTargetForEdit(null)}
                     onSave={handleUpdateCheckpoint}
                 />
             )}
 
             {/* Confirm delete dialog */}
-            <ConfirmDeleteDialog
+            <ConfirmationDialog
                 open={!!targetIdForRemove}
-                onCLose={() => setTargetIdForRemove(null)}
+                title="Удалить чекпоинт?"
+                description="Чекпоинт будет удалён без возможности восстановления."
+                confirmLabel="Удалить"
+                cancelLabel="Отмена"
+                pendingLabel={feedbackMessages.checkpointDelete.loading}
+                severity="danger"
+                pending={isDeletingCheckpoint}
+                onCancel={() => {
+                    if (!isDeletingCheckpoint) setTargetIdForRemove(null);
+                }}
                 onConfirm={handleDeleteCheckpoint}
             />
 

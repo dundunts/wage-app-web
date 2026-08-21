@@ -57,6 +57,27 @@ export const feedbackMessages = {
         information: "Загрузка данных сотрудника",
         loading: "Данные сотрудника загружаются",
     },
+    checkpointCreate: {
+        success: "Чекпоинт создан",
+        error: "Чекпоинт не создан",
+        warning: "Создание чекпоинта требует внимания",
+        information: "Создание чекпоинта",
+        loading: "Чекпоинт создаётся",
+    },
+    checkpointUpdate: {
+        success: "Чекпоинт обновлён",
+        error: "Чекпоинт не обновлён",
+        warning: "Изменение чекпоинта требует внимания",
+        information: "Изменение чекпоинта",
+        loading: "Чекпоинт обновляется",
+    },
+    checkpointDelete: {
+        success: "Чекпоинт удалён",
+        error: "Чекпоинт не удалён",
+        warning: "Удаление чекпоинта требует внимания",
+        information: "Удаление чекпоинта",
+        loading: "Чекпоинт удаляется",
+    },
     shiftSessionOpen: {
         success: "Смена открыта",
         error: "Смена не открыта",

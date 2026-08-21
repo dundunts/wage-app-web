@@ -6,6 +6,9 @@ import {Provider} from "@/components/ui/provider";
 import {toaster} from "@/components/ui/toaster";
 import {sessionService} from "@/service/session/session.service";
 import {employeeService} from "@/service/employee/employee.service";
+import {checkpointService} from "@/service/checpoint/checkpoint.service";
+import {CheckpointCalcDestination, CheckpointType} from "@/types/checkpoint.types";
+import {EmployeePosition} from "@/types/employee.types";
 
 const navigation = vi.hoisted(() => ({push: vi.fn()}));
 const searchParams = new URLSearchParams("sessionId=session-1");
@@ -35,13 +38,36 @@ vi.mock("@/service/checpoint/checkpoint.service", () => ({
     },
 }));
 
+const employee = {
+    id: "employee-1",
+    userId: null,
+    firstName: "Иван",
+    lastName: "Иванов",
+    patronymic: "Иванович",
+    simpleName: "Иван",
+    position: EmployeePosition.WAITER_ACTIVE,
+};
+
+const checkpoint = {
+    id: "checkpoint-1",
+    tips: 20,
+    revenue: 100,
+    employees: [employee],
+    dateTime: new Date("2026-08-21T12:00:00"),
+    type: CheckpointType.REGULAR,
+    metricRecords: [
+        {id: "metric-1", label: "Выручка", destination: CheckpointCalcDestination.REVENUE, value: 100},
+        {id: "metric-2", label: "Чай", destination: CheckpointCalcDestination.TIPS, value: 20},
+    ],
+};
+
 const session = {
     id: "session-1",
     companyId: "company-1",
     startWorkTime: "09:00",
     date: new Date("2026-08-21"),
     status: "OPENED" as const,
-    checkpoints: [],
+    checkpoints: [checkpoint],
 };
 
 function renderPage() {
@@ -64,6 +90,24 @@ async function openCloseDialog(user: ReturnType<typeof userEvent.setup>) {
     return screen.getByRole("alertdialog", {name: "Закрыть смену?"});
 }
 
+async function openCreateCheckpointDialog(user: ReturnType<typeof userEvent.setup>) {
+    renderPage();
+    await user.click(await screen.findByRole("button", {name: "Add checkpoint"}));
+    return screen.getByRole("dialog", {name: "Создание чекпоинта"});
+}
+
+async function openUpdateCheckpointDialog(user: ReturnType<typeof userEvent.setup>) {
+    renderPage();
+    await user.click(await screen.findByRole("button", {name: "Edit"}));
+    return screen.getByRole("dialog", {name: "Создание чекпоинта"});
+}
+
+async function openDeleteCheckpointDialog(user: ReturnType<typeof userEvent.setup>) {
+    renderPage();
+    await user.click(await screen.findByRole("button", {name: "Delete"}));
+    return screen.getByRole("alertdialog", {name: "Удалить чекпоинт?"});
+}
+
 beforeEach(() => {
     toaster.remove();
     navigation.push.mockReset();
@@ -72,10 +116,168 @@ beforeEach(() => {
     vi.mocked(sessionService.updateStartWorkTime).mockReset();
     vi.mocked(sessionService.close).mockReset();
     vi.mocked(employeeService.getAvailableEmployeesForCompany).mockReset();
-    vi.mocked(employeeService.getAvailableEmployeesForCompany).mockResolvedValue([]);
+    vi.mocked(employeeService.getAvailableEmployeesForCompany).mockResolvedValue([employee]);
+    vi.mocked(checkpointService.create).mockReset();
+    vi.mocked(checkpointService.update).mockReset();
+    vi.mocked(checkpointService.delete).mockReset();
 });
 
 afterEach(() => vi.restoreAllMocks());
+
+describe("Checkpoint create", () => {
+    it("keeps one local request pending and reports success before refreshing and closing", async () => {
+        const user = userEvent.setup();
+        let resolveCreate!: () => void;
+        vi.mocked(checkpointService.create).mockReturnValue(new Promise((resolve) => {
+            resolveCreate = () => resolve(checkpoint);
+        }));
+        const dialog = await openCreateCheckpointDialog(user);
+        await user.click(within(dialog).getByRole("checkbox", {name: "Иван"}));
+
+        await user.click(within(dialog).getByRole("button", {name: "Сохранить"}));
+
+        expect(screen.getByText("Расчёт за день")).toBeVisible();
+        const pending = within(dialog).getByRole("button", {name: "Чекпоинт создаётся"});
+        expect(pending).toBeDisabled();
+        expect(within(dialog).getByRole("button", {name: "Отмена"})).toBeDisabled();
+        await user.click(pending);
+        expect(checkpointService.create).toHaveBeenCalledOnce();
+
+        resolveCreate();
+
+        expect(await screen.findByText("Чекпоинт создан")).toBeVisible();
+        await waitFor(() => expect(sessionService.getAvailableById).toHaveBeenCalledTimes(2));
+        await waitFor(() => expect(screen.queryByRole("dialog", {name: "Создание чекпоинта"})).not.toBeInTheDocument());
+    });
+
+    it("shows safe feedback and preserves the form and page after failure", async () => {
+        const user = userEvent.setup();
+        const failure = new Error("backend create detail must stay hidden");
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.mocked(checkpointService.create).mockRejectedValue(failure);
+        const dialog = await openCreateCheckpointDialog(user);
+        const employeeCheckbox = within(dialog).getByRole("checkbox", {name: "Иван"});
+        await user.click(employeeCheckbox);
+
+        await user.click(within(dialog).getByRole("button", {name: "Сохранить"}));
+
+        expect(await screen.findByText("Чекпоинт не создан")).toBeVisible();
+        expect(screen.getByText("Не удалось выполнить действие. Попробуйте ещё раз")).toBeVisible();
+        expect(screen.queryByText(/backend create detail/)).not.toBeInTheDocument();
+        expect(dialog).toBeVisible();
+        expect(employeeCheckbox).toBeChecked();
+        expect(within(dialog).getByRole("button", {name: "Сохранить"})).toBeEnabled();
+        expect(screen.getByText("Расчёт за день")).toBeVisible();
+        expect(screen.queryByText("Ошибка при создании чекпоинта")).not.toBeInTheDocument();
+        expect(sessionService.getAvailableById).toHaveBeenCalledOnce();
+        expect(consoleError).toHaveBeenCalledOnce();
+        expect(consoleError).toHaveBeenCalledWith("[feedback:checkpointCreate]", failure);
+    });
+});
+
+describe("Checkpoint update", () => {
+    it("prevents repetition, reports success, refreshes, and closes", async () => {
+        const user = userEvent.setup();
+        let resolveUpdate!: () => void;
+        vi.mocked(checkpointService.update).mockReturnValue(new Promise((resolve) => {
+            resolveUpdate = () => resolve(checkpoint);
+        }));
+        const dialog = await openUpdateCheckpointDialog(user);
+
+        await user.click(within(dialog).getByRole("button", {name: "Сохранить"}));
+
+        const pending = within(dialog).getByRole("button", {name: "Чекпоинт обновляется"});
+        expect(pending).toBeDisabled();
+        await user.click(pending);
+        expect(checkpointService.update).toHaveBeenCalledOnce();
+
+        resolveUpdate();
+
+        expect(await screen.findByText("Чекпоинт обновлён")).toBeVisible();
+        await waitFor(() => expect(sessionService.getAvailableById).toHaveBeenCalledTimes(2));
+        await waitFor(() => expect(screen.queryByRole("dialog", {name: "Создание чекпоинта"})).not.toBeInTheDocument());
+    });
+
+    it("keeps entered data and the dialog recoverable after failure", async () => {
+        const user = userEvent.setup();
+        const failure = new Error("backend update detail must stay hidden");
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.mocked(checkpointService.update).mockRejectedValue(failure);
+        const dialog = await openUpdateCheckpointDialog(user);
+        const revenueInput = within(dialog).getByDisplayValue("100");
+        await user.clear(revenueInput);
+        await user.type(revenueInput, "250");
+
+        await user.click(within(dialog).getByRole("button", {name: "Сохранить"}));
+
+        expect(await screen.findByText("Чекпоинт не обновлён")).toBeVisible();
+        expect(dialog).toBeVisible();
+        expect(revenueInput).toHaveValue(250);
+        expect(within(dialog).getByRole("button", {name: "Сохранить"})).toBeEnabled();
+        expect(screen.getByText("Расчёт за день")).toBeVisible();
+        expect(screen.queryByText("Ошибка при обновлении чекпоинта")).not.toBeInTheDocument();
+        expect(sessionService.getAvailableById).toHaveBeenCalledOnce();
+        expect(consoleError).toHaveBeenCalledOnce();
+        expect(consoleError).toHaveBeenCalledWith("[feedback:checkpointUpdate]", failure);
+    });
+});
+
+describe("Checkpoint delete", () => {
+    it("uses the shared alertdialog and cancels without a request", async () => {
+        const user = userEvent.setup();
+        const dialog = await openDeleteCheckpointDialog(user);
+
+        expect(screen.getByText(/будет удалён без возможности восстановления/)).toBeVisible();
+        await user.click(within(dialog).getByRole("button", {name: "Отмена"}));
+
+        expect(checkpointService.delete).not.toHaveBeenCalled();
+        await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    });
+
+    it("prevents duplicate requests, reports success, and refreshes the checkpoints", async () => {
+        const user = userEvent.setup();
+        let resolveDelete!: () => void;
+        vi.mocked(checkpointService.delete).mockReturnValue(new Promise((resolve) => {
+            resolveDelete = resolve;
+        }));
+        const dialog = await openDeleteCheckpointDialog(user);
+
+        await user.click(within(dialog).getByRole("button", {name: "Удалить"}));
+
+        const pending = within(dialog).getByRole("button", {name: "Чекпоинт удаляется"});
+        expect(pending).toBeDisabled();
+        expect(within(dialog).getByRole("button", {name: "Отмена"})).toBeDisabled();
+        await user.click(pending);
+        expect(checkpointService.delete).toHaveBeenCalledOnce();
+        expect(checkpointService.delete).toHaveBeenCalledWith("checkpoint-1");
+
+        resolveDelete();
+
+        expect(await screen.findByText("Чекпоинт удалён")).toBeVisible();
+        await waitFor(() => expect(sessionService.getAvailableById).toHaveBeenCalledTimes(2));
+        await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    });
+
+    it("keeps a failed deletion available for retry or cancel", async () => {
+        const user = userEvent.setup();
+        const failure = new Error("backend delete detail must stay hidden");
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.mocked(checkpointService.delete).mockRejectedValue(failure);
+        const dialog = await openDeleteCheckpointDialog(user);
+
+        await user.click(within(dialog).getByRole("button", {name: "Удалить"}));
+
+        expect(await screen.findByText("Чекпоинт не удалён")).toBeVisible();
+        expect(dialog).toBeVisible();
+        expect(within(dialog).getByRole("button", {name: "Удалить"})).toBeEnabled();
+        expect(within(dialog).getByRole("button", {name: "Отмена"})).toBeEnabled();
+        expect(screen.getByText("Расчёт за день")).toBeVisible();
+        expect(screen.queryByText("Ошибка при удалении чекпоинта")).not.toBeInTheDocument();
+        expect(sessionService.getAvailableById).toHaveBeenCalledOnce();
+        expect(consoleError).toHaveBeenCalledOnce();
+        expect(consoleError).toHaveBeenCalledWith("[feedback:checkpointDelete]", failure);
+    });
+});
 
 describe("Shift Session time update", () => {
     it("keeps the page visible, prevents repetition, reports success, and updates the displayed time", async () => {

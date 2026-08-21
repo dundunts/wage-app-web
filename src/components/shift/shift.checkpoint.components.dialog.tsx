@@ -34,6 +34,8 @@ type CreateCheckpointDialogProps = {
     companyEmployees: CompanyEmployeeInfo[];
     prevCheckpoint?: Checkpoint;
     open: boolean;
+    pending: boolean;
+    pendingLabel: string;
     onClose: () => void;
     onSave: (payload: CheckpointPayload) => void;
 }
@@ -58,6 +60,8 @@ export function CheckpointDialog(
         companyEmployees,
         prevCheckpoint,
         open,
+        pending,
+        pendingLabel,
         onClose,
         onSave,
     }: CreateCheckpointDialogProps
@@ -108,8 +112,6 @@ export function CheckpointDialog(
                 ({...f, value: values[f.label]} as CheckpointMetricRecordPayload)),
         }
 
-        console.log("Saving checkpoint with payload:", payload)
-
         onSave(payload);
     };
 
@@ -122,13 +124,15 @@ export function CheckpointDialog(
     return (
         <Dialog.Root
             open={open}
+            closeOnEscape={!pending}
+            closeOnInteractOutside={!pending}
             onOpenChange={(details) => {
                 if (details.open) {
                     setFormType(initialFormType);
                     setValues(getInitialValues(origin));
                     setSelectedEmployees(getInitialEmployees(origin, prevCheckpoint));
                     setDate(getInitialDate(origin));
-                } else {
+                } else if (!pending) {
                     onClose();
                 }
             }}
@@ -161,7 +165,7 @@ export function CheckpointDialog(
 
                             {/* Form fields */}
                             <VStack align="stretch" gap={3}>
-                                {form.fields.map((field, index) => (
+                                {form.fields.map((field) => (
                                     <HStack key={field.label} justify="space-between">
                                         <Text>{field.label}</Text>
                                         <Input
@@ -217,7 +221,6 @@ export function CheckpointDialog(
                                         size="lg"
                                         value={toLocalDateTimeInputValue(date)}
                                         onChange={e => {
-                                            console.log(e.target.value)
                                             setDate(new Date(e.target.value))
                                         }}
                                     />
@@ -248,10 +251,16 @@ export function CheckpointDialog(
 
                     <Dialog.Footer>
                         <HStack justify="flex-end">
-                            <Button variant="subtle" onClick={onClose}>
+                            <Button variant="subtle" disabled={pending} onClick={onClose}>
                                 Отмена
                             </Button>
-                            <Button colorPalette="teal" onClick={handleSave}>
+                            <Button
+                                colorPalette="teal"
+                                loading={pending}
+                                loadingText={pendingLabel}
+                                disabled={pending}
+                                onClick={handleSave}
+                            >
                                 Сохранить
                             </Button>
                         </HStack>
