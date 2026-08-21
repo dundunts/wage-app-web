@@ -27,4 +27,9 @@ Object.defineProperty(window, "matchMedia", {
     }),
 });
 
+Object.defineProperty(Element.prototype, "scrollTo", {
+    writable: true,
+    value: () => {},
+});
+
 afterEach(() => cleanup());

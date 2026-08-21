@@ -19,9 +19,12 @@ interface ConfirmationDialogProps {
     onConfirm: () => void;
 }
 
-const severityPalette: Record<ConfirmationSeverity, "red" | "orange"> = {
-    danger: "red",
-    warning: "orange",
+const severityPresentation: Record<ConfirmationSeverity, {
+    colorPalette: "danger" | "warning";
+    color: "status.danger" | "status.warning";
+}> = {
+    danger: {colorPalette: "danger", color: "status.danger"},
+    warning: {colorPalette: "warning", color: "status.warning"},
 };
 
 export function ConfirmationDialog({
@@ -38,6 +41,7 @@ export function ConfirmationDialog({
     onConfirm,
 }: ConfirmationDialogProps) {
     const returnFocusRef = useRef<HTMLElement | null>(null);
+    const cancelButtonRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         if (open) {
@@ -49,6 +53,7 @@ export function ConfirmationDialog({
         <Dialog.Root
             role="alertdialog"
             open={open}
+            initialFocusEl={() => cancelButtonRef.current}
             finalFocusEl={() => returnFocusRef.current}
             closeOnEscape={!pending}
             closeOnInteractOutside={!pending}
@@ -60,26 +65,36 @@ export function ConfirmationDialog({
         >
             <Portal>
                 <Dialog.Backdrop />
-                <Dialog.Positioner>
+                <Dialog.Positioner p={{base: 4, md: 6}}>
                     <Dialog.Content>
                         <Dialog.Header>
-                            <Dialog.Title>{title}</Dialog.Title>
+                            <Dialog.Title color={severityPresentation[severity].color}>
+                                {title}
+                            </Dialog.Title>
                         </Dialog.Header>
                         <Dialog.Body>
-                            <Dialog.Description>{description}</Dialog.Description>
+                            <Dialog.Description color="fg.muted">
+                                {description}
+                            </Dialog.Description>
                         </Dialog.Body>
-                        <Dialog.Footer>
-                            <Dialog.CloseTrigger asChild>
-                                <Button variant="outline" disabled={pending}>
-                                    {cancelLabel}
-                                </Button>
-                            </Dialog.CloseTrigger>
+                        <Dialog.Footer flexDirection={{base: "column-reverse", sm: "row"}}>
                             <Button
-                                colorPalette={severityPalette[severity]}
+                                ref={cancelButtonRef}
+                                variant="outline"
+                                disabled={pending}
+                                onClick={onCancel}
+                                w={{base: "full", sm: "auto"}}
+                            >
+                                {cancelLabel}
+                            </Button>
+                            <Button
+                                colorPalette={severityPresentation[severity].colorPalette}
+                                variant="solid"
                                 loading={pending}
                                 loadingText={pendingLabel}
                                 disabled={pending}
                                 onClick={onConfirm}
+                                w={{base: "full", sm: "auto"}}
                             >
                                 {confirmLabel}
                             </Button>

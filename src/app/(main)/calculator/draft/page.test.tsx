@@ -68,6 +68,37 @@ describe("Shift Result Draft actions", () => {
         expect(navigation.replace).toHaveBeenCalledWith("/results/result-1");
     });
 
+    it("identifies a failed Shift Result Draft load and supports retry", async () => {
+        const user = userEvent.setup();
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.mocked(calculationService.getDraftForSession)
+            .mockRejectedValueOnce(new Error("load failed"))
+            .mockResolvedValueOnce(structuredClone(draft));
+
+        renderPage();
+
+        expect(await screen.findByRole("heading", {name: "Shift Result Draft не загружен"})).toBeVisible();
+        expect(screen.getByRole("alert")).toHaveTextContent("Не удалось загрузить Shift Result Draft");
+        await user.click(screen.getByRole("button", {name: "Повторить"}));
+
+        expect(await screen.findByRole("button", {name: "Завершить смену"})).toBeVisible();
+        expect(calculationService.getDraftForSession).toHaveBeenCalledTimes(2);
+    });
+
+    it("reports a user-requested retry failure through the feedback facade", async () => {
+        const user = userEvent.setup();
+        const failure = new Error("private retry detail");
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.mocked(calculationService.getDraftForSession).mockRejectedValue(failure);
+
+        renderPage();
+        await user.click(await screen.findByRole("button", {name: "Повторить"}));
+
+        expect(await screen.findAllByText("Shift Result Draft не загружен")).toHaveLength(2);
+        expect(screen.queryByText(/private retry detail/)).not.toBeInTheDocument();
+        expect(consoleError).toHaveBeenCalledWith("[feedback:shiftResultDraftLoad]", failure);
+    });
+
     it("shows confirmation failure, stays on the draft, and allows retry", async () => {
         const user = userEvent.setup();
         const failure = new Error("backend detail must stay hidden");

@@ -1,13 +1,11 @@
 "use client";
 
 import {Box, Button, Container, Flex, Heading, Spinner, Stack, Text} from "@chakra-ui/react";
-import {ArrowLeft, Check} from "lucide-react";
+import {AlertTriangle, ArrowLeft, Check} from "lucide-react";
 import {EmployeePaymentDraftCard, ShiftResultsDraftTable} from "@/components/shift/shift.results.draft.components";
 import React, {useEffect, useState} from "react";
 import {useRouter, useSearchParams} from "next/navigation";
 import {ShiftResultDraft} from "@/types/draft.types";
-import {PageHeader} from "@/components/page/PageHeader";
-import {EmptyState} from "@/components/page/EmptyState";
 import {calculationService} from "@/service/calculation/calculation.service";
 import {feedback} from "@/feedback/feedback";
 import {feedbackMessages} from "@/feedback/messages";
@@ -33,10 +31,11 @@ export default function DraftPage() {
         loadData()
     }, []);
     
-    async function loadData() {
+    async function loadData(reportFailure = false) {
         if (!sessionId) return;
         
         setLoading(true)
+        setError("")
         
         try {
             const draft = await calculationService.getDraftForSession(sessionId)
@@ -44,7 +43,10 @@ export default function DraftPage() {
             setResultDraft(draft)
         } catch (e) {
             console.error("Error while loading data", e)
-            setError("Error while loading data")
+            setError("Не удалось загрузить Shift Result Draft")
+            if (reportFailure) {
+                feedback.beginAction("shiftResultDraftLoad").error(e)
+            }
         } finally {
             setLoading(false)
         }
@@ -84,7 +86,7 @@ export default function DraftPage() {
 
     if (isLoading) {
         return (
-            <Stack align="center" mt={10}>
+            <Stack role="status" aria-label="Shift Result Draft загружается" align="center" mt={10} color="fg.muted">
                 <Spinner size="lg" />
             </Stack>
         );
@@ -92,10 +94,26 @@ export default function DraftPage() {
 
     if (error) {
         return (
-            <Stack gap={6}>
-                <PageHeader title="Выбор компании" />
-                <EmptyState title="Ошибка" description={error} />
-            </Stack>
+            <Container maxW="breakpoint-lg" py={6}>
+                <Stack
+                    role="alert"
+                    gap={3}
+                    p={{base: 4, md: 5}}
+                    bg="bg.panel"
+                    borderWidth="1px"
+                    borderColor="status.danger"
+                    borderRadius="panel"
+                >
+                    <Text color="accent" fontSize="xs" fontWeight="bold" letterSpacing="wide" textTransform="uppercase">
+                        Этап 3 · Shift Result Draft
+                    </Text>
+                    <Heading as="h1" size="md">Shift Result Draft не загружен</Heading>
+                    <Text color="status.danger">{error}</Text>
+                    <Button alignSelf="flex-start" variant="outline" onClick={() => void loadData(true)}>
+                        Повторить
+                    </Button>
+                </Stack>
+            </Container>
         );
     }
     
@@ -103,9 +121,32 @@ export default function DraftPage() {
 
     return (
         <Container maxW="breakpoint-lg" py={6}>
-            <Stack gap={6}>
-                {/* Page header */}
-                <Heading size="lg">Расчёт за день</Heading>
+            <Stack gap={6} aria-busy={pendingAction !== null}>
+                <Box>
+                    <Text color="accent" fontSize="xs" fontWeight="bold" letterSpacing="wide" textTransform="uppercase">
+                        Этап 3 · Shift Result Draft
+                    </Text>
+                    <Heading as="h1" size="lg">Проверьте расчёт за день</Heading>
+                    <Text mt={1} color="fg.muted" fontSize="sm">
+                        Подтвердите рассчитанные Payment или вернитесь к Checkpoint для корректировки.
+                    </Text>
+                </Box>
+
+                <Flex
+                    role="status"
+                    align="center"
+                    gap={2}
+                    px={4}
+                    py={3}
+                    color="status.warning"
+                    bg="bg.subtle"
+                    borderWidth="1px"
+                    borderColor="status.warning"
+                    borderRadius="control"
+                >
+                    <AlertTriangle size={18} aria-hidden="true" />
+                    <Text fontSize="sm">Это черновик: Payment будут зафиксированы только после подтверждения.</Text>
+                </Flex>
 
                 {/* Shift controls */}
                 <Flex
@@ -113,14 +154,22 @@ export default function DraftPage() {
                     justify="space-between"
                     direction={{base: "column", md: "row"}}
                     gap={4}
+                    bg="bg.panel"
+                    borderWidth="1px"
+                    borderColor="border"
+                    borderRadius="panel"
+                    boxShadow="panel"
+                    p={{base: 4, md: 5}}
                 >
                     <Text fontSize="sm" color="fg.muted">
                         Начало смены: {resultDraft.date.toLocaleString()}
                     </Text>
 
-                    <Stack direction={{base: "column", md: "row"}}>
+                    <Stack direction={{base: "column-reverse", md: "row"}} w={{base: "full", md: "auto"}}>
                         <Button
                             variant="outline"
+                            color="status.warning"
+                            borderColor="status.warning"
                             onClick={handleBackToCheckpoints}
                             disabled={pendingAction !== null}
                             loading={pendingAction === "discard"}
@@ -129,7 +178,7 @@ export default function DraftPage() {
                             <ArrowLeft/> Назад
                         </Button>
                         <Button
-                            colorPalette="teal"
+                            colorPalette="brand"
                             onClick={handleAcceptResults}
                             disabled={pendingAction !== null}
                             loading={pendingAction === "confirm"}
@@ -142,13 +191,28 @@ export default function DraftPage() {
 
                 <Stack gap={4}>
                     {resultDraft.payments.length === 0 && (
-                        <Text color="fg.muted">
-                            Нет данных для расчёта
-                        </Text>
+                        <Box
+                            py={8}
+                            px={4}
+                            textAlign="center"
+                            color="fg.muted"
+                            bg="bg.panel"
+                            borderWidth="1px"
+                            borderColor="border"
+                            borderRadius="panel"
+                        >
+                            <Text>Нет данных для расчёта</Text>
+                        </Box>
                     )}
 
                     {/* Desktop table */}
-                    <Box display={{base: "none", md: "block"}}>
+                    <Box
+                        display={{base: "none", md: "block"}}
+                        overflowX="auto"
+                        borderWidth="1px"
+                        borderColor="border"
+                        borderRadius="panel"
+                    >
                         <ShiftResultsDraftTable resultsDraft={resultDraft}/>
                     </Box>
 

@@ -20,12 +20,20 @@ export function ShiftCheckpointCard(
     }: ShiftCheckpointCardProps
 ) {
     return (
-        <Card.Root variant="outline">
+        <Card.Root
+            variant="outline"
+            bg="bg.panel"
+            borderColor="border"
+            overflow="hidden"
+        >
             {/* Header */}
-            <Card.Header pb={2}>
+            <Card.Header pb={3} bg="bg.raised" borderBottomWidth="1px" borderColor="border.muted">
                 <Flex align="center" justify="space-between">
                     <Text fontWeight="semibold">
                         Чекпоинт #{position}
+                    </Text>
+                    <Text fontSize="xs" color="fg.quiet" textTransform="uppercase" letterSpacing="wide">
+                        {checkpoint.type === "FINAL" ? "Финальный" : "Обычный"}
                     </Text>
                 </Flex>
             </Card.Header>
@@ -44,7 +52,7 @@ export function ShiftCheckpointCard(
                                     key={e.id}
                                     px={2}
                                     py={1}
-                                    borderRadius="md"
+                                    borderRadius="control"
                                     bg="bg.subtle"
                                     fontSize="sm"
                                 >
@@ -55,12 +63,12 @@ export function ShiftCheckpointCard(
                     </VStack>
 
                     {/* Revenue / Tips */}
-                    <HStack gap={6}>
+                    <Flex gap={{base: 3, sm: 6}} direction={{base: "column", sm: "row"}}>
                         <VStack align="start" gap={0}>
                             <Text fontSize="sm" color="fg.muted">
                                 Выручка
                             </Text>
-                            <Text fontWeight="medium">
+                            <Text fontWeight="semibold" fontSize="xl" fontVariantNumeric="tabular-nums">
                                 {checkpoint.revenue.toLocaleString()} ₽
                             </Text>
                         </VStack>
@@ -69,11 +77,11 @@ export function ShiftCheckpointCard(
                             <Text fontSize="sm" color="fg.muted">
                                 Чаевые
                             </Text>
-                            <Text fontWeight="medium">
+                            <Text fontWeight="semibold" fontSize="xl" fontVariantNumeric="tabular-nums">
                                 {checkpoint.tips.toLocaleString()} ₽
                             </Text>
                         </VStack>
-                    </HStack>
+                    </Flex>
 
                     {/* Updated at */}
                     <Text fontSize="xs" color="fg.muted">
@@ -82,9 +90,9 @@ export function ShiftCheckpointCard(
                     </Text>
                 </Stack>
             </Card.Body>
-            <Card.Footer>
+            <Card.Footer gap={2} flexWrap="wrap" borderTopWidth="1px" borderColor="border.muted">
                 <Button
-                    aria-label="Edit"
+                    aria-label={`Изменить чекпоинт ${position}`}
                     variant="outline"
                     size="sm"
                     onClick={onEdit}
@@ -93,10 +101,11 @@ export function ShiftCheckpointCard(
                 </Button>
 
                 <Button
-                    aria-label="Delete"
-                    variant="surface"
+                    aria-label={`Удалить чекпоинт ${position}`}
+                    variant="outline"
                     size="sm"
-                    colorPalette="red"
+                    color="status.danger"
+                    borderColor="status.danger"
                     onClick={onDeleteRequested}
                 >
                     <Trash size={16}/> Удалить

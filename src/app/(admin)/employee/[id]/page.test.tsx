@@ -73,6 +73,15 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("Employee detail deletion", () => {
+    it("shows stored employee identifiers without inventing account semantics", async () => {
+        await renderPage();
+
+        expect(await screen.findByRole("heading", {name: "Иванов Иван Иванович"})).toBeVisible();
+        expect(screen.getByText("USER ID")).toBeVisible();
+        expect(screen.queryByText(/Аккаунт (связан|не связан)/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/в соответствии с ролью/i)).not.toBeInTheDocument();
+    });
+
     it("uses the shared alert dialog and cancels without a request", async () => {
         const user = userEvent.setup();
         const nativeConfirm = vi.spyOn(window, "confirm");

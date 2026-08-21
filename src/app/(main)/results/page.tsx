@@ -1,8 +1,8 @@
 // @/app/results/page.tsx
 "use client";
 
-import {useEffect, useState} from "react";
-import {Button, Container, Flex, Heading} from "@chakra-ui/react";
+import {useEffect, useRef, useState} from "react";
+import {Button, Container, Flex, Heading, Stack, Text} from "@chakra-ui/react";
 import {companyService} from "@/service/company/company.service";
 import {shiftResultService} from "@/service/results/shiftResult.service";
 import {Company} from "@/types/company.types";
@@ -24,7 +24,10 @@ export default function ResultsPage() {
     const [resultsPage, setResultsPage] = useState<Page<ShiftResultDetailed> | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
-    const [targetForEdit, setTargetForEdit] = useState<ShiftResultDetailed | null>(null)
+    const [targetForEdit, setTargetForEdit] = useState<{
+        result: ShiftResultDetailed;
+        trigger: HTMLButtonElement | null;
+    } | null>(null)
     const [resultsRevision, setResultsRevision] = useState(0);
     const [deleteTarget, setDeleteTarget] = useState<{
         id: string;
@@ -32,6 +35,7 @@ export default function ResultsPage() {
     } | null>(null);
     const [isDeletePending, setDeletePending] = useState(false);
     const [isDownloadPending, setDownloadPending] = useState(false);
+    const createTriggerRef = useRef<HTMLButtonElement>(null);
     const isEditDialogOpen = targetForEdit !== null
 
     // Инициализация хука фильтров (defaultCompanyId будет применен после загрузки компаний)
@@ -135,16 +139,31 @@ export default function ResultsPage() {
     };
 
     return (
-        <Container maxW="7xl" py={8}>
-            <Flex justify="space-between" align="center" mb={6}>
-                <Heading size="2xl">Результаты смен</Heading>
+        <Container maxW="7xl" px={{base: 4, md: 6}} py={{base: 6, md: 8}}>
+            <Flex
+                justify="space-between"
+                align={{base: "stretch", md: "end"}}
+                direction={{base: "column", md: "row"}}
+                gap={4}
+                mb={6}
+            >
+                <Stack gap={1}>
+                    <Text color="accent" fontSize="xs" fontWeight="bold" letterSpacing="wide" textTransform="uppercase">
+                        Shift Result · Payroll
+                    </Text>
+                    <Heading as="h1" size={{base: "xl", md: "2xl"}}>Результаты смен</Heading>
+                </Stack>
 
-                <Flex justify="space-between" align="center" gap={2}>
-                    <Button colorPalette="blue" onClick={() => {setCreateModalOpen(true)}}>
+                <Flex gap={2} direction={{base: "column", sm: "row"}}>
+                    <Button
+                        ref={createTriggerRef}
+                        colorPalette="brand"
+                        onClick={() => {setCreateModalOpen(true)}}
+                    >
                         Создать результат
                     </Button>
                     <Button
-                        colorPalette="gray"
+                        variant="outline"
                         onClick={handleDownload}
                         loading={isDownloadPending}
                         loadingText={feedbackMessages.payrollExport.loading}
@@ -164,7 +183,7 @@ export default function ResultsPage() {
             <ResultsTable
                 data={resultsPage?.content || []}
                 isLoading={isLoading}
-                onEdit={data => setTargetForEdit(data)}
+                onEdit={(result, trigger) => setTargetForEdit({result, trigger})}
                 onDelete={openDeleteDialog}
             />
 
@@ -211,6 +230,7 @@ export default function ResultsPage() {
                 onSuccess={handleSaveSuccess}
                 companies={companies}
                 initialData={null} // null для создания
+                finalFocusEl={() => createTriggerRef.current}
             />
 
             { targetForEdit &&
@@ -219,7 +239,8 @@ export default function ResultsPage() {
                     onClose={() => setTargetForEdit(null)}
                     onSuccess={handleSaveSuccess}
                     companies={companies}
-                    initialData={{ result: targetForEdit, companyId: filters.companyId }} // null для создания
+                    initialData={{ result: targetForEdit.result, companyId: filters.companyId }}
+                    finalFocusEl={() => targetForEdit.trigger}
                 />
             }
         </Container>

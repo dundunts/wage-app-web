@@ -1,4 +1,4 @@
-import "./globals.css";
+import "@fontsource-variable/manrope";
 import {AuthSessionProvider} from "./providers/session-provider";
 import {Provider} from "@/components/ui/provider";
 import {Header} from "@/components/navigation/Header";

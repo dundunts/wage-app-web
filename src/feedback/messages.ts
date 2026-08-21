@@ -141,6 +141,13 @@ export const feedbackMessages = {
         information: "Подтверждение результата смены",
         loading: "Результат смены создаётся",
     },
+    shiftResultDraftLoad: {
+        success: "Shift Result Draft загружен",
+        error: "Shift Result Draft не загружен",
+        warning: "Загрузка Shift Result Draft требует внимания",
+        information: "Загрузка Shift Result Draft",
+        loading: "Shift Result Draft загружается",
+    },
     shiftResultDraftDiscard: {
         success: "Черновик результата смены удалён",
         error: "Черновик результата смены не удалён",

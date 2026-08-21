@@ -8,6 +8,7 @@ import {
     Dialog,
     Button,
     Input,
+    Portal,
     Stack,
     Field,
 } from "@chakra-ui/react";
@@ -79,8 +80,9 @@ export const CompanyFormModal = ({
 
     return (
         <Dialog.Root open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
-            <Dialog.Backdrop />
-            <Dialog.Positioner>
+            <Portal>
+                <Dialog.Backdrop />
+                <Dialog.Positioner p={{base: 4, md: 6}}>
                 <Dialog.Content>
                     <Dialog.Header>
                         <Dialog.Title>
@@ -93,7 +95,9 @@ export const CompanyFormModal = ({
                                 <Field.Root invalid={!!errors.title}>
                                     <Field.Label>Название компании</Field.Label>
                                     <Input {...register("title")} placeholder="Например, ООО Ромашка" />
-                                    <Field.ErrorText>{errors.title?.message}</Field.ErrorText>
+                                    <Field.ErrorText color="status.danger">
+                                        {errors.title?.message}
+                                    </Field.ErrorText>
                                 </Field.Root>
 
                                 <Field.Root invalid={!!errors.employeeWageCoefficientFromRevenue}>
@@ -106,7 +110,7 @@ export const CompanyFormModal = ({
                                     <Field.HelperText>
                                         Введите значение в процентах (например, 3.5 для 3.5%)
                                     </Field.HelperText>
-                                    <Field.ErrorText>
+                                    <Field.ErrorText color="status.danger">
                                         {errors.employeeWageCoefficientFromRevenue?.message}
                                     </Field.ErrorText>
                                 </Field.Root>
@@ -117,16 +121,20 @@ export const CompanyFormModal = ({
                                         type="time"
                                         {...register("defaultShiftStartTime")}
                                     />
-                                    <Field.ErrorText>
+                                    <Field.ErrorText color="status.danger">
                                         {errors.defaultShiftStartTime?.message}
                                     </Field.ErrorText>
                                 </Field.Root>
                             </Stack>
                         </form>
                     </Dialog.Body>
-                    <Dialog.Footer>
+                    <Dialog.Footer flexDirection={{base: "column-reverse", sm: "row"}}>
                         <Dialog.CloseTrigger asChild>
-                            <Button variant="outline" disabled={isLoading}>
+                            <Button
+                                variant="outline"
+                                disabled={isLoading}
+                                w={{base: "full", sm: "auto"}}
+                            >
                                 Отмена
                             </Button>
                         </Dialog.CloseTrigger>
@@ -138,13 +146,15 @@ export const CompanyFormModal = ({
                                 isEditMode ? "companyUpdate" : "companyCreate"
                             ].loading}
                             disabled={isLoading}
-                            colorPalette="blue"
+                            colorPalette="brand"
+                            w={{base: "full", sm: "auto"}}
                         >
                             {isEditMode ? "Сохранить" : "Создать"}
                         </Button>
                     </Dialog.Footer>
                 </Dialog.Content>
             </Dialog.Positioner>
+            </Portal>
         </Dialog.Root>
     );
 };

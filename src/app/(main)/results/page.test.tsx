@@ -1,4 +1,4 @@
-import {render, screen, waitFor} from "@testing-library/react";
+import {render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import ResultsPage from "@/app/(main)/results/page";
@@ -35,6 +35,10 @@ vi.mock("@/service/salary/salary.service", () => ({
     salaryService: {downloadReportTable: vi.fn()},
 }));
 
+vi.mock("@/service/employee/employee.service", () => ({
+    employeeService: {getCoworkersForCompany: vi.fn().mockResolvedValue([])},
+}));
+
 vi.mock("@/utils/download-file", () => ({
     downloadFile: vi.fn(),
 }));
@@ -44,6 +48,12 @@ const company = {
     title: "Компания",
     employeeWageCoefficientFromRevenue: 0.4,
     defaultShiftStartTime: "09:00",
+};
+
+const secondCompany = {
+    ...company,
+    id: "company-2",
+    title: "Вторая компания",
 };
 
 const result = {
@@ -72,7 +82,7 @@ function renderPage() {
 
 async function openDeleteDialog(user: ReturnType<typeof userEvent.setup>) {
     renderPage();
-    const actions = await screen.findByRole("button", {name: "Опции"});
+    const actions = await screen.findByRole("button", {name: /Действия для смены/});
     await user.click(actions);
     await user.click(screen.getByRole("menuitem", {name: "Удалить"}));
     return actions;
@@ -80,6 +90,7 @@ async function openDeleteDialog(user: ReturnType<typeof userEvent.setup>) {
 
 beforeEach(() => {
     toaster.remove();
+    navigation.push.mockReset();
     vi.mocked(companyService.getForUser).mockReset();
     vi.mocked(companyService.getForUser).mockResolvedValue([company]);
     vi.mocked(shiftResultService.getPageByPeriod).mockReset();
@@ -191,6 +202,64 @@ describe("Shift Result list deletion", () => {
         expect(await screen.findByText("Результат смены удалён")).toBeVisible();
         expect(shiftResultService.delete).toHaveBeenCalledTimes(2);
         expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+});
+
+describe("Shift Result list presentation", () => {
+    it("restores focus to the create action when its modal is cancelled", async () => {
+        const user = userEvent.setup();
+        renderPage();
+        const create = await screen.findByRole("button", {name: "Создать результат"});
+
+        await user.click(create);
+        expect(screen.getByRole("dialog", {name: "Создать результат смены"})).toBeVisible();
+        await user.click(screen.getByRole("button", {name: "Отмена"}));
+
+        await waitFor(() => expect(create).toHaveFocus());
+        const closedDialog = screen.queryByRole("dialog", {
+            name: "Создать результат смены",
+            hidden: true,
+        });
+        expect(closedDialog === null || closedDialog.dataset.state === "closed").toBe(true);
+    });
+
+    it("keeps filters labelled and updates the Company filter from the keyboard", async () => {
+        const user = userEvent.setup();
+        vi.mocked(companyService.getForUser).mockResolvedValue([company, secondCompany]);
+        renderPage();
+
+        const companyFilter = await screen.findByRole("combobox", {name: "Компания"});
+        expect(screen.getByRole("combobox", {name: "Период"})).toBeVisible();
+
+        companyFilter.focus();
+        await user.keyboard("{Enter}");
+        expect(companyFilter).toHaveAttribute("aria-expanded", "true");
+        const listbox = await screen.findByRole("listbox", {name: "Компания"});
+        expect(screen.getByRole("option", {name: "Вторая компания"})).toBeVisible();
+        await waitFor(() => expect(listbox).toHaveFocus());
+        await user.keyboard("{ArrowDown}");
+        expect(listbox).toHaveAttribute(
+            "aria-activedescendant",
+            expect.stringContaining("company-2"),
+        );
+        await user.keyboard("{Enter}");
+
+        await waitFor(() => expect(navigation.push).toHaveBeenCalledWith(
+            "/results?companyId=company-2&page=0",
+        ));
+    });
+
+    it("exposes a scrollable table region and a uniquely named action for each Shift Result", async () => {
+        renderPage();
+
+        const tableRegion = await screen.findByRole("region", {
+            name: "Таблица результатов смен",
+        });
+        expect(tableRegion).toHaveAttribute("tabindex", "0");
+        expect(within(tableRegion).getByRole("table")).toBeVisible();
+        expect(within(tableRegion).getByRole("button", {
+            name: "Действия для смены 21.08.2026",
+        })).toBeVisible();
     });
 });
 

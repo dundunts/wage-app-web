@@ -3,14 +3,21 @@
 import {Payroll} from "@/types/salary.types";
 import {
     calculateByDays,
-    calculateEmployeesByDays,
     calculateSummary,
     groupByEmployee,
     prepareChartData,
 } from "@/utils/payrollCalculations";
-import {Accordion, Box, SimpleGrid, Stat, Text,} from "@chakra-ui/react";
+import type {DayEmployeeStat} from "@/utils/payrollCalculations";
+import {Accordion, Box, SimpleGrid, Text,} from "@chakra-ui/react";
 import {useMemo} from "react";
-import {Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import {Bar, BarChart, ResponsiveContainer, Tooltip} from "recharts";
+import {chartPalette, getChartSeriesStyle} from "@/theme/chart";
+import {
+    StatisticChartAxes,
+    StatisticChartFrame,
+    StatisticChartTooltip,
+} from "@/components/statistic/PayrollCharts";
+import {StatisticSummaryCard} from "@/components/statistic/StatisticSummaryCard";
 
 interface Props {
     payroll: Payroll;
@@ -19,11 +26,6 @@ interface Props {
 export function StaffStatistic({ payroll }: Props) {
     const days = useMemo(
         () => calculateByDays(payroll.elements),
-        [payroll.elements]
-    );
-
-    const { data: daysByEmployee, employeesMap } = useMemo(
-        () => calculateEmployeesByDays(payroll.elements),
         [payroll.elements]
     );
 
@@ -48,49 +50,44 @@ export function StaffStatistic({ payroll }: Props) {
 
     return (
         <Box>
-            <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
-                <Stat.Root>
-                    <Stat.Label>Общая сумма выплат</Stat.Label>
-                    <Stat.ValueText>{summary.total.toFixed(2)}</Stat.ValueText>
-                </Stat.Root>
+            <SimpleGrid as="section" aria-label="Сводка статистики команды" columns={{ base: 1, md: 3 }} gap={4}>
+                <StatisticSummaryCard label="Общая сумма выплат">
+                    {summary.total.toFixed(2)}
+                </StatisticSummaryCard>
 
-                <Stat.Root>
-                    <Stat.Label>Средний общий доход за день</Stat.Label>
-                    <Stat.ValueText>{summary.avgTotal.toFixed(2)}</Stat.ValueText>
-                </Stat.Root>
+                <StatisticSummaryCard label="Средний общий доход за день">
+                    {summary.avgTotal.toFixed(2)}
+                </StatisticSummaryCard>
 
-                <Stat.Root>
-                    <Stat.Label>Макс / Мин общий за день</Stat.Label>
-                    <Stat.ValueText>
-                        {summary.max.toFixed(2)} / {summary.min.toFixed(2)}
-                    </Stat.ValueText>
-                </Stat.Root>
+                <StatisticSummaryCard label="Макс. / мин. общий за день">
+                    {summary.max.toFixed(2)} / {summary.min.toFixed(2)}
+                </StatisticSummaryCard>
             </SimpleGrid>
 
             <PayrollEmployeeChart
                 data={chartData}
                 employeeIds={employeeIds}
-                namesMap={employeeNames}
+                labelsByDataKey={employeeNames}
             />
 
-            <Box mt={8}>
+            <Box mt={8} borderWidth="1px" borderColor="border" borderRadius="panel" bg="bg.panel" overflow="hidden">
                 <Accordion.Root multiple defaultValue={["b"]}>
                     {[...employees.values()].sort((a, b) => b.total - a.total).map((employeeStat) => (
                         <Accordion.Item key={employeeStat.employee.id} value={employeeStat.employee.id}>
-                            <Accordion.ItemTrigger>
+                            <Accordion.ItemTrigger px={4} _hover={{bg: "accent.subtle"}}>
                                 <Box flex="1" textAlign="left">
                                     {employeeStat.employee.simpleName ||
                                         `${employeeStat.employee.lastName} ${employeeStat.employee.firstName}`}
                                 </Box>
-                                <Text fontWeight="bold">
+                                <Text fontWeight="bold" fontVariantNumeric="tabular-nums">
                                     {employeeStat.total.toFixed(2)}
                                 </Text>
                                 <Accordion.ItemIndicator />
                             </Accordion.ItemTrigger>
-                            <Accordion.ItemContent>
+                            <Accordion.ItemContent borderTopWidth="1px" borderColor="border.muted">
                                 <Accordion.ItemBody>
                                     {employeeStat.days.map((day) => (
-                                        <Text key={day.date}>
+                                        <Text key={day.date} color="fg.muted" fontVariantNumeric="tabular-nums">
                                             {day.date}: {day.total.toFixed(2)}
                                         </Text>
                                     ))}
@@ -105,43 +102,70 @@ export function StaffStatistic({ payroll }: Props) {
 }
 
 interface PayrollEmployeeChartProps {
-    data: unknown[];
+    data: DayEmployeeStat[];
     employeeIds: string[];
-    namesMap: Record<string, string>;
+    labelsByDataKey: Record<string, string>;
 }
 
-// Набор приятных цветов для графиков
-const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F'];
+export const PayrollEmployeeChart = ({
+    data,
+    employeeIds,
+    labelsByDataKey,
+}: PayrollEmployeeChartProps) => {
+    const legendItems = employeeIds.map((id, index) => {
+        const seriesStyle = getChartSeriesStyle(index);
 
-export const PayrollEmployeeChart = ({ data, employeeIds, namesMap }: PayrollEmployeeChartProps) => {
+        return {
+            id,
+            label: labelsByDataKey[id] ?? id,
+            color: seriesStyle.color,
+            dashArray: seriesStyle.dashArray,
+        };
+    });
+
     return (
-        <div style={{ width: '100%', height: 400 }}>
-            <ResponsiveContainer>
-                <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip
-                        // Форматируем ID в понятное имя в тултипе
-                        // @ts-expect-error Recharts formatter accepts the runtime numeric value.
-                        formatter={(value: number, name: string) => [value.toFixed(2), namesMap[name]]}
-                    />
-                    <Legend
-                        // Форматируем ID в понятное имя в легенде
-                        formatter={(value) => namesMap[value]}
-                    />
-
-                    {employeeIds.map((id, index) => (
-                        <Bar
-                            key={id}
-                            dataKey={id}
-                            stackId="a" // Это делает график "стопкой" (один над другим)
-                            fill={COLORS[index % COLORS.length]}
-                            radius={index === employeeIds.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+        <StatisticChartFrame
+            title="Выплаты сотрудникам по дням"
+            description="Столбчатая диаграмма выплат сотрудникам по датам. Серии перечислены в легенде."
+            legendItems={legendItems}
+            height={{base: "19rem", md: "24rem"}}
+        >
+            <ResponsiveContainer
+                width="100%"
+                height="100%"
+                minWidth={0}
+                minHeight={304}
+                initialDimension={{width: 640, height: 384}}
+            >
+                    <BarChart data={data} accessibilityLayer margin={{top: 12, right: 8, left: 4, bottom: 0}}>
+                        <StatisticChartAxes />
+                        <Tooltip<number, string>
+                            cursor={{fill: chartPalette.cursor}}
+                            content={<StatisticChartTooltip labelsByDataKey={labelsByDataKey} />}
+                            isAnimationActive={false}
                         />
-                    ))}
-                </BarChart>
+
+                        {employeeIds.map((id, index) => {
+                            const seriesStyle = getChartSeriesStyle(index);
+
+                            return (
+                                <Bar
+                                    key={id}
+                                    dataKey={id}
+                                    name={labelsByDataKey[id] ?? id}
+                                    stackId="payroll"
+                                    fill={seriesStyle.color}
+                                    fillOpacity={seriesStyle.fillOpacity}
+                                    stroke={seriesStyle.color}
+                                    strokeWidth={seriesStyle.dashArray ? 2 : 0}
+                                    strokeDasharray={seriesStyle.dashArray}
+                                    radius={index === employeeIds.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                                    isAnimationActive={false}
+                                />
+                            );
+                        })}
+                    </BarChart>
             </ResponsiveContainer>
-        </div>
+        </StatisticChartFrame>
     );
 };

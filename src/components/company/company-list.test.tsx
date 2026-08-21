@@ -49,7 +49,7 @@ async function openCreateDialog(user: ReturnType<typeof userEvent.setup>) {
 }
 
 async function openDeleteDialog(user: ReturnType<typeof userEvent.setup>) {
-    await user.click(screen.getByRole("button", {name: "Опции"}));
+    await user.click(screen.getByRole("button", {name: "Опции компании «Старая компания»"}));
     await user.click(screen.getByRole("menuitem", {name: "Удалить"}));
     return screen.getByRole("alertdialog", {name: "Удалить компанию?"});
 }

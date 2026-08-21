@@ -54,9 +54,15 @@ function renderPage() {
 async function openDeleteDialog(user: ReturnType<typeof userEvent.setup>) {
     renderPage();
     await screen.findByText("Иванов И. И.");
-    await user.click(screen.getByRole("button", {name: "Опции"}));
+    const actionTrigger = screen.getByRole("button", {
+        name: "Действия с работником Иванов И. И.",
+    });
+    await user.click(actionTrigger);
     await user.click(screen.getByRole("menuitem", {name: "Удалить"}));
-    return screen.getByRole("alertdialog", {name: "Удалить сотрудника?"});
+    return {
+        actionTrigger,
+        dialog: screen.getByRole("alertdialog", {name: "Удалить сотрудника?"}),
+    };
 }
 
 beforeEach(() => {
@@ -69,10 +75,24 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("Employee list deletion", () => {
+    it("keeps the wide employee table and row actions keyboard-accessible", async () => {
+        renderPage();
+
+        const employeeTableRegion = await screen.findByRole("region", {
+            name: "Список работников",
+        });
+
+        expect(employeeTableRegion).toHaveAttribute("tabindex", "0");
+        expect(within(employeeTableRegion).getByRole("table")).toBeVisible();
+        expect(within(employeeTableRegion).getByRole("button", {
+            name: "Действия с работником Иванов И. И.",
+        })).toBeVisible();
+    });
+
     it("uses the shared alert dialog and cancels without a request", async () => {
         const user = userEvent.setup();
         const nativeConfirm = vi.spyOn(window, "confirm");
-        const dialog = await openDeleteDialog(user);
+        const {actionTrigger, dialog} = await openDeleteDialog(user);
 
         expect(dialog).toBeVisible();
         expect(screen.getByText("Сотрудник «Иванов Иван Иванович» будет удалён без возможности восстановления.")).toBeVisible();
@@ -81,6 +101,7 @@ describe("Employee list deletion", () => {
 
         expect(employeeService.delete).not.toHaveBeenCalled();
         await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+        await waitFor(() => expect(actionTrigger).toHaveFocus());
     });
 
     it("prevents repeated deletion and refetches after success", async () => {
@@ -89,7 +110,7 @@ describe("Employee list deletion", () => {
         vi.mocked(employeeService.delete).mockReturnValue(new Promise((resolve) => {
             resolveDelete = resolve;
         }));
-        const dialog = await openDeleteDialog(user);
+        const {dialog} = await openDeleteDialog(user);
 
         await user.click(within(dialog).getByRole("button", {name: "Удалить"}));
 

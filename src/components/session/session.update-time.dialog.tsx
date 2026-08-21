@@ -1,5 +1,5 @@
 import React from 'react';
-import {Button, Dialog, Field, Input, Stack, Text} from "@chakra-ui/react";
+import {Button, Dialog, Field, Input, Portal, Stack, Text} from "@chakra-ui/react";
 import {useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -57,7 +57,12 @@ export function SessionUpdateTimeDialog({
             closeOnInteractOutside={!isLoading}
             onOpenChange={(e) => !e.open && !isLoading && onClose()}
         >
-            <Dialog.Content>
+            <Portal>
+                <Dialog.Backdrop />
+                <Dialog.Positioner p={{base: 3, sm: 4}}>
+            <Dialog.Content
+                maxW="440px"
+            >
                 <Dialog.Header>
                     <Dialog.Title>Изменить начало смены</Dialog.Title>
                 </Dialog.Header>
@@ -73,6 +78,8 @@ export function SessionUpdateTimeDialog({
                                 <Field.Label>Время начала (ЧЧ:ММ)</Field.Label>
                                 <Input
                                     type="time"
+                                    colorScheme="light dark"
+                                    disabled={isLoading}
                                     size="lg"
                                     {...register("startWorkTime")}
                                 />
@@ -84,25 +91,28 @@ export function SessionUpdateTimeDialog({
                     </form>
                 </Dialog.Body>
 
-                <Dialog.Footer>
+                <Dialog.Footer flexDirection={{base: "column-reverse", sm: "row"}}>
                     <Dialog.ActionTrigger asChild>
-                        <Button variant="outline" onClick={onClose} disabled={isLoading}>
+                        <Button variant="outline" onClick={onClose} disabled={isLoading} w={{base: "full", sm: "auto"}}>
                             Отмена
                         </Button>
                     </Dialog.ActionTrigger>
                     <Button
-                        colorPalette="teal"
+                        colorPalette="brand"
                         type="submit"
                         form="update-time-form"
                         loading={isLoading}
                         loadingText={feedbackMessages.shiftSessionUpdateTime.loading}
                         disabled={isLoading}
+                        w={{base: "full", sm: "auto"}}
                     >
                         Сохранить
                     </Button>
                 </Dialog.Footer>
-                <Dialog.CloseTrigger onClick={onClose} disabled={isLoading} />
+                <Dialog.CloseTrigger aria-label="Закрыть диалог" onClick={onClose} disabled={isLoading} />
             </Dialog.Content>
+                </Dialog.Positioner>
+            </Portal>
         </Dialog.Root>
     );
 }

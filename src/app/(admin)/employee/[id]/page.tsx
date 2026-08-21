@@ -8,20 +8,31 @@ import {
     Box,
     Breadcrumb,
     Button,
+    Card,
     Center,
     Flex,
     Grid,
     Heading,
+    HStack,
+    IconButton,
     Separator,
     Spinner,
     Stack,
     Text,
 } from "@chakra-ui/react";
-import {ArrowLeft, Building2, ChevronRight, Pencil, Trash2, User,} from "lucide-react";
+import {
+    ArrowLeft,
+    Building2,
+    ChevronRight,
+    Pencil,
+    Trash2,
+    TriangleAlert,
+    User,
+} from "lucide-react";
 
 import {employeeService} from "@/service/employee/employee.service";
 import {useAllCompanies} from "@/hooks/useAllCompanies";
-import {Employee, EmployeePosition} from "@/types/employee.types";
+import {Employee} from "@/types/employee.types";
 import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
 import {EmployeeModal} from "@/components/dialog/employee-modal";
 import {feedback} from "@/feedback/feedback";
@@ -81,7 +92,7 @@ export default function EmployeeDetailPage({ params }: Props) {
 
     if (isLoading) {
         return (
-            <Center minH="400px">
+            <Center role="status" aria-label="Employee загружается" minH="400px">
                 <Spinner size="lg" />
             </Center>
         );
@@ -92,9 +103,8 @@ export default function EmployeeDetailPage({ params }: Props) {
     const assignedCompanies = companies.filter((c) =>
         employee.companyIds.includes(c.id)
     );
-
     return (
-        <Box p={6} maxW="1000px" mx="auto">
+        <Box p={{base: 4, md: 6}} maxW="1000px" mx="auto">
             {/* Breadcrumbs */}
             <Breadcrumb.Root mb={6}>
                 <Breadcrumb.List>
@@ -115,36 +125,46 @@ export default function EmployeeDetailPage({ params }: Props) {
             </Breadcrumb.Root>
 
             {/* Header */}
-            <Flex justify="space-between" align="flex-start" mb={8}>
-                <Flex gap={4} align="center">
-                    <Button
-                        variant="subtle"
+            <Flex
+                justify="space-between"
+                align={{base: "stretch", md: "flex-start"}}
+                direction={{base: "column", md: "row"}}
+                gap={5}
+                mb={8}
+            >
+                <Flex gap={3} align="center" minW={0}>
+                    <IconButton
+                        aria-label="Вернуться к списку работников"
+                        variant="ghost"
                         onClick={() => router.push("/employee")}
-                        px={2}
                     >
                         <ArrowLeft size={20} />
-                    </Button>
+                    </IconButton>
 
-                    <Stack gap={1}>
-                        <Heading size="lg">
+                    <Stack gap={1} minW={0}>
+                        <Text color="fg.quiet" fontSize="xs" fontWeight="bold" letterSpacing="0.08em">
+                            КАРТОЧКА РАБОТНИКА
+                        </Text>
+                        <Heading as="h1" size="lg">
                             {employee.lastName} {employee.firstName}{" "}
                             {employee.patronymic}
                         </Heading>
                         <Badge
-                            colorPalette={
-                                employee.position === EmployeePosition.MANAGER
-                                    ? "purple"
-                                    : "blue"
-                            }
                             alignSelf="flex-start"
+                            variant="subtle"
+                            color="status.info"
+                            borderWidth="1px"
+                            borderColor="border"
                         >
+                            <User size={12} aria-hidden="true"/>
                             {employee.position}
                         </Badge>
                     </Stack>
                 </Flex>
 
-                <Flex gap={3}>
+                <Flex gap={3} direction={{base: "column", sm: "row"}}>
                     <Button
+                        colorPalette="brand"
                         onClick={() => setEditOpen(true)}
                     >
                         <Pencil size={18} /> Изменить
@@ -152,7 +172,7 @@ export default function EmployeeDetailPage({ params }: Props) {
                     <Button
                         ref={deleteTriggerRef}
                         variant="outline"
-                        colorPalette="red"
+                        colorPalette="danger"
                         onClick={() => setDeleteOpen(true)}
                     >
                         <Trash2 size={18} /> Удалить
@@ -160,46 +180,41 @@ export default function EmployeeDetailPage({ params }: Props) {
                 </Flex>
             </Flex>
 
-            <Grid templateColumns={{ base: "1fr", md: "2fr 1fr" }} gap={8}>
-                {/* Main info */}
-                <Box
-                    borderWidth="1px"
-                    borderRadius="xl"
-                    p={6}
-                    bg="bg.panel"
-                    shadow="sm"
-                >
-                    <Heading size="sm" mb={6} display="flex" alignItems="center">
-                        <User size={18} style={{ marginRight: 8 }} />
-                        Основная информация
-                    </Heading>
+            <Grid templateColumns="1fr" gap={6}>
+                <Card.Root>
+                    <Card.Header pb={0}>
+                        <Heading size="sm" display="flex" alignItems="center" gap={2}>
+                            <User size={18} aria-hidden="true"/>
+                            Основная информация
+                        </Heading>
+                    </Card.Header>
+                    <Card.Body>
+                        <Stack gap={6}>
+                            <Grid templateColumns={{base: "1fr", sm: "repeat(2, 1fr)"}} gap={4}>
+                                <Box>
+                                    <Text fontSize="xs" color="fg.quiet" fontWeight="bold" letterSpacing="0.06em">
+                                        USER ID
+                                    </Text>
+                                    <Text fontWeight="semibold" fontVariantNumeric="tabular-nums" overflowWrap="anywhere">
+                                        {employee.userId || "—"}
+                                    </Text>
+                                </Box>
+                                <Box>
+                                    <Text fontSize="xs" color="fg.quiet" fontWeight="bold" letterSpacing="0.06em">
+                                        SIMPLE NAME
+                                    </Text>
+                                    <Text fontWeight="semibold" color={employee.simpleName ? "fg" : "fg.muted"}>
+                                        {employee.simpleName || "—"}
+                                    </Text>
+                                </Box>
+                            </Grid>
 
-                    <Stack gap={6}>
-                        <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                            <Separator />
+
                             <Box>
-                                <Text fontSize="xs" color="fg.muted" fontWeight="bold">
-                                    USER ID
-                                </Text>
-                                <Text fontWeight="medium">
-                                    {employee.userId || "—"}
-                                </Text>
-                            </Box>
-                            <Box>
-                                <Text fontSize="xs" color="fg.muted" fontWeight="bold">
-                                    SIMPLE NAME
-                                </Text>
-                                <Text fontWeight="medium">
-                                    {employee.simpleName || "—"}
-                                </Text>
-                            </Box>
-                        </Grid>
-
-                        <Separator />
-
-                        <Box>
                             <Text
                                 fontSize="xs"
-                                color="fg.muted"
+                                color="fg.quiet"
                                 fontWeight="bold"
                                 mb={3}
                             >
@@ -212,7 +227,7 @@ export default function EmployeeDetailPage({ params }: Props) {
                                         <Badge
                                             key={company.id}
                                             variant="subtle"
-                                            colorPalette="gray"
+                                            color="fg.muted"
                                             px={3}
                                             py={1}
                                             borderRadius="full"
@@ -225,30 +240,16 @@ export default function EmployeeDetailPage({ params }: Props) {
                                     ))}
                                 </Flex>
                             ) : (
-                                <Text fontSize="sm" color="orange.500">
-                                    Компании не привязаны
-                                </Text>
+                                <HStack color="status.warning" align="flex-start">
+                                    <TriangleAlert size={16} aria-hidden="true"/>
+                                    <Text fontSize="sm">Компании не привязаны</Text>
+                                </HStack>
                             )}
-                        </Box>
-                    </Stack>
-                </Box>
+                            </Box>
+                        </Stack>
+                    </Card.Body>
+                </Card.Root>
 
-                {/* Sidebar */}
-                <Box
-                    borderWidth="1px"
-                    borderRadius="xl"
-                    p={6}
-                    bg="blue.50"
-                    borderColor="blue.100"
-                >
-                    <Text fontWeight="bold" color="blue.700" mb={2}>
-                        Статус аккаунта
-                    </Text>
-                    <Text fontSize="sm" color="blue.600">
-                        Сотрудник имеет доступ к системе в соответствии с ролью:
-                        <strong> {employee.position}</strong>
-                    </Text>
-                </Box>
             </Grid>
 
             {/* Dialogs */}
