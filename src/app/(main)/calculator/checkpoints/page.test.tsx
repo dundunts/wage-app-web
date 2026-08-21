@@ -92,19 +92,19 @@ async function openCloseDialog(user: ReturnType<typeof userEvent.setup>) {
 
 async function openCreateCheckpointDialog(user: ReturnType<typeof userEvent.setup>) {
     renderPage();
-    await user.click(await screen.findByRole("button", {name: "Add checkpoint"}));
+    await user.click(await screen.findByRole("button", {name: "Добавить чекпоинт"}));
     return screen.getByRole("dialog", {name: "Создание чекпоинта"});
 }
 
 async function openUpdateCheckpointDialog(user: ReturnType<typeof userEvent.setup>) {
     renderPage();
-    await user.click(await screen.findByRole("button", {name: "Edit"}));
-    return screen.getByRole("dialog", {name: "Создание чекпоинта"});
+    await user.click(await screen.findByRole("button", {name: "Изменить чекпоинт 1"}));
+    return screen.getByRole("dialog", {name: "Редактирование чекпоинта"});
 }
 
 async function openDeleteCheckpointDialog(user: ReturnType<typeof userEvent.setup>) {
     renderPage();
-    await user.click(await screen.findByRole("button", {name: "Delete"}));
+    await user.click(await screen.findByRole("button", {name: "Удалить чекпоинт 1"}));
     return screen.getByRole("alertdialog", {name: "Удалить чекпоинт?"});
 }
 
@@ -138,6 +138,39 @@ describe("Checkpoint page loading", () => {
 });
 
 describe("Checkpoint create", () => {
+    it("exposes metric and date controls with accessible names", async () => {
+        const user = userEvent.setup();
+        const dialog = await openCreateCheckpointDialog(user);
+
+        expect(within(dialog).getByRole("spinbutton", {name: "Выручка"})).toBeVisible();
+        expect(within(dialog).getByRole("spinbutton", {name: "Чай"})).toBeVisible();
+        expect(within(dialog).getByLabelText("Дата и время чекпоинта")).toBeVisible();
+    });
+
+    it("announces the employee selection error inline", async () => {
+        const user = userEvent.setup();
+        const dialog = await openCreateCheckpointDialog(user);
+
+        await user.click(within(dialog).getByRole("button", {name: "Сохранить"}));
+
+        expect(within(dialog).getByRole("alert")).toHaveTextContent(
+            "Выберите хотя бы одного сотрудника",
+        );
+        expect(checkpointService.create).not.toHaveBeenCalled();
+    });
+
+    it("submits the checkpoint form from the keyboard", async () => {
+        const user = userEvent.setup();
+        vi.mocked(checkpointService.create).mockResolvedValue(checkpoint);
+        const dialog = await openCreateCheckpointDialog(user);
+        await user.click(within(dialog).getByRole("checkbox", {name: "Иван"}));
+        const revenue = within(dialog).getByRole("spinbutton", {name: "Выручка"});
+        await user.clear(revenue);
+        await user.type(revenue, "250{Enter}");
+
+        expect(checkpointService.create).toHaveBeenCalledOnce();
+    });
+
     it("keeps one local request pending and reports success before refreshing and closing", async () => {
         const user = userEvent.setup();
         let resolveCreate!: () => void;
@@ -208,7 +241,7 @@ describe("Checkpoint update", () => {
 
         expect(await screen.findByText("Чекпоинт обновлён")).toBeVisible();
         await waitFor(() => expect(sessionService.getAvailableById).toHaveBeenCalledTimes(2));
-        await waitFor(() => expect(screen.queryByRole("dialog", {name: "Создание чекпоинта"})).not.toBeInTheDocument());
+        await waitFor(() => expect(screen.queryByRole("dialog", {name: "Редактирование чекпоинта"})).not.toBeInTheDocument());
     });
 
     it("keeps entered data and the dialog recoverable after failure", async () => {
@@ -315,6 +348,7 @@ describe("Shift Session time update", () => {
         expect(screen.getByText("Расчёт за день")).toBeVisible();
         const pending = screen.getByRole("button", {name: "Время смены обновляется"});
         expect(pending).toBeDisabled();
+        expect(input).toBeDisabled();
         expect(screen.getByRole("button", {name: "Отмена"})).toBeDisabled();
         await user.click(pending);
         expect(sessionService.updateStartWorkTime).toHaveBeenCalledOnce();

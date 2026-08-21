@@ -3,6 +3,7 @@
 
 import React, {useEffect, useRef, useState} from 'react';
 import {
+    Box,
     Button,
     Container,
     Flex,
@@ -215,8 +216,17 @@ function CalcInShiftPage() {
     );
 
     if (error) return (
-        <Stack py={6} align="center">
-            <Text color="red.500" fontSize="lg">{error}</Text>
+        <Stack
+            role="alert"
+            py={6}
+            px={4}
+            align="center"
+            bg="bg.panel"
+            borderWidth="1px"
+            borderColor="status.danger"
+            borderRadius="panel"
+        >
+            <Text color="status.danger" fontSize="lg">{error}</Text>
             <Button variant="outline" onClick={() => window.location.reload()}>Попробовать снова</Button>
         </Stack>
     );
@@ -231,10 +241,18 @@ function CalcInShiftPage() {
     });
 
     return (
-        <Container maxW="breakpoint-lg" py={6}>
+        <Container maxW="breakpoint-lg" pt={6} pb={{base: 24, md: 6}}>
             <Stack gap={6}>
                 {/* Page header */}
-                <Heading size="lg">Расчёт за день</Heading>
+                <Box>
+                    <Text color="accent" fontSize="xs" fontWeight="bold" letterSpacing="wide" textTransform="uppercase">
+                        Этап 2 · Checkpoint
+                    </Text>
+                    <Heading size="lg">Расчёт за день</Heading>
+                    <Text mt={1} color="fg.muted" fontSize="sm">
+                        Фиксируйте Revenue, Restaurant Tips и состав команды по ходу Shift Session.
+                    </Text>
+                </Box>
 
                 {/* Shift controls */}
                 <Flex
@@ -242,10 +260,14 @@ function CalcInShiftPage() {
                     justify="space-between"
                     direction={{base: "column", md: "row"}}
                     gap={4}
-                    bg="bg.subtle"
-                    p={4}
-                    borderRadius="md"
+                    bg="bg.panel"
+                    p={{base: 4, md: 5}}
+                    borderRadius="panel"
                     borderWidth="1px"
+                    borderColor="border"
+                    boxShadow="panel"
+                    as="section"
+                    aria-label="Управление Shift Session"
                 >
                     {/* Date & Time selector */}
                     <Stack gap={1}>
@@ -265,7 +287,7 @@ function CalcInShiftPage() {
                                 px={2}
                                 py={1}
                                 onClick={onOpenTimeDialog}
-                                colorPalette="teal"
+                                colorPalette="brand"
                             >
                                 <Clock size={16} style={{marginRight: '6px'}}/>
                                 <Text fontWeight="bold" fontSize="md">{session.startWorkTime}</Text>
@@ -274,12 +296,14 @@ function CalcInShiftPage() {
                     </Stack>
 
                     {/* Actions */}
-                    <HStack gap={3} wrap="wrap">
+                    <HStack gap={3} wrap="wrap" w={{base: "full", md: "auto"}}>
                         <Button
                             ref={closeSessionTriggerRef}
-                            colorPalette="red"
-                            variant="surface"
+                            variant="outline"
+                            color="status.danger"
+                            borderColor="status.danger"
                             onClick={onOpenCloseSessionDialog}
+                            flex={{base: "1 1 auto", md: "initial"}}
                         >
                             <Lock size={16}/> Закрыть смену
                         </Button>
@@ -287,9 +311,10 @@ function CalcInShiftPage() {
                         <Separator orientation="vertical" height="24px" hideBelow="md" />
 
                         <Button
-                            colorPalette="teal"
+                            colorPalette="brand"
                             onClick={handleGoToResults}
                             disabled={checkpoints.length <= 0}
+                            flex={{base: "1 1 auto", md: "initial"}}
                         >
                             <Calculator/> К результатам
                         </Button>
@@ -308,7 +333,16 @@ function CalcInShiftPage() {
                     ))}
 
                     {checkpoints.length === 0 && (
-                        <Stack align="center" py={8} opacity={0.6}>
+                        <Stack
+                            align="center"
+                            py={8}
+                            px={4}
+                            color="fg.muted"
+                            bg="bg.panel"
+                            borderWidth="1px"
+                            borderColor="border"
+                            borderRadius="panel"
+                        >
                             <Text fontSize="lg" fontWeight="medium">Чекпоинты ещё не добавлены</Text>
                             <Text fontSize="sm">Нажмите кнопку &quot;+&#34; внизу справа, чтобы добавить первую запись</Text>
                         </Stack>
@@ -318,17 +352,18 @@ function CalcInShiftPage() {
 
             {/* Floating Action Button */}
             <IconButton
-                aria-label="Add checkpoint"
+                aria-label="Добавить чекпоинт"
                 position="fixed"
-                bottom={6}
-                right={6}
+                bottom={{base: "calc(env(safe-area-inset-bottom) + 1rem)", md: 6}}
+                right={{base: "calc(env(safe-area-inset-right) + 1rem)", md: 6}}
                 size="xl"
-                colorPalette="teal"
+                colorPalette="brand"
                 borderRadius="full"
-                boxShadow="xl"
+                boxShadow="accent"
                 onClick={onOpenCreateDialog}
-                _hover={{ transform: "scale(1.1)" }}
-                transition="all 0.2s"
+                _hover={{ transform: "translateY(-1px)" }}
+                _motionReduce={{transform: "none", transitionDuration: "0ms"}}
+                transitionDuration="quiet"
             >
                 <Plus />
             </IconButton>

@@ -58,11 +58,13 @@ describe("SessionOpenDialog", () => {
         renderDialog();
 
         await user.click(screen.getByRole("button", {name: "Открыть сессию"}));
+        const dateTime = screen.getByLabelText("Дата и время начала");
         const submit = screen.getByRole("button", {name: "Открыть"});
         await user.click(submit);
 
         const pending = screen.getByRole("button", {name: "Смена открывается"});
         expect(pending).toBeDisabled();
+        expect(dateTime).toBeDisabled();
         expect(screen.getByRole("button", {name: "Отмена"})).toBeDisabled();
         await user.click(pending);
         expect(sessionService.open).toHaveBeenCalledOnce();

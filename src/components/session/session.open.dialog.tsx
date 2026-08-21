@@ -4,8 +4,9 @@ import {
     Button,
     Dialog,
     Field,
-    HStack,
     Input,
+    Portal,
+    Stack,
     useDisclosure,
     VStack,
 } from "@chakra-ui/react";
@@ -59,7 +60,7 @@ export function SessionOpenDialog({ company }: Props) {
         <>
             <Button
                 onClick={() => onOpen()}
-                colorPalette="blue"
+                colorPalette="brand"
             >
                 Открыть сессию
             </Button>
@@ -74,9 +75,15 @@ export function SessionOpenDialog({ company }: Props) {
                     }
                 }}
             >
-                <Dialog.Backdrop />
-                <Dialog.Positioner>
-                    <Dialog.Content maxW="400px">
+                <Portal>
+                    <Dialog.Backdrop />
+                    <Dialog.Positioner p={{base: 3, sm: 4}}>
+                    <Dialog.Content
+                        maxW="400px"
+                        bg="bg.raised"
+                        borderWidth="1px"
+                        borderColor="border.emphasized"
+                    >
                         <Dialog.Header>
                             <Dialog.Title>Открытие сессии</Dialog.Title>
                         </Dialog.Header>
@@ -87,6 +94,8 @@ export function SessionOpenDialog({ company }: Props) {
                                     <Field.Label>Дата и время начала</Field.Label>
                                     <Input
                                         type="datetime-local"
+                                        colorScheme="light dark"
+                                        disabled={isPending}
                                         value={toLocalDateTimeInputValue(dateTime)}
                                         onChange={(e) => setDateTime(new Date(e.target.value))}
                                     />
@@ -95,27 +104,35 @@ export function SessionOpenDialog({ company }: Props) {
                         </Dialog.Body>
 
                         <Dialog.Footer>
-                            <HStack justify="flex-end" gap={2}>
+                            <Stack
+                                direction={{base: "column-reverse", sm: "row"}}
+                                justify="flex-end"
+                                gap={2}
+                                w="full"
+                            >
                                 <Button
                                     variant="subtle"
                                     onClick={onClose}
                                     disabled={isPending}
+                                    w={{base: "full", sm: "auto"}}
                                 >
                                     Отмена
                                 </Button>
                                 <Button
-                                    colorPalette="blue"
+                                    colorPalette="brand"
                                     onClick={submit}
                                     loading={isPending}
                                     loadingText={feedbackMessages.shiftSessionOpen.loading}
                                     disabled={isPending}
+                                    w={{base: "full", sm: "auto"}}
                                 >
                                     Открыть
                                 </Button>
-                            </HStack>
+                            </Stack>
                         </Dialog.Footer>
                     </Dialog.Content>
-                </Dialog.Positioner>
+                    </Dialog.Positioner>
+                </Portal>
             </Dialog.Root>
         </>
     );

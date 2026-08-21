@@ -8,14 +8,14 @@ type ShiftResultsDraftTableProps = {
 
 export function ShiftResultsDraftTable({resultsDraft} : ShiftResultsDraftTableProps) {
     return (
-        <Table.Root size="sm" striped>
+        <Table.Root size="sm" variant="line" bg="bg.panel">
             <Table.Header>
-                <Table.Row>
-                    <Table.ColumnHeader>Сотрудник</Table.ColumnHeader>
-                    <Table.ColumnHeader textAlign="right">%</Table.ColumnHeader>
-                    <Table.ColumnHeader textAlign="right">Чаевые</Table.ColumnHeader>
-                    <Table.ColumnHeader textAlign="right">Итого</Table.ColumnHeader>
-                    <Table.ColumnHeader>Отработал</Table.ColumnHeader>
+                <Table.Row bg="bg.raised">
+                    <Table.ColumnHeader color="fg.muted">Сотрудник</Table.ColumnHeader>
+                    <Table.ColumnHeader color="fg.muted" textAlign="right">От выручки</Table.ColumnHeader>
+                    <Table.ColumnHeader color="fg.muted" textAlign="right">Из фонда чаевых</Table.ColumnHeader>
+                    <Table.ColumnHeader color="fg.muted" textAlign="right">Итого</Table.ColumnHeader>
+                    <Table.ColumnHeader color="fg.muted">Отработал</Table.ColumnHeader>
                 </Table.Row>
             </Table.Header>
 
@@ -28,22 +28,22 @@ export function ShiftResultsDraftTable({resultsDraft} : ShiftResultsDraftTablePr
                     const workedMinutes = Math.floor((workedMs % 36e5) / 6e4);
 
                     return (
-                        <Table.Row key={p.employee.id}>
+                        <Table.Row key={p.employee.id} _hover={{bg: "accent.subtle"}}>
                             <Table.Cell>
                                 {p.employee.lastName}{" "}
                                 {p.employee.firstName[0]}.{" "}
                                 {p.employee.patronymic?.[0] && `${p.employee.patronymic[0]}.`}
                             </Table.Cell>
-                            <Table.Cell textAlign="right">
+                            <Table.Cell textAlign="right" fontVariantNumeric="tabular-nums">
                                 {p.percentFromRevenue.toLocaleString()} ₽
                             </Table.Cell>
-                            <Table.Cell textAlign="right">
+                            <Table.Cell textAlign="right" fontVariantNumeric="tabular-nums">
                                 {p.tips.toLocaleString()} ₽
                             </Table.Cell>
-                            <Table.Cell textAlign="right" fontWeight="medium">
+                            <Table.Cell textAlign="right" fontWeight="semibold" fontVariantNumeric="tabular-nums">
                                 {total.toLocaleString()} ₽
                             </Table.Cell>
-                            <Table.Cell>
+                            <Table.Cell fontVariantNumeric="tabular-nums">
                                 {workedHours}ч {workedMinutes}м
                             </Table.Cell>
                         </Table.Row>
@@ -69,8 +69,10 @@ export function EmployeePaymentDraftCard({payment: p} : EmployeePaymentDraftCard
         <Box
             key={p.employee.id}
             borderWidth="1px"
-            borderRadius="lg"
-            p={3}
+            borderColor="border"
+            borderRadius="panel"
+            bg="bg.panel"
+            p={4}
         >
             <Stack gap={2}>
                 {/* Header */}
@@ -82,24 +84,24 @@ export function EmployeePaymentDraftCard({payment: p} : EmployeePaymentDraftCard
 
                 {/* Money row */}
                 <HStack justify="space-between" fontSize="sm">
-                    <Text>Процент</Text>
-                    <Text>{p.percentFromRevenue.toLocaleString()} ₽</Text>
+                    <Text color="fg.muted">От выручки</Text>
+                    <Text fontVariantNumeric="tabular-nums">{p.percentFromRevenue.toLocaleString()} ₽</Text>
                 </HStack>
                 <HStack justify="space-between" fontSize="sm">
-                    <Text>Чаевые</Text>
-                    <Text>{p.tips.toLocaleString()} ₽</Text>
+                    <Text color="fg.muted">Из фонда чаевых</Text>
+                    <Text fontVariantNumeric="tabular-nums">{p.tips.toLocaleString()} ₽</Text>
                 </HStack>
-                <HStack justify="space-between" fontWeight="medium">
+                <HStack justify="space-between" fontWeight="semibold" bg="bg.subtle" borderRadius="control" px={3} py={2}>
                     <Text>Итого</Text>
-                    <Text>{total.toLocaleString()} ₽</Text>
+                    <Text fontVariantNumeric="tabular-nums">{total.toLocaleString()} ₽</Text>
                 </HStack>
 
                 {/*<Divider />*/}
 
                 {/* Time row */}
                 <HStack justify="space-between" fontSize="sm">
-                    <Text>Отработал</Text>
-                    <Text>
+                    <Text color="fg.muted">Отработал</Text>
+                    <Text fontVariantNumeric="tabular-nums">
                         {workedHours}ч {workedMinutes}м
                     </Text>
                 </HStack>
