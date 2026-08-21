@@ -81,6 +81,11 @@ Frontend-приложение для системы **расчёта зараб�
 
 - Backend: [wage-app-backend](https://github.com/dundunts/wage-app)
 
+## 📚 Документация для разработчиков
+
+- [Краткий обзор проекта](docs/project-overview.md)
+- [Доменный словарь](CONTEXT.md)
+
 ---
 
 ## 👨‍💻 Автор
