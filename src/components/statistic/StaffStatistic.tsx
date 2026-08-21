@@ -67,7 +67,7 @@ export function StaffStatistic({ payroll }: Props) {
             <PayrollEmployeeChart
                 data={chartData}
                 employeeIds={employeeIds}
-                namesMap={employeeNames}
+                labelsByDataKey={employeeNames}
             />
 
             <Box mt={8} borderWidth="1px" borderColor="border" borderRadius="panel" bg="bg.panel" overflow="hidden">
@@ -104,10 +104,14 @@ export function StaffStatistic({ payroll }: Props) {
 interface PayrollEmployeeChartProps {
     data: DayEmployeeStat[];
     employeeIds: string[];
-    namesMap: Record<string, string>;
+    labelsByDataKey: Record<string, string>;
 }
 
-export const PayrollEmployeeChart = ({ data, employeeIds, namesMap }: PayrollEmployeeChartProps) => {
+export const PayrollEmployeeChart = ({
+    data,
+    employeeIds,
+    labelsByDataKey,
+}: PayrollEmployeeChartProps) => {
     const titleId = useId();
     const descriptionId = useId();
     const legendItems = employeeIds.map((id, index) => {
@@ -115,7 +119,7 @@ export const PayrollEmployeeChart = ({ data, employeeIds, namesMap }: PayrollEmp
 
         return {
             id,
-            label: namesMap[id] ?? id,
+            label: labelsByDataKey[id] ?? id,
             color: seriesStyle.color,
             dashArray: seriesStyle.dashArray,
         };
@@ -158,7 +162,7 @@ export const PayrollEmployeeChart = ({ data, employeeIds, namesMap }: PayrollEmp
                         <StatisticChartAxes />
                         <Tooltip<number, string>
                             cursor={{fill: chartPalette.cursor}}
-                            content={<StatisticChartTooltip labelsByDataKey={namesMap} />}
+                            content={<StatisticChartTooltip labelsByDataKey={labelsByDataKey} />}
                             isAnimationActive={false}
                         />
 
@@ -169,7 +173,7 @@ export const PayrollEmployeeChart = ({ data, employeeIds, namesMap }: PayrollEmp
                                 <Bar
                                     key={id}
                                     dataKey={id}
-                                    name={namesMap[id] ?? id}
+                                    name={labelsByDataKey[id] ?? id}
                                     stackId="payroll"
                                     fill={seriesStyle.color}
                                     fillOpacity={seriesStyle.fillOpacity}

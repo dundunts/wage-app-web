@@ -52,7 +52,7 @@ describe("Payroll charts", () => {
                     "employee5",
                     "employee6",
                 ]}
-                namesMap={{
+                labelsByDataKey={{
                     employee1: "Анна А.",
                     employee2: "Борис Б.",
                     employee3: "Вера В.",
