@@ -6,6 +6,7 @@ import {Provider} from "@/components/ui/provider";
 import {toaster} from "@/feedback/toast-store";
 import {ApplicationError} from "@/feedback/api-error";
 import {authService} from "@/service/auth.service";
+import {deferred} from "@/test/deferred";
 
 const navigation = vi.hoisted(() => ({
     push: vi.fn(),
@@ -80,10 +81,8 @@ describe("Authentication logout", () => {
 
     it("protects a pending logout from repeated submission", async () => {
         const user = userEvent.setup();
-        let resolveLogout!: () => void;
-        vi.mocked(authService.logout).mockReturnValue(new Promise<void>((resolve) => {
-            resolveLogout = resolve;
-        }));
+        const logoutRequest = deferred<void>();
+        vi.mocked(authService.logout).mockReturnValue(logoutRequest.promise);
         renderHeader();
 
         await user.click(screen.getByRole("button", {name: "Open menu"}));
@@ -94,7 +93,7 @@ describe("Authentication logout", () => {
         await user.click(logout);
         expect(authService.logout).toHaveBeenCalledOnce();
 
-        resolveLogout();
+        logoutRequest.resolve();
         expect(await screen.findByText("Вы вышли из системы")).toBeVisible();
     });
 });

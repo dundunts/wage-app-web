@@ -7,6 +7,7 @@ import {ShiftResultModal} from "@/components/results/ShiftResultModal";
 import {shiftResultService} from "@/service/results/shiftResult.service";
 import {employeeService} from "@/service/employee/employee.service";
 import {toaster} from "@/feedback/toast-store";
+import {deferred} from "@/test/deferred";
 
 vi.mock("@/service/results/shiftResult.service", () => ({
     shiftResultService: {save: vi.fn()},
@@ -146,10 +147,8 @@ describe("ShiftResultModal save flow", () => {
 
     it("sends one request when submit is clicked repeatedly while pending", async () => {
         const user = userEvent.setup();
-        let resolveSave!: (value: {resultId: string}) => void;
-        vi.mocked(shiftResultService.save).mockReturnValue(new Promise((resolve) => {
-            resolveSave = resolve;
-        }));
+        const save = deferred<{resultId: string}>();
+        vi.mocked(shiftResultService.save).mockReturnValue(save.promise);
         const props = renderModal();
         const submit = screen.getByRole("button", {name: "Создать"});
         const cancel = screen.getByRole("button", {name: "Отмена"});
@@ -162,7 +161,7 @@ describe("ShiftResultModal save flow", () => {
 
         expect(shiftResultService.save).toHaveBeenCalledTimes(1);
         expect(props.onClose).not.toHaveBeenCalled();
-        resolveSave({resultId: "result-1"});
+        save.resolve({resultId: "result-1"});
         expect(await screen.findByText("Результат смены сохранён")).toBeVisible();
     });
 });

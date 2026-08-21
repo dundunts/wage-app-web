@@ -6,6 +6,7 @@ import {Provider} from "@/components/ui/provider";
 import {toaster} from "@/feedback/toast-store";
 import {ApplicationError} from "@/feedback/api-error";
 import {authService} from "@/service/auth.service";
+import {deferred} from "@/test/deferred";
 
 const navigation = vi.hoisted(() => ({
     push: vi.fn(),
@@ -86,10 +87,8 @@ describe("Authentication login", () => {
 
     it("protects a pending login from repeated submission", async () => {
         const user = userEvent.setup();
-        let resolveLogin!: () => void;
-        vi.mocked(authService.login).mockReturnValue(new Promise<void>((resolve) => {
-            resolveLogin = resolve;
-        }));
+        const login = deferred<void>();
+        vi.mocked(authService.login).mockReturnValue(login.promise);
         renderPage();
 
         await user.type(screen.getByLabelText("Пользователь"), "manager@example.com");
@@ -101,7 +100,7 @@ describe("Authentication login", () => {
         await user.click(submit);
         expect(authService.login).toHaveBeenCalledOnce();
 
-        resolveLogin();
+        login.resolve();
         expect(await screen.findByText("Вход выполнен")).toBeVisible();
     });
 });

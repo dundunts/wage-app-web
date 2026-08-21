@@ -17,19 +17,21 @@ interface GetStaffSalaryParams {
     now?: string;
 }
 
+function withCurrentDate<T extends GetOwnSalaryParams>(params: T): T & {now: string} {
+    return {...params, now: new Date().toISOString().slice(0, 10)};
+}
+
 export class SalaryService {
     constructor(private readonly apiClient: SalaryApiClient) {
     }
 
     async getOwn(params: GetOwnSalaryParams): Promise<Payroll> {
-        const mappedParams = {...params, now: new Date().toISOString().slice(0, 10)}
-        const response = await this.apiClient.fetchOwn(mappedParams)
+        const response = await this.apiClient.fetchOwn(withCurrentDate(params))
         return response.data
     }
 
     async getStaff(params: GetStaffSalaryParams): Promise<Payroll> {
-        const mappedParams = {...params, now: new Date().toISOString().slice(0, 10)}
-        const response = await this.apiClient.fetchStaff(mappedParams)
+        const response = await this.apiClient.fetchStaff(withCurrentDate(params))
         return response.data
     }
 
