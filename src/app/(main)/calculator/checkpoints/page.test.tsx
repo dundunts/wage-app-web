@@ -124,6 +124,19 @@ beforeEach(() => {
 
 afterEach(() => vi.restoreAllMocks());
 
+describe("Checkpoint page loading", () => {
+    it("keeps the existing page-level failure persistent", async () => {
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.mocked(sessionService.getAvailableById).mockRejectedValue(new Error("load failed"));
+
+        renderPage();
+
+        expect(await screen.findByText("Не удалось загрузить данные сессии")).toBeVisible();
+        expect(screen.getByRole("button", {name: "Попробовать снова"})).toBeVisible();
+        expect(screen.queryByText("Чекпоинт не создан")).not.toBeInTheDocument();
+    });
+});
+
 describe("Checkpoint create", () => {
     it("keeps one local request pending and reports success before refreshing and closing", async () => {
         const user = userEvent.setup();
@@ -262,7 +275,9 @@ describe("Checkpoint delete", () => {
         const user = userEvent.setup();
         const failure = new Error("backend delete detail must stay hidden");
         const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-        vi.mocked(checkpointService.delete).mockRejectedValue(failure);
+        vi.mocked(checkpointService.delete)
+            .mockRejectedValueOnce(failure)
+            .mockResolvedValueOnce();
         const dialog = await openDeleteCheckpointDialog(user);
 
         await user.click(within(dialog).getByRole("button", {name: "Удалить"}));
@@ -276,6 +291,12 @@ describe("Checkpoint delete", () => {
         expect(sessionService.getAvailableById).toHaveBeenCalledOnce();
         expect(consoleError).toHaveBeenCalledOnce();
         expect(consoleError).toHaveBeenCalledWith("[feedback:checkpointDelete]", failure);
+
+        await user.click(within(dialog).getByRole("button", {name: "Удалить"}));
+
+        expect(await screen.findByText("Чекпоинт удалён")).toBeVisible();
+        expect(checkpointService.delete).toHaveBeenCalledTimes(2);
+        await waitFor(() => expect(sessionService.getAvailableById).toHaveBeenCalledTimes(2));
     });
 });
 
