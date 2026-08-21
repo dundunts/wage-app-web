@@ -1,4 +1,4 @@
-import { Stack, Text } from "@chakra-ui/react";
+import { Heading, Stack, Text } from "@chakra-ui/react";
 
 interface EmptyStateProps {
     title: string;
@@ -8,14 +8,13 @@ interface EmptyStateProps {
 export function EmptyState({ title, description }: EmptyStateProps) {
     return (
         <Stack
-            borderWidth="1px"
-            borderRadius="md"
-            p={6}
+            layerStyle="panel"
+            p={{base: 6, md: 8}}
             align="center"
-            color="gray.500"
+            textAlign="center"
         >
-            <Text fontWeight="medium">{title}</Text>
-            {description && <Text fontSize="sm">{description}</Text>}
+            <Heading as="h2" size="sm" color="fg">{title}</Heading>
+            {description && <Text fontSize="sm" color="fg.muted">{description}</Text>}
         </Stack>
     );
 }

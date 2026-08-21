@@ -324,6 +324,58 @@ const config = defineConfig({
                         value: {_light: "{colors.ledgerLight.danger}", _dark: "{colors.ledger.red}"},
                     },
                 },
+                danger: {
+                    contrast: {
+                        value: {_light: "white", _dark: "#2d080b"},
+                    },
+                    fg: {
+                        value: {_light: "{colors.ledgerLight.danger}", _dark: "{colors.ledger.red}"},
+                    },
+                    subtle: {
+                        value: {_light: "{colors.ledgerLight.danger/10}", _dark: "{colors.ledger.red/10}"},
+                    },
+                    muted: {
+                        value: {_light: "{colors.ledgerLight.danger/18}", _dark: "{colors.ledger.red/16}"},
+                    },
+                    emphasized: {
+                        value: {_light: "{colors.ledgerLight.danger/26}", _dark: "{colors.ledger.red/24}"},
+                    },
+                    solid: {
+                        value: {_light: "{colors.ledgerLight.danger}", _dark: "{colors.ledger.red}"},
+                    },
+                    focusRing: {
+                        value: {_light: "{colors.ledgerLight.danger}", _dark: "{colors.ledger.red}"},
+                    },
+                    border: {
+                        value: {_light: "{colors.ledgerLight.danger/36}", _dark: "{colors.ledger.red/34}"},
+                    },
+                },
+                warning: {
+                    contrast: {
+                        value: {_light: "white", _dark: "#2b1b00"},
+                    },
+                    fg: {
+                        value: {_light: "{colors.ledgerLight.warning}", _dark: "{colors.ledger.amber}"},
+                    },
+                    subtle: {
+                        value: {_light: "{colors.ledgerLight.warning/10}", _dark: "{colors.ledger.amber/10}"},
+                    },
+                    muted: {
+                        value: {_light: "{colors.ledgerLight.warning/18}", _dark: "{colors.ledger.amber/16}"},
+                    },
+                    emphasized: {
+                        value: {_light: "{colors.ledgerLight.warning/26}", _dark: "{colors.ledger.amber/24}"},
+                    },
+                    solid: {
+                        value: {_light: "{colors.ledgerLight.warning}", _dark: "{colors.ledger.amber}"},
+                    },
+                    focusRing: {
+                        value: {_light: "{colors.ledgerLight.warning}", _dark: "{colors.ledger.amber}"},
+                    },
+                    border: {
+                        value: {_light: "{colors.ledgerLight.warning/36}", _dark: "{colors.ledger.amber/34}"},
+                    },
+                },
                 brand: {
                     contrast: {
                         value: {_light: "white", _dark: "white"},
@@ -357,6 +409,17 @@ const config = defineConfig({
                 },
                 accent: {
                     value: {_light: "{shadows.accentLight}", _dark: "{shadows.accentDark}"},
+                },
+            },
+        },
+        layerStyles: {
+            panel: {
+                value: {
+                    bg: "bg.panel",
+                    borderWidth: "1px",
+                    borderColor: "border",
+                    borderRadius: "panel",
+                    boxShadow: "panel",
                 },
             },
         },

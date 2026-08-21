@@ -1,4 +1,4 @@
-import {render, screen} from "@testing-library/react";
+import {render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {Header} from "@/components/navigation/Header";
@@ -7,20 +7,29 @@ import {toaster} from "@/feedback/toast-store";
 import {ApplicationError} from "@/feedback/api-error";
 import {authService} from "@/service/auth.service";
 import {deferred} from "@/test/deferred";
+import {adminPermissions} from "@/constants/roles";
 
 const navigation = vi.hoisted(() => ({
     push: vi.fn(),
     replace: vi.fn(),
+    pathname: "/statistic",
 }));
+
+const userState = vi.hoisted(() => ({permissions: [] as string[]}));
 
 vi.mock("next/navigation", () => ({
     useRouter: () => navigation,
+    usePathname: () => navigation.pathname,
 }));
 
 vi.mock("@/service/auth.service", () => ({
     authService: {
         logout: vi.fn(),
     },
+}));
+
+vi.mock("@/store/userStore", () => ({
+    default: () => userState,
 }));
 
 function renderHeader() {
@@ -95,5 +104,55 @@ describe("Authentication logout", () => {
 
         logoutRequest.resolve();
         expect(await screen.findByText("Вы вышли из системы")).toBeVisible();
+    });
+});
+
+describe("Navigation", () => {
+    beforeEach(() => {
+        navigation.pathname = "/statistic";
+        userState.permissions = [];
+    });
+
+    it("exposes the current destination to assistive technology", async () => {
+        const user = userEvent.setup();
+        renderHeader();
+        await user.click(screen.getByRole("button", {name: "Open menu"}));
+
+        expect(await screen.findByRole("button", {name: "Статистика"})).toHaveAttribute(
+            "aria-current",
+            "page",
+        );
+    });
+
+    it("keeps an active navigation group distinct from the current destination", async () => {
+        const user = userEvent.setup();
+        navigation.pathname = "/company/company-1";
+        userState.permissions = adminPermissions;
+        renderHeader();
+
+        await user.click(screen.getByRole("button", {name: "Open menu"}));
+        const admin = await screen.findByRole("button", {name: "Админ. панель"});
+        expect(admin).not.toHaveAttribute("aria-current");
+
+        await user.click(admin);
+        expect(await screen.findByRole("button", {name: "Предприятия"})).toHaveAttribute(
+            "aria-current",
+            "page",
+        );
+    });
+
+    it("dismisses the mobile navigation from its keyboard close action", async () => {
+        const user = userEvent.setup();
+        renderHeader();
+
+        await user.click(screen.getByRole("button", {name: "Open menu"}));
+        expect(await screen.findByRole("dialog", {name: "Навигация"})).toBeVisible();
+        const close = screen.getByRole("button", {name: "Close"});
+        close.focus();
+        await user.keyboard("{Enter}");
+
+        await waitFor(() => {
+            expect(screen.queryByRole("dialog", {name: "Навигация"})).not.toBeInTheDocument();
+        });
     });
 });

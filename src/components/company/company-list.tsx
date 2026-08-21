@@ -8,12 +8,12 @@ import {
     Box,
     Button,
     Center,
+    Container,
     Flex,
-    Heading,
     HStack,
     IconButton,
     Menu,
-    Spacer,
+    Portal,
     Spinner,
     Table,
     Text
@@ -27,6 +27,7 @@ import {Page} from "@/types/common.types";
 import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
 import {feedback} from "@/feedback/feedback";
 import {feedbackMessages} from "@/feedback/messages";
+import {PageHeader} from "@/components/page/PageHeader";
 
 interface CompanyListProps {
     data: Page<Company> | null;
@@ -93,14 +94,18 @@ export const CompanyList = ({ data, isLoadingData, onRefresh }: CompanyListProps
     if (!data && isLoadingData) {
         return (
             <Center h="300px">
-                <Spinner size="xl" color="blue.500" />
+                <Spinner size="xl" color="accent" />
             </Center>
         );
     }
 
     // Если данные не загрузились и нет загрузки (ошибка)
     if (!data) {
-        return <Box p={6}>Не удалось загрузить данные</Box>;
+        return (
+            <Container maxW="7xl" px={{base: 4, md: 6}} py={{base: 6, md: 8}}>
+                <Text color="status.danger">Не удалось загрузить данные</Text>
+            </Container>
+        );
     }
 
     const { content: companies, number: currentPage, totalPages } = data;
@@ -108,36 +113,44 @@ export const CompanyList = ({ data, isLoadingData, onRefresh }: CompanyListProps
     const hasPrev = currentPage > 0;
 
     return (
-        <Box p={6}>
-            <Flex mb={6} align="center">
-                <Heading size="2xl">Компании</Heading>
-                <Spacer />
-                <Button onClick={() => setCreateOpen(true)} colorPalette="blue">
+        <Container maxW="7xl" px={{base: 4, md: 6}} py={{base: 6, md: 8}}>
+            <PageHeader
+                title="Компании"
+                actions={<Button
+                    onClick={() => setCreateOpen(true)}
+                    colorPalette="brand"
+                    w={{base: "full", md: "auto"}}
+                >
                     <Plus /> Создать компанию
-                </Button>
-            </Flex>
+                </Button>}
+            />
 
-            <Box borderWidth="1px" borderRadius="lg" overflow="hidden" position="relative">
+            <Box
+                mt={6}
+                layerStyle="panel"
+                overflowX="auto"
+                position="relative"
+            >
                 {/* Оверлей загрузки при пагинации/обновлении */}
                 {isLoadingData && (
                     <Box
                         position="absolute"
                         inset="0"
-                        bg="white/50"
+                        bg="bg.panel/82"
                         zIndex="1"
                         display="flex"
                         alignItems="center"
                         justifyContent="center"
                     >
-                        <Spinner color="blue.500" />
+                        <Spinner color="accent" />
                     </Box>
                 )}
 
-                <Table.Root interactive>
-                    <Table.Header>
+                <Table.Root interactive size="sm" variant="line" minW="36rem">
+                    <Table.Header bg="bg.subtle">
                         <Table.Row>
-                            <Table.ColumnHeader>Название</Table.ColumnHeader>
-                            <Table.ColumnHeader textAlign="end">Действия</Table.ColumnHeader>
+                            <Table.ColumnHeader color="fg.muted">Название</Table.ColumnHeader>
+                            <Table.ColumnHeader color="fg.muted" textAlign="end">Действия</Table.ColumnHeader>
                         </Table.Row>
                     </Table.Header>
                     <Table.Body>
@@ -149,31 +162,47 @@ export const CompanyList = ({ data, isLoadingData, onRefresh }: CompanyListProps
                             </Table.Row>
                         ) : (
                             companies.map((company) => (
-                                <Table.Row key={company.id}>
+                                <Table.Row
+                                    key={company.id}
+                                    borderColor="border.muted"
+                                    _hover={{bg: "accent.subtle"}}
+                                >
                                     <Table.Cell fontWeight="medium">{company.title}</Table.Cell>
                                     <Table.Cell textAlign="end">
                                         <Menu.Root positioning={{ placement: "bottom-end" }}>
                                             <Menu.Trigger asChild>
-                                                <IconButton variant="subtle" size="sm" aria-label="Опции">
+                                                <IconButton
+                                                    variant="subtle"
+                                                    size="sm"
+                                                    aria-label={`Опции компании «${company.title}»`}
+                                                >
                                                     <MoreHorizontal />
                                                 </IconButton>
                                             </Menu.Trigger>
-                                            <Menu.Content>
-                                                <Menu.Item value="details" asChild>
-                                                    <Link href={`/company/${company.id}`}>
-                                                        <Eye style={{ marginRight: "8px", width: "16px" }} />
-                                                        Подробнее
-                                                    </Link>
-                                                </Menu.Item>
-                                                <Menu.Item
-                                                    value="delete"
-                                                    color="fg.error"
-                                                    onClick={() => setCompanyToDelete(company)}
-                                                >
-                                                    <Trash2 style={{ marginRight: "8px", width: "16px" }} />
-                                                    Удалить
-                                                </Menu.Item>
-                                            </Menu.Content>
+                                            <Portal>
+                                                <Menu.Positioner>
+                                                    <Menu.Content
+                                                        layerStyle="panel"
+                                                        bg="bg.raised"
+                                                        borderRadius="control"
+                                                    >
+                                                        <Menu.Item value="details" asChild>
+                                                            <Link href={`/company/${company.id}`}>
+                                                                <Eye style={{ marginRight: "8px", width: "16px" }} />
+                                                                Подробнее
+                                                            </Link>
+                                                        </Menu.Item>
+                                                        <Menu.Item
+                                                            value="delete"
+                                                            color="status.danger"
+                                                            onClick={() => setCompanyToDelete(company)}
+                                                        >
+                                                            <Trash2 style={{ marginRight: "8px", width: "16px" }} />
+                                                            Удалить
+                                                        </Menu.Item>
+                                                    </Menu.Content>
+                                                </Menu.Positioner>
+                                            </Portal>
                                         </Menu.Root>
                                     </Table.Cell>
                                 </Table.Row>
@@ -183,7 +212,14 @@ export const CompanyList = ({ data, isLoadingData, onRefresh }: CompanyListProps
                 </Table.Root>
 
                 {totalPages > 1 && (
-                    <Flex p={4} justify="flex-end" align="center" gap={4} borderTopWidth="1px">
+                    <Flex
+                        p={4}
+                        justify="flex-end"
+                        align="center"
+                        gap={4}
+                        borderTopWidth="1px"
+                        borderColor="border"
+                    >
                         <Text textStyle="sm" color="fg.muted">
                             Страница {currentPage + 1} из {totalPages}
                         </Text>
@@ -233,6 +269,6 @@ export const CompanyList = ({ data, isLoadingData, onRefresh }: CompanyListProps
                 }}
                 onConfirm={handleDelete}
             />
-        </Box>
+        </Container>
     );
 };

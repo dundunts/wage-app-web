@@ -15,10 +15,11 @@ import {
     useDisclosure,
     VStack,
 } from "@chakra-ui/react";
+import type {ButtonProps} from "@chakra-ui/react";
 import {ChevronLeft, ChevronRight, LogOut, Menu} from "lucide-react";
 import {useState} from "react";
 import {NavItem, navItems} from "@/components/navigation/navigation";
-import {useRouter} from "next/navigation";
+import {usePathname, useRouter} from "next/navigation";
 import {authService} from "@/service/auth.service";
 import useUserStore from "@/store/userStore";
 import {feedback} from "@/feedback/feedback";
@@ -30,6 +31,53 @@ function filterNavItems(items: NavItem[], permissions: string[]): NavItem[] {
         if (!requiredPermissions) return true;
         return requiredPermissions.every(permission => permissions.includes(permission))
     })
+}
+
+function isRouteActive(item: NavItem, pathname: string): boolean {
+    if (isDestinationCurrent(item, pathname)) {
+        return true;
+    }
+
+    return item.children?.some((child) => isRouteActive(child, pathname)) ?? false;
+}
+
+function isDestinationCurrent(item: NavItem, pathname: string): boolean {
+    return Boolean(
+        item.href && (pathname === item.href || pathname.startsWith(`${item.href}/`)),
+    );
+}
+
+function NavigationButton({
+                              active,
+                              current,
+                              children,
+                              ...props
+                          }: ButtonProps & { active: boolean; current: boolean }) {
+    return (
+        <Button
+            {...props}
+            variant="subtle"
+            position="relative"
+            color={active ? "accent" : "fg.muted"}
+            bg={active ? "accent.subtle" : "transparent"}
+            aria-current={current ? "page" : undefined}
+            _hover={{
+                color: active ? "accent" : "fg",
+                bg: active ? "accent.subtle" : "bg.subtle",
+            }}
+            _after={active ? {
+                content: '""',
+                position: "absolute",
+                insetInline: "3",
+                bottom: "0",
+                h: "2px",
+                bg: "accent",
+                borderRadius: "full",
+            } : undefined}
+        >
+            {children}
+        </Button>
+    );
 }
 
 export function Header() {
@@ -58,11 +106,11 @@ export function Header() {
             position="sticky"
             top={0}
             zIndex={100}
-            bg="blackAlpha.800"   // прозрачность 80%
+            bg="bg.canvasWarm/88"
             backdropFilter="auto"
             backdropBlur="12px"
             borderBottomWidth="1px"
-            borderColor="border.subtle"
+            borderColor="border"
         >
             <Flex
                 h="64px"
@@ -72,7 +120,9 @@ export function Header() {
                 maxW="1400px"
                 mx="auto"
             >
-                <Text fontSize="lg" fontWeight="bold">WageApp</Text>
+                <Text color="fg" fontSize="lg" fontWeight="700" letterSpacing="-0.02em">
+                    WageApp
+                </Text>
 
                 {/* Desktop navigation */}
                 <DesktopNavigation/>
@@ -113,6 +163,7 @@ function LogoutButton({
 
 function DesktopNavigation() {
     const router = useRouter()
+    const pathname = usePathname()
 
     function navTo(item: NavItem) {
         if (item.href) router.push(item.href)
@@ -124,50 +175,63 @@ function DesktopNavigation() {
                 level1.children && level1.children.length > 0
                     ? <Popover.Root key={level1.label}>
                         <Popover.Trigger asChild>
-                            <Button variant="subtle" fontWeight="medium">
+                            <NavigationButton
+                                active={isRouteActive(level1, pathname)}
+                                current={isDestinationCurrent(level1, pathname)}
+                                fontWeight="medium"
+                            >
                                 {level1.label}
-                            </Button>
+                            </NavigationButton>
                         </Popover.Trigger>
 
                         <Portal>
                             <Popover.Positioner>
-                                <Popover.Content p={4} borderRadius="lg" boxShadow="lg" width={'full'}>
+                                <Popover.Content
+                                    layerStyle="panel"
+                                    p={4}
+                                    bg="bg.raised"
+                                    width="max-content"
+                                    minW="12rem"
+                                >
                                     <HStack align="start" separator={<StackSeparator/>}>
                                         {level1.children?.map((level2) => (
                                             <VStack key={level2.label} align="start">
                                                 {level2.children && level2.children.length > 0 ? (
                                                     <>
-                                                        <Button
-                                                            variant="subtle"
-                                                            fontSize="sm"
-                                                            fontWeight="semibold"
-                                                        >
-                                                            {level2.label}
-                                                        </Button>
+                                                            <NavigationButton
+                                                                active={isRouteActive(level2, pathname)}
+                                                                current={isDestinationCurrent(level2, pathname)}
+                                                                variant="subtle"
+                                                                fontSize="sm"
+                                                                fontWeight="semibold"
+                                                            >
+                                                                {level2.label}
+                                                            </NavigationButton>
 
                                                         {level2.children.map((level3) => (
-                                                            <Button
+                                                            <NavigationButton
                                                                 key={level3.href}
-                                                                variant="subtle"
+                                                                active={isRouteActive(level3, pathname)}
+                                                                current={isDestinationCurrent(level3, pathname)}
                                                                 size="sm"
                                                                 justifyContent="flex-start"
-                                                                color="fg.muted"
                                                                 onClick={() => navTo(level3)}
                                                             >
                                                                 {level3.label}
-                                                            </Button>
+                                                            </NavigationButton>
                                                         ))}
                                                     </>
                                                 ) : (
-                                                    <Button
-                                                        variant="subtle"
+                                                    <NavigationButton
+                                                        active={isRouteActive(level2, pathname)}
+                                                        current={isDestinationCurrent(level2, pathname)}
                                                         size="sm"
                                                         fontWeight="medium"
                                                         justifyContent="flex-start"
                                                         onClick={() => navTo(level2)}
                                                     >
                                                         {level2.label}
-                                                    </Button>
+                                                    </NavigationButton>
                                                 )}
                                             </VStack>
                                         ))}
@@ -176,9 +240,15 @@ function DesktopNavigation() {
                             </Popover.Positioner>
                         </Portal>
                     </Popover.Root>
-                    : <Button key={level1.label} variant="subtle" fontWeight="medium" onClick={() => navTo(level1)}>
+                    : <NavigationButton
+                        key={level1.label}
+                        active={isRouteActive(level1, pathname)}
+                        current={isDestinationCurrent(level1, pathname)}
+                        fontWeight="medium"
+                        onClick={() => navTo(level1)}
+                    >
                         {level1.label}
-                    </Button>
+                    </NavigationButton>
             )}
         </HStack>
     );
@@ -198,24 +268,40 @@ function MobileNavigation({
     const filteredNavItems = filterNavItems(navItems, useUserStore().permissions)
 
     const router = useRouter()
-
-    function navTo(item: NavItem) {
-        if (item.href) router.push(item.href)
-    }
+    const pathname = usePathname()
 
     const reset = () => {
         setLevel1(null);
         setLevel2(null);
     };
 
+    function navTo(item: NavItem) {
+        if (item.href) {
+            router.push(item.href)
+            onClose()
+            reset()
+        }
+    }
+
     return (
-        <Drawer.Root placement="end" size="full" open={open}>
+        <Drawer.Root
+            placement="end"
+            size="full"
+            open={open}
+            onOpenChange={({open: nextOpen}) => {
+                if (nextOpen) {
+                    onOpen();
+                } else {
+                    onClose();
+                    reset();
+                }
+            }}
+        >
             <Drawer.Trigger asChild>
                 <IconButton
                     aria-label="Open menu"
                     variant="subtle"
                     display={{base: "inline-flex", md: "none"}}
-                    onClick={onOpen}
                 >
                     <Menu/>
                 </IconButton>
@@ -224,7 +310,7 @@ function MobileNavigation({
             <Portal>
                 <Drawer.Backdrop/>
                 <Drawer.Positioner>
-                    <Drawer.Content>
+                    <Drawer.Content bg="bg.panel">
                         <Drawer.Header>
                             <Drawer.Title>Навигация</Drawer.Title>
                         </Drawer.Header>
@@ -248,9 +334,10 @@ function MobileNavigation({
                                 {/* LEVEL 1 */}
                                 {level1 === null &&
                                     filteredNavItems.map((item, i) => (
-                                        <Button
+                                        <NavigationButton
                                             key={item.label}
-                                            variant="subtle"
+                                            active={isRouteActive(item, pathname)}
+                                            current={isDestinationCurrent(item, pathname)}
                                             justifyContent="space-between"
                                             onClick={() => {
                                                 if (item.children) setLevel1(i)
@@ -259,15 +346,16 @@ function MobileNavigation({
                                         >
                                             {item.label}
                                             <ChevronRight/>
-                                        </Button>
+                                        </NavigationButton>
                                     ))}
 
                                 {/* LEVEL 2 */}
                                 {level1 !== null && level2 === null &&
                                     filteredNavItems[level1].children?.map((item, i) => (
-                                        <Button
+                                        <NavigationButton
                                             key={item.label}
-                                            variant="subtle"
+                                            active={isRouteActive(item, pathname)}
+                                            current={isDestinationCurrent(item, pathname)}
                                             justifyContent="space-between"
                                             onClick={() => {
                                                 if (item.children) setLevel2(i)
@@ -276,25 +364,24 @@ function MobileNavigation({
                                         >
                                             {item.label}
                                             <ChevronRight/>
-                                        </Button>
+                                        </NavigationButton>
                                     ))}
 
                                 {/* LEVEL 3 */}
                                 {level1 !== null && level2 !== null &&
                                     filteredNavItems[level1].children?.[level2].children?.map(
                                         (item) => (
-                                            <Button
+                                            <NavigationButton
                                                 key={item.href}
-                                                variant="subtle"
+                                                active={isRouteActive(item, pathname)}
+                                                current={isDestinationCurrent(item, pathname)}
                                                 justifyContent="flex-start"
                                                 onClick={() => {
                                                     navTo(item);
-                                                    // onClose();
-                                                    // reset();
                                                 }}
                                             >
                                                 {item.label}
-                                            </Button>
+                                            </NavigationButton>
                                         )
                                     )}
 
@@ -309,10 +396,7 @@ function MobileNavigation({
                         </Drawer.Body>
 
                         <Drawer.CloseTrigger asChild>
-                            <CloseButton size="sm" onClick={() => {
-                                onClose();
-                                reset();
-                            }}/>
+                            <CloseButton size="sm"/>
                         </Drawer.CloseTrigger>
                     </Drawer.Content>
                 </Drawer.Positioner>

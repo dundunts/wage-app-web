@@ -19,9 +19,12 @@ interface ConfirmationDialogProps {
     onConfirm: () => void;
 }
 
-const severityPalette: Record<ConfirmationSeverity, "red" | "orange"> = {
-    danger: "red",
-    warning: "orange",
+const severityPresentation: Record<ConfirmationSeverity, {
+    colorPalette: "danger" | "warning";
+    color: "status.danger" | "status.warning";
+}> = {
+    danger: {colorPalette: "danger", color: "status.danger"},
+    warning: {colorPalette: "warning", color: "status.warning"},
 };
 
 export function ConfirmationDialog({
@@ -60,26 +63,35 @@ export function ConfirmationDialog({
         >
             <Portal>
                 <Dialog.Backdrop />
-                <Dialog.Positioner>
-                    <Dialog.Content>
+                <Dialog.Positioner p={{base: 4, md: 6}}>
+                    <Dialog.Content
+                        layerStyle="panel"
+                    >
                         <Dialog.Header>
-                            <Dialog.Title>{title}</Dialog.Title>
+                            <Dialog.Title color={severityPresentation[severity].color}>
+                                {title}
+                            </Dialog.Title>
                         </Dialog.Header>
                         <Dialog.Body>
                             <Dialog.Description>{description}</Dialog.Description>
                         </Dialog.Body>
-                        <Dialog.Footer>
+                        <Dialog.Footer flexDirection={{base: "column-reverse", sm: "row"}}>
                             <Dialog.CloseTrigger asChild>
-                                <Button variant="outline" disabled={pending}>
+                                <Button
+                                    variant="outline"
+                                    disabled={pending}
+                                    w={{base: "full", sm: "auto"}}
+                                >
                                     {cancelLabel}
                                 </Button>
                             </Dialog.CloseTrigger>
                             <Button
-                                colorPalette={severityPalette[severity]}
+                                colorPalette={severityPresentation[severity].colorPalette}
                                 loading={pending}
                                 loadingText={pendingLabel}
                                 disabled={pending}
                                 onClick={onConfirm}
+                                w={{base: "full", sm: "auto"}}
                             >
                                 {confirmLabel}
                             </Button>

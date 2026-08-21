@@ -3,11 +3,13 @@
 
 import {useCallback, useEffect, useState} from "react";
 import {useSearchParams} from "next/navigation";
-import {Center, Spinner, Text} from "@chakra-ui/react";
+import {Container, Stack} from "@chakra-ui/react";
 import {CompanyList} from "@/components/company/company-list";
 import {companyService} from "@/service/company/company.service";
 import {Company} from "@/types/company.types";
 import {Page} from "@/types/common.types";
+import {EmptyState} from "@/components/page/EmptyState";
+import {PageHeader} from "@/components/page/PageHeader";
 
 export default function CompanyPage() {
     const searchParams = useSearchParams();
@@ -47,9 +49,12 @@ export default function CompanyPage() {
 
     if (error && !data) {
         return (
-            <Center h="100vh">
-                <Text color="red.500">{error}</Text>
-            </Center>
+            <Container maxW="7xl" px={{base: 4, md: 6}} py={{base: 6, md: 8}}>
+                <Stack gap={6}>
+                    <PageHeader title="Компании" />
+                    <EmptyState title="Не удалось загрузить компании" description={error} />
+                </Stack>
+            </Container>
         )
     }
 
