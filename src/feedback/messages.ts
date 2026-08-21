@@ -1,6 +1,27 @@
 import type {ApplicationErrorCategory} from "@/feedback/api-error";
 
 export const feedbackMessages = {
+    shiftSessionOpen: {
+        success: "Смена открыта",
+        error: "Смена не открыта",
+        warning: "Открытие смены требует внимания",
+        information: "Открытие смены",
+        loading: "Смена открывается",
+    },
+    shiftSessionUpdateTime: {
+        success: "Время начала смены обновлено",
+        error: "Время начала смены не обновлено",
+        warning: "Изменение времени смены требует внимания",
+        information: "Изменение времени смены",
+        loading: "Время смены обновляется",
+    },
+    shiftSessionClose: {
+        success: "Смена закрыта",
+        error: "Смена не закрыта",
+        warning: "Закрытие смены требует внимания",
+        information: "Закрытие смены",
+        loading: "Смена закрывается",
+    },
     shiftResultSave: {
         success: "Результат смены сохранён",
         error: "Результат смены не сохранён",
@@ -76,10 +97,22 @@ export const applicationErrorDescriptions: Record<ApplicationErrorCategory, stri
     unknown: "Не удалось выполнить действие. Попробуйте ещё раз",
 };
 
+const shiftSessionConflictDescription =
+    "Состояние смены изменилось. Обновите данные и попробуйте ещё раз";
+
 export const actionErrorDescriptions: Partial<Record<
     FeedbackActionKey,
     Partial<Record<ApplicationErrorCategory | "default", string>>
 >> = {
+    shiftSessionOpen: {
+        conflict: shiftSessionConflictDescription,
+    },
+    shiftSessionUpdateTime: {
+        conflict: shiftSessionConflictDescription,
+    },
+    shiftSessionClose: {
+        conflict: shiftSessionConflictDescription,
+    },
     login: {
         sessionExpired: "Неверное имя пользователя или пароль",
     },

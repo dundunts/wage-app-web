@@ -9,54 +9,29 @@ export class SessionService {
     }
 
     async getAllAvailableByCompany(companyId: string): Promise<Session[]> {
-        try {
-            const response = await this.apiClient.fetchAllAvailableByCompany(companyId)
-            return response.data
-        } catch (e) {
-            console.error("Session service", e)
-            return Promise.reject(e)
-        }
+        const response = await this.apiClient.fetchAllAvailableByCompany(companyId)
+        return response.data
     }
 
     async getAvailableById(sessionId: string): Promise<Session> {
-        try {
-            const response = await this.apiClient.fetchAvailableById(sessionId)
-            return response.data
-        } catch (e) {
-            console.error("Session service", e)
-            return Promise.reject(e)
-        }
+        const response = await this.apiClient.fetchAvailableById(sessionId)
+        return response.data
     }
 
     async open(payload: OpenNewShiftSessionPayload): Promise<Session> {
-        try {
-            const response = await this.apiClient.open({
-                ...payload,
-                startWorkAt: formatLocalDateTime(payload.startWorkAt)
-            })
-            return response.data
-        } catch (e) {
-            console.error("Session service", e)
-            return Promise.reject(e)
-        }
+        const response = await this.apiClient.open({
+            ...payload,
+            startWorkAt: formatLocalDateTime(payload.startWorkAt)
+        })
+        return response.data
     }
 
     async close(sessionId: string): Promise<void> {
-        try {
-            await this.apiClient.close(sessionId)
-        } catch (e) {
-            console.error("Session service", e)
-            return Promise.reject(e)
-        }
+        await this.apiClient.close(sessionId)
     }
 
     async updateStartWorkTime(payload: UpdateShiftSessionStartWorkTimePayload): Promise<void> {
-        try {
-            await this.apiClient.updateStartWorkTime(payload)
-        } catch (e) {
-            console.error("Session service", e)
-            return Promise.reject(e)
-        }
+        await this.apiClient.updateStartWorkTime(payload)
     }
 }
 

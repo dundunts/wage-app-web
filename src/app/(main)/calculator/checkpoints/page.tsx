@@ -1,7 +1,7 @@
 // @/app/calculator/checkpoints/page.tsx
 "use client";
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
     Button,
     Container,
@@ -36,7 +36,8 @@ import {ShiftCheckpointCard} from "@/components/shift/shift.checkpoint.component
 import {CheckpointDialog} from "@/components/shift/shift.checkpoint.components.dialog";
 import ConfirmDeleteDialog from "@/components/dialog/components.dialog.confirmation.delete";
 import {SessionUpdateTimeDialog} from "@/components/session/session.update-time.dialog";
-import {SessionCloseDialog} from "@/components/session/session.close.dialog";
+import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
+import {feedback} from "@/feedback/feedback";
 
 function CalcInShiftPage() {
     const searchParams = useSearchParams();
@@ -47,6 +48,9 @@ function CalcInShiftPage() {
     const [error, setError] = useState("");
     const [session, setSession] = useState<Session | undefined>(undefined);
     const [availableEmployees, setAvailableEmployees] = useState<CompanyEmployeeInfo[]>([]);
+    const [isUpdatingTime, setIsUpdatingTime] = useState(false);
+    const [isClosingSession, setIsClosingSession] = useState(false);
+    const closeSessionTriggerRef = useRef<HTMLButtonElement>(null);
 
     // Dialog states
     const {open: isCreateDialogOpened, onOpen: onOpenCreateDialog, onClose: onCloseCreateDialog} = useDisclosure();
@@ -148,41 +152,41 @@ function CalcInShiftPage() {
 
     // --- Session Handlers (NEW) ---
 
-    function handleUpdateSessionTime(newTime: string) {
-        if (!session) return;
-        setLoading(true);
+    async function handleUpdateSessionTime(newTime: string) {
+        if (!session || isUpdatingTime) return;
 
-        sessionService.updateStartWorkTime({
-            sessionId: session.id,
-            startWorkTime: newTime
-        })
-            .then(() => {
-                loadData(); // Перезагружаем, чтобы обновить данные в UI
-                onCloseTimeDialog();
-            })
-            .catch((e) => {
-                console.error(e);
-                // В реальном проекте здесь стоит добавить Toast notification
-                setError("Не удалось обновить время начала смены");
-                setLoading(false); // Снимаем лоадинг только если ошибка, иначе loadData сам снимет
+        const action = feedback.beginAction("shiftSessionUpdateTime");
+        setIsUpdatingTime(true);
+        try {
+            await sessionService.updateStartWorkTime({
+                sessionId: session.id,
+                startWorkTime: newTime
             });
+            setSession((current) => current ? {...current, startWorkTime: newTime} : current);
+            action.success();
+            onCloseTimeDialog();
+        } catch (error) {
+            action.error(error);
+        } finally {
+            setIsUpdatingTime(false);
+        }
     }
 
-    function handleCloseSession() {
-        if (!session) return;
-        setLoading(true);
+    async function handleCloseSession() {
+        if (!session || isClosingSession) return;
 
-        sessionService.close(session.id)
-            .then(() => {
-                // После успешного закрытия переходим на драфт (или страницу результатов)
-                router.push(`/calculator`);
-            })
-            .catch((e) => {
-                console.error(e);
-                setError("Не удалось закрыть смену");
-                setLoading(false);
-                onCloseCloseSessionDialog();
-            });
+        const action = feedback.beginAction("shiftSessionClose");
+        setIsClosingSession(true);
+        try {
+            await sessionService.close(session.id);
+            action.success();
+            onCloseCloseSessionDialog();
+            router.push(`/calculator`);
+        } catch (error) {
+            action.error(error);
+        } finally {
+            setIsClosingSession(false);
+        }
     }
 
     function handleGoToResults() {
@@ -210,9 +214,6 @@ function CalcInShiftPage() {
         month: "long",
         year: "numeric"
     });
-
-    //TODO delete logs
-    console.log("Checkpoints page. Checkpoints:", checkpoints)
 
     return (
         <Container maxW="breakpoint-lg" py={6}>
@@ -260,6 +261,7 @@ function CalcInShiftPage() {
                     {/* Actions */}
                     <HStack gap={3} wrap="wrap">
                         <Button
+                            ref={closeSessionTriggerRef}
                             colorPalette="red"
                             variant="surface"
                             onClick={onOpenCloseSessionDialog}
@@ -350,15 +352,21 @@ function CalcInShiftPage() {
                 onClose={onCloseTimeDialog}
                 currentStartTime={session.startWorkTime}
                 onSave={handleUpdateSessionTime}
-                isLoading={isLoading}
+                isLoading={isUpdatingTime}
             />
 
-            {/* Close Session Dialog (NEW) */}
-            <SessionCloseDialog
+            <ConfirmationDialog
                 open={isCloseSessionDialogOpen}
-                onClose={onCloseCloseSessionDialog}
+                title="Закрыть смену?"
+                description="После закрытия редактирование чекпоинтов будет недоступно, и начнётся финальный пересчёт."
+                confirmLabel="Закрыть смену"
+                cancelLabel="Отмена"
+                pendingLabel="Смена закрывается"
+                severity="danger"
+                pending={isClosingSession}
+                finalFocusEl={() => closeSessionTriggerRef.current}
+                onCancel={onCloseCloseSessionDialog}
                 onConfirm={handleCloseSession}
-                isLoading={isLoading}
             />
         </Container>
     );
