@@ -44,13 +44,8 @@ export class ShiftResultService {
     }
 
     async save(payload: SaveShiftResultPayload): Promise<SaveShiftResultResponse> {
-        try {
-            const response = await this.apiClient.save(payload)
-            return response.data
-        } catch (e) {
-            console.error("ShiftResult service", e)
-            return Promise.reject(e)
-        }
+        const response = await this.apiClient.save(payload)
+        return response.data
     }
 
     async delete(resultId: string): Promise<void> {

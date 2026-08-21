@@ -7,6 +7,7 @@ import axios, {
 } from "axios";
 import {apiBaseUrl} from "@/constants/urls";
 import {tokenService} from "@/auth/auth.tokens.service";
+import {normalizeApiError, normalizeSessionExpiredError} from "@/feedback/api-error";
 
 type RetryableRequest = InternalAxiosRequestConfig & { _retry?: boolean };
 
@@ -34,7 +35,6 @@ class AxiosInterceptor {
         this.axiosInstance.interceptors.response.use(
             resp => resp,
             async (error: AxiosError) => {
-                console.log("Axios interceptor. Error:", error)
                 const originalRequest = error.config as RetryableRequest | undefined;
 
                 if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
@@ -45,11 +45,11 @@ class AxiosInterceptor {
                         originalRequest.headers.Authorization = `Bearer ${newToken}`;
                         return this.axiosInstance(originalRequest);
                     } catch (err) {
-                        return Promise.reject(err);
+                        return Promise.reject(normalizeSessionExpiredError(err));
                     }
                 }
 
-                return Promise.reject(error);
+                return Promise.reject(normalizeApiError(error));
             }
         );
     }

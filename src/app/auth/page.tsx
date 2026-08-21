@@ -8,7 +8,7 @@ import {Controller, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useRouter, useSearchParams} from "next/navigation";
 import {authService} from "@/service/auth.service";
-import {Toaster, toaster} from "@/components/ui/toaster";
+import {toaster} from "@/components/ui/toaster";
 import {loginSchema, LoginSchemaType} from "@/schemas/auth.schema";
 import {Checkbox} from "@/components/ui/checkbox"; // Chakra v3 Toaster
 
@@ -148,7 +148,6 @@ export default function AuthPage() {
             <Suspense fallback={<Center>Загрузка формы...</Center>}>
                 <LoginForm/>
             </Suspense>
-            <Toaster/>
         </Container>
     );
 }

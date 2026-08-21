@@ -23,6 +23,7 @@ export default function ResultsPage() {
     const [isPending, startTransition] = useTransition();
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
     const [targetForEdit, setTargetForEdit] = useState<ShiftResultDetailed | null>(null)
+    const [resultsRevision, setResultsRevision] = useState(0);
     const isEditDialogOpen = targetForEdit !== null
 
     // Инициализация хука фильтров (defaultCompanyId будет применен после загрузки компаний)
@@ -57,20 +58,17 @@ export default function ResultsPage() {
                 size: filters.size
             })
                 .then(setResultsPage)
-                .catch((e) => {
+                .catch(() => {
                     toaster.create({ title: "Ошибка загрузки данных", type: "error" });
                 })
                 .finally(() => setIsLoading(false));
         }
 
         init()
-    }, [filters, companies]);
+    }, [filters, companies, resultsRevision]);
 
     const handleSaveSuccess = () => {
-        // Перезагружаем данные
-        // Можно вызвать рефетч функции, которая загружает таблицу
-        // Для простоты:
-        window.location.reload();
+        setResultsRevision((revision) => revision + 1);
     };
 
     // Обработчик удаления
@@ -85,7 +83,7 @@ export default function ResultsPage() {
                 // Перезагрузка данных (триггер эффекта)
                 // В идеале использовать React Query invalidate, но здесь просто перезапросим
                 window.location.reload();
-            } catch (e) {
+            } catch {
                 toaster.create({ title: "Ошибка удаления", type: "error" });
             }
         });
