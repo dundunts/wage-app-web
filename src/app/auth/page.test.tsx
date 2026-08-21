@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import AuthPage from "@/app/auth/page";
 import {Provider} from "@/components/ui/provider";
-import {toaster} from "@/components/ui/toaster";
+import {toaster} from "@/feedback/toast-store";
 import {ApplicationError} from "@/feedback/api-error";
 import {authService} from "@/service/auth.service";
 
@@ -82,5 +82,26 @@ describe("Authentication login", () => {
         );
         expect(navigation.push).toHaveBeenCalledWith("/results?companyId=company-1");
         expect(navigation.refresh).toHaveBeenCalledOnce();
+    });
+
+    it("protects a pending login from repeated submission", async () => {
+        const user = userEvent.setup();
+        let resolveLogin!: () => void;
+        vi.mocked(authService.login).mockReturnValue(new Promise<void>((resolve) => {
+            resolveLogin = resolve;
+        }));
+        renderPage();
+
+        await user.type(screen.getByLabelText("Пользователь"), "manager@example.com");
+        await user.type(screen.getByLabelText("Пароль"), "password");
+        const submit = screen.getByRole("button", {name: "Войти"});
+        await user.click(submit);
+
+        expect(submit).toBeDisabled();
+        await user.click(submit);
+        expect(authService.login).toHaveBeenCalledOnce();
+
+        resolveLogin();
+        expect(await screen.findByText("Вход выполнен")).toBeVisible();
     });
 });

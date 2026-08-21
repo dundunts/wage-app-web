@@ -9,8 +9,6 @@ import {
 } from "@chakra-ui/react"
 import {toaster} from "@/feedback/toast-store"
 
-export {toaster}
-
 export const Toaster = () => {
   return (
     <Portal>

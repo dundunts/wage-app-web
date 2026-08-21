@@ -104,6 +104,7 @@ function LogoutButton({
             onClick={onLogout}
             loading={isLoggingOut}
             loadingText={feedbackMessages.logout.loading}
+            disabled={isLoggingOut}
         >
             <LogOut size={18}/> Выйти
         </Button>

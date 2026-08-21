@@ -22,25 +22,15 @@ export class SalaryService {
     }
 
     async getOwn(params: GetOwnSalaryParams): Promise<Payroll> {
-        try {
-            const mappedParams = {...params, now: new Date().toISOString().slice(0, 10)}
-            const response = await this.apiClient.fetchOwn(mappedParams)
-            return response.data
-        } catch (e) {
-            console.error("Salary service", e)
-            return Promise.reject(e)
-        }
+        const mappedParams = {...params, now: new Date().toISOString().slice(0, 10)}
+        const response = await this.apiClient.fetchOwn(mappedParams)
+        return response.data
     }
 
     async getStaff(params: GetStaffSalaryParams): Promise<Payroll> {
-        try {
-            const mappedParams = {...params, now: new Date().toISOString().slice(0, 10)}
-            const response = await this.apiClient.fetchStaff(mappedParams)
-            return response.data
-        } catch (e) {
-            console.error("Salary service", e)
-            return Promise.reject(e)
-        }
+        const mappedParams = {...params, now: new Date().toISOString().slice(0, 10)}
+        const response = await this.apiClient.fetchStaff(mappedParams)
+        return response.data
     }
 
     async downloadReportTable(params: GetStaffSalaryParams) {

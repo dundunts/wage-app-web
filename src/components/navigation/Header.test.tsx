@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {Header} from "@/components/navigation/Header";
 import {Provider} from "@/components/ui/provider";
-import {toaster} from "@/components/ui/toaster";
+import {toaster} from "@/feedback/toast-store";
 import {ApplicationError} from "@/feedback/api-error";
 import {authService} from "@/service/auth.service";
 
@@ -76,5 +76,25 @@ describe("Authentication logout", () => {
         expect(logout).toBeEnabled();
         expect(consoleError).toHaveBeenCalledOnce();
         expect(consoleError).toHaveBeenCalledWith("[feedback:logout]", backendError);
+    });
+
+    it("protects a pending logout from repeated submission", async () => {
+        const user = userEvent.setup();
+        let resolveLogout!: () => void;
+        vi.mocked(authService.logout).mockReturnValue(new Promise<void>((resolve) => {
+            resolveLogout = resolve;
+        }));
+        renderHeader();
+
+        await user.click(screen.getByRole("button", {name: "Open menu"}));
+        const logout = await screen.findByRole("button", {name: /Выйти/});
+        await user.click(logout);
+
+        expect(logout).toBeDisabled();
+        await user.click(logout);
+        expect(authService.logout).toHaveBeenCalledOnce();
+
+        resolveLogout();
+        expect(await screen.findByText("Вы вышли из системы")).toBeVisible();
     });
 });

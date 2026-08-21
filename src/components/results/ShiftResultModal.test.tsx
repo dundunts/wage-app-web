@@ -6,7 +6,7 @@ import {Provider} from "@/components/ui/provider";
 import {ShiftResultModal} from "@/components/results/ShiftResultModal";
 import {shiftResultService} from "@/service/results/shiftResult.service";
 import {employeeService} from "@/service/employee/employee.service";
-import {toaster} from "@/components/ui/toaster";
+import {toaster} from "@/feedback/toast-store";
 
 vi.mock("@/service/results/shiftResult.service", () => ({
     shiftResultService: {save: vi.fn()},
@@ -150,14 +150,18 @@ describe("ShiftResultModal save flow", () => {
         vi.mocked(shiftResultService.save).mockReturnValue(new Promise((resolve) => {
             resolveSave = resolve;
         }));
-        renderModal();
+        const props = renderModal();
         const submit = screen.getByRole("button", {name: "Создать"});
+        const cancel = screen.getByRole("button", {name: "Отмена"});
 
         await user.click(submit);
         expect(submit).toBeDisabled();
+        expect(cancel).toBeDisabled();
         await user.click(submit);
+        await user.click(cancel);
 
         expect(shiftResultService.save).toHaveBeenCalledTimes(1);
+        expect(props.onClose).not.toHaveBeenCalled();
         resolveSave({resultId: "result-1"});
         expect(await screen.findByText("Результат смены сохранён")).toBeVisible();
     });

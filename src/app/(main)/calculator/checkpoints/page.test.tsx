@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import CalcInShiftPage from "@/app/(main)/calculator/checkpoints/page";
 import {Provider} from "@/components/ui/provider";
-import {toaster} from "@/components/ui/toaster";
+import {toaster} from "@/feedback/toast-store";
 import {sessionService} from "@/service/session/session.service";
 import {employeeService} from "@/service/employee/employee.service";
 import {checkpointService} from "@/service/checpoint/checkpoint.service";

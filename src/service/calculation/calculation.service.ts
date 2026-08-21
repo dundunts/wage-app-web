@@ -6,13 +6,8 @@ export class CalculationService {
     }
 
     async getDraftForSession(sessionId: string): Promise<ShiftResultDraft> {
-        try {
-            const response = await this.apiClient.fetchDraftForSession(sessionId)
-            return response.data
-        } catch (e) {
-            console.error("Calculation service", e)
-            return Promise.reject(e)
-        }
+        const response = await this.apiClient.fetchDraftForSession(sessionId)
+        return response.data
     }
 
     async confirmDraft(draftId: string): Promise<ConfirmDraftResponse> {

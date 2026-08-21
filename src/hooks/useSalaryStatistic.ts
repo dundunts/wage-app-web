@@ -4,7 +4,7 @@ import {useEffect, useState} from "react";
 import {Payroll, PeriodType, StatisticScope} from "@/types/salary.types";
 import {salaryService} from "@/service/salary/salary.service";
 import {StatisticFilters} from "@/hooks/useStatisticFilter";
-import {toaster} from "@/components/ui/toaster";
+import {feedback} from "@/feedback/feedback";
 
 interface UseSalaryStatisticResult {
     data: Payroll | null;
@@ -36,13 +36,7 @@ export function useSalaryStatistic(filters: StatisticFilters): UseSalaryStatisti
 
                 setData(result);
             } catch (e) {
-                console.error(e);
-                toaster.create({
-                    title: "Ошибка загрузки статистики",
-                    type: "error",
-                    duration: 4000,
-                    closable: true,
-                });
+                feedback.beginAction("salaryStatisticLoad").error(e);
                 setData(null);
             } finally {
                 setIsLoading(false);

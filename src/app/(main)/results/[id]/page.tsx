@@ -21,9 +21,9 @@ import {shiftResultService} from "@/service/results/shiftResult.service";
 import {ShiftResultDetailed} from "@/types/shiftResult.types";
 import {companyService} from "@/service/company/company.service";
 import {Company} from "@/types/company.types";
-import {toaster} from "@/components/ui/toaster";
 import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
 import {feedback} from "@/feedback/feedback";
+import {feedbackMessages} from "@/feedback/messages";
 
 // В Next.js 16 params - это Promise
 export default function ResultDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -52,7 +52,7 @@ export default function ResultDetailsPage({ params }: { params: Promise<{ id: st
                 setData(resultRes.shiftResult);
                 setCompanies(companiesRes);
             } catch (e) {
-                toaster.create({ title: "Ошибка загрузки", type: "error" });
+                feedback.beginAction("shiftResultDetailLoad").error(e);
             } finally {
                 setIsLoading(false);
             }
@@ -165,7 +165,7 @@ export default function ResultDetailsPage({ params }: { params: Promise<{ id: st
                 description="Результат смены будет удалён без возможности восстановления."
                 confirmLabel="Удалить"
                 cancelLabel="Отмена"
-                pendingLabel="Результат смены удаляется"
+                pendingLabel={feedbackMessages.shiftResultDelete.loading}
                 severity="danger"
                 pending={isDeletePending}
                 finalFocusEl={() => deleteTriggerRef.current}

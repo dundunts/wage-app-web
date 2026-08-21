@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import EmployeeListPage from "@/app/(admin)/employee/page";
 import {Provider} from "@/components/ui/provider";
-import {toaster} from "@/components/ui/toaster";
+import {toaster} from "@/feedback/toast-store";
 import {employeeService} from "@/service/employee/employee.service";
 import {EmployeePosition} from "@/types/employee.types";
 

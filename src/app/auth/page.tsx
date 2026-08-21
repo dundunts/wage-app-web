@@ -11,6 +11,7 @@ import {authService} from "@/service/auth.service";
 import {feedback} from "@/feedback/feedback";
 import {loginSchema, LoginSchemaType} from "@/schemas/auth.schema";
 import {Checkbox} from "@/components/ui/checkbox";
+import {feedbackMessages} from "@/feedback/messages";
 
 // Обертка для Suspense, так как useSearchParams требует этого в Next.js
 function LoginForm() {
@@ -35,6 +36,8 @@ function LoginForm() {
     });
 
     const onSubmit = async (data: LoginSchemaType) => {
+        if (isLoading) return;
+
         setIsLoading(true);
         const loginFeedback = feedback.beginAction("login");
 
@@ -115,7 +118,8 @@ function LoginForm() {
                             colorPalette="blue"
                             size="lg"
                             loading={isLoading}
-                            loadingText="Вход..."
+                            loadingText={feedbackMessages.login.loading}
+                            disabled={isLoading}
                             mt={4}
                         >
                             Войти

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import DraftPage from "@/app/(main)/calculator/draft/page";
 import {Provider} from "@/components/ui/provider";
-import {toaster} from "@/components/ui/toaster";
+import {toaster} from "@/feedback/toast-store";
 import {calculationService} from "@/service/calculation/calculation.service";
 
 const navigation = vi.hoisted(() => ({

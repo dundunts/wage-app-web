@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import ResultDetailsPage from "@/app/(main)/results/[id]/page";
 import {Provider} from "@/components/ui/provider";
-import {toaster} from "@/components/ui/toaster";
+import {toaster} from "@/feedback/toast-store";
 import {companyService} from "@/service/company/company.service";
 import {shiftResultService} from "@/service/results/shiftResult.service";
 import {CalculationSource} from "@/types/shiftResult.types";

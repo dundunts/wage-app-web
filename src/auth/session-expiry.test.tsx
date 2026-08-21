@@ -5,7 +5,7 @@ import {AxiosInterceptor} from "@/api/config/api";
 import {SessionExpiryHandler} from "@/auth/session-expiry";
 import SessionExpiryBoundary from "@/components/auth/SessionExpiryBoundary";
 import {Provider} from "@/components/ui/provider";
-import {toaster} from "@/components/ui/toaster";
+import {toaster} from "@/feedback/toast-store";
 import {feedback} from "@/feedback/feedback";
 
 const navigation = vi.hoisted(() => ({replace: vi.fn()}));

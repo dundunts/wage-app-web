@@ -24,9 +24,9 @@ import {CompanyEmployeeInfo} from "@/types/employee.types";
 import {SaveShiftResultPayload, ShiftResultDetailed} from "@/types/shiftResult.types";
 import {employeeService} from "@/service/employee/employee.service";
 import {shiftResultService} from "@/service/results/shiftResult.service"; // Проверь путь импорта
-import {toaster} from "@/components/ui/toaster";
 import {feedback} from "@/feedback/feedback";
 import {Field} from "@/components/ui/field";
+import {feedbackMessages} from "@/feedback/messages";
 
 interface InitialData {
     result: ShiftResultDetailed;
@@ -142,8 +142,7 @@ export function ShiftResultModal({
         employeeService.getCoworkersForCompany(selectedCompanyId)
             .then(setEmployees)
             .catch((e) => {
-                console.error("Err loading employees", e);
-                toaster.create({ title: "Ошибка загрузки сотрудников", type: "error" });
+                feedback.beginAction("shiftResultEmployeesLoad").error(e);
             })
             .finally(() => setIsEmployeesLoading(false));
     }, [selectedCompanyId]);
@@ -178,7 +177,9 @@ export function ShiftResultModal({
     return (
         <Dialog.Root
             open={isOpen}
-            onOpenChange={(details) => !details.open && onClose()}
+            closeOnEscape={!isSubmitting}
+            closeOnInteractOutside={!isSubmitting}
+            onOpenChange={(details) => !details.open && !isSubmitting && onClose()}
             size="xl"
             scrollBehavior="inside" // Важно для длинных списков, чтобы модалка скроллилась внутри
         >
@@ -379,9 +380,14 @@ export function ShiftResultModal({
 
                         <Dialog.Footer>
                             <Dialog.ActionTrigger asChild>
-                                <Button variant="outline" onClick={onClose}>Отмена</Button>
+                                <Button variant="outline" onClick={onClose} disabled={isSubmitting}>Отмена</Button>
                             </Dialog.ActionTrigger>
-                            <Button type="submit" loading={isSubmitting}>
+                            <Button
+                                type="submit"
+                                loading={isSubmitting}
+                                loadingText={feedbackMessages.shiftResultSave.loading}
+                                disabled={isSubmitting}
+                            >
                                 {initialData ? "Сохранить изменения" : "Создать"}
                             </Button>
                         </Dialog.Footer>

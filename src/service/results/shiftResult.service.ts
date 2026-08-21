@@ -23,24 +23,14 @@ export class ShiftResultService {
     }
 
     async getDetailed(id: string): Promise<ShiftResultExtendedResponse> {
-        try {
-            const response = await this.apiClient.fetchDetailedById(id)
-            return response.data
-        } catch (e) {
-            console.error("ShiftResult service", e)
-            return Promise.reject(e)
-        }
+        const response = await this.apiClient.fetchDetailedById(id)
+        return response.data
     }
 
     async getPageByPeriod(params: GetShiftResultsByPeriodParams): Promise<Page<ShiftResultDetailed>> {
-        try {
-            const mappedParams = {...params, now: params.now.slice(0, 10)}
-            const response = await this.apiClient.fetchPageByPeriod(mappedParams)
-            return response.data
-        } catch (e) {
-            console.error("ShiftResult service", e)
-            return Promise.reject(e)
-        }
+        const mappedParams = {...params, now: params.now.slice(0, 10)}
+        const response = await this.apiClient.fetchPageByPeriod(mappedParams)
+        return response.data
     }
 
     async save(payload: SaveShiftResultPayload): Promise<SaveShiftResultResponse> {

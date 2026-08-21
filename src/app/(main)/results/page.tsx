@@ -10,7 +10,6 @@ import {Page} from "@/types/common.types"; // (Assuming Page is exported from co
 import {useShiftResultFilters} from "../../../hooks/useShiftResultFilters";
 import {ResultsFilters} from "../../../components/results/ResultsFilters";
 import {ResultsTable} from "../../../components/results/ResultsTable";
-import {toaster} from "@/components/ui/toaster";
 import {ShiftResultDetailed} from "@/types/shiftResult.types";
 import {ShiftResultModal} from "@/components/results/ShiftResultModal";
 import {salaryService} from "@/service/salary/salary.service";
@@ -67,8 +66,8 @@ export default function ResultsPage() {
                 size: filters.size
             })
                 .then(setResultsPage)
-                .catch(() => {
-                    toaster.create({ title: "Ошибка загрузки данных", type: "error" });
+                .catch((error) => {
+                    feedback.beginAction("shiftResultListLoad").error(error);
                 })
                 .finally(() => setIsLoading(false));
         }
@@ -175,7 +174,7 @@ export default function ResultsPage() {
                 description="Результат смены будет удалён без возможности восстановления."
                 confirmLabel="Удалить"
                 cancelLabel="Отмена"
-                pendingLabel="Результат смены удаляется"
+                pendingLabel={feedbackMessages.shiftResultDelete.loading}
                 severity="danger"
                 pending={isDeletePending}
                 finalFocusEl={() => deleteTarget?.trigger ?? null}

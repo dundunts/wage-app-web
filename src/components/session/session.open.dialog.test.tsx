@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {SessionOpenDialog} from "@/components/session/session.open.dialog";
 import {Provider} from "@/components/ui/provider";
-import {toaster} from "@/components/ui/toaster";
+import {toaster} from "@/feedback/toast-store";
 import {sessionService} from "@/service/session/session.service";
 
 const navigation = vi.hoisted(() => ({push: vi.fn()}));
