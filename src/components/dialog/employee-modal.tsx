@@ -20,7 +20,8 @@ import {Employee, EmployeePosition} from "@/types/employee.types";
 import {useAllCompanies} from "@/hooks/useAllCompanies";
 import {CreateEmployeeFormValues, createEmployeeSchema} from "@/schemas/employee.schema";
 import {employeeService} from "@/service/employee/employee.service";
-import {toaster} from "@/components/ui/toaster";
+import {feedback} from "@/feedback/feedback";
+import {feedbackMessages} from "@/feedback/messages";
 
 interface EmployeeModalProps {
     isOpen: boolean;
@@ -35,7 +36,7 @@ export const EmployeeModal = ({
                                   initialData,
                                   onSuccess,
                               }: EmployeeModalProps) => {
-    const {companies, isLoading: isCompaniesLoading} = useAllCompanies();
+    const {companies} = useAllCompanies();
     const isEditMode = !!initialData;
 
     const {
@@ -61,7 +62,6 @@ export const EmployeeModal = ({
         if (!isOpen) return;
 
         if (initialData) {
-            console.log("RESET TO INITIAL DATA")
             reset({
                 firstName: initialData.firstName,
                 lastName: initialData.lastName,
@@ -83,6 +83,8 @@ export const EmployeeModal = ({
     })
 
     const onSubmit = async (data: CreateEmployeeFormValues) => {
+        const action = isEditMode ? "employeeUpdate" : "employeeCreate";
+        const actionFeedback = feedback.beginAction(action);
         try {
             const payload = {
                 ...data,
@@ -92,21 +94,15 @@ export const EmployeeModal = ({
 
             if (isEditMode && initialData) {
                 await employeeService.update(initialData.id, payload);
-                toaster.create({title: "Сотрудник обновлён", type: "success"});
             } else {
                 await employeeService.create(payload);
-                toaster.create({title: "Сотрудник создан", type: "success"});
             }
 
+            actionFeedback.success();
             onSuccess();
             onClose();
-        } catch (e) {
-            console.error(e);
-            toaster.create({
-                title: "Ошибка",
-                description: "Не удалось сохранить данные сотрудника",
-                type: "error",
-            });
+        } catch (error) {
+            actionFeedback.error(error);
         }
     };
 
@@ -119,7 +115,12 @@ export const EmployeeModal = ({
     const invalid = !!errors.companyIds
 
     return (
-        <Dialog.Root open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
+        <Dialog.Root
+            open={isOpen}
+            closeOnEscape={!isSubmitting}
+            closeOnInteractOutside={!isSubmitting}
+            onOpenChange={(e) => !e.open && !isSubmitting && onClose()}
+        >
             <Dialog.Backdrop/>
             <Dialog.Positioner>
                 <Dialog.Content as="form" onSubmit={handleSubmit(onSubmit)}>
@@ -236,12 +237,16 @@ export const EmployeeModal = ({
 
                     <Dialog.Footer>
                         <Dialog.CloseTrigger asChild>
-                            <Button variant="outline">Отмена</Button>
+                            <Button variant="outline" disabled={isSubmitting}>Отмена</Button>
                         </Dialog.CloseTrigger>
                         <Button
                             type="submit"
                             colorPalette="blue"
                             loading={isSubmitting}
+                            loadingText={feedbackMessages[
+                                isEditMode ? "employeeUpdate" : "employeeCreate"
+                            ].loading}
+                            disabled={isSubmitting}
                         >
                             {isEditMode ? "Сохранить" : "Создать"}
                         </Button>

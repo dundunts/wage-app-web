@@ -13,43 +13,23 @@ export class EmployeeService {
     }
 
     async getById(id: string): Promise<Employee> {
-        try {
-            const response = await this.apiClient.fetchById(id)
-            return response.data
-        } catch (e) {
-            console.error("Get employee by id error:", e)
-            return Promise.reject(e)
-        }
+        const response = await this.apiClient.fetchById(id)
+        return response.data
     }
 
     async getAll(): Promise<Employee[]> {
-        try {
-            const response = await this.apiClient.fetchAll()
-            return response.data
-        } catch (e) {
-            console.error("Get employees error:", e)
-            return Promise.reject(e)
-        }
+        const response = await this.apiClient.fetchAll()
+        return response.data
     }
 
     async getByCompanies(companyIds: string[]): Promise<CompanyEmployeesResponse[]> {
-        try {
-            const response = await this.apiClient.fetchByCompanies(companyIds)
-            return response.data
-        } catch (e) {
-            console.error("Get employees by companies error:", e)
-            return Promise.reject(e)
-        }
+        const response = await this.apiClient.fetchByCompanies(companyIds)
+        return response.data
     }
 
     async getCoworkers(): Promise<CompanyEmployeesResponse[]> {
-        try {
-            const response = await this.apiClient.fetchCoworkers()
-            return response.data
-        } catch (e) {
-            console.error("Get employees-coworkers error:", e)
-            return Promise.reject(e)
-        }
+        const response = await this.apiClient.fetchCoworkers()
+        return response.data
     }
 
     async getCoworkersForCompany(companyId: string): Promise<CompanyEmployeeInfo[]> {
@@ -63,31 +43,16 @@ export class EmployeeService {
     }
 
     async create(payload: CreateEmployeePayload): Promise<Employee> {
-        try {
-            const response = await this.apiClient.create(payload)
-            return response.data
-        } catch (e) {
-            console.error("Create employee error:", e)
-            return Promise.reject(e)
-        }
+        const response = await this.apiClient.create(payload)
+        return response.data
     }
 
     async update(id: string, payload: UpdateEmployeePayload): Promise<void> {
-        try {
-            await this.apiClient.update(id, payload)
-        } catch (e) {
-            console.error("Update employee error:", e)
-            return Promise.reject(e)
-        }
+        await this.apiClient.update(id, payload)
     }
 
     async delete(id: string): Promise<void> {
-        try {
-            await this.apiClient.delete(id)
-        } catch (e) {
-            console.error("Delete employee error:", e)
-            return Promise.reject(e)
-        }
+        await this.apiClient.delete(id)
     }
 }
 
