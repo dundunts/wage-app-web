@@ -73,6 +73,14 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("Employee detail deletion", () => {
+    it("describes an unlinked account without treating Position as a permission", async () => {
+        await renderPage();
+
+        expect(await screen.findByText("Аккаунт не связан")).toBeVisible();
+        expect(screen.getByText("User ID не указан. Сотрудник может учитываться без учётной записи.")).toBeVisible();
+        expect(screen.queryByText(/в соответствии с ролью/i)).not.toBeInTheDocument();
+    });
+
     it("uses the shared alert dialog and cancels without a request", async () => {
         const user = userEvent.setup();
         const nativeConfirm = vi.spyOn(window, "confirm");

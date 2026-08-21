@@ -41,6 +41,7 @@ export function ConfirmationDialog({
     onConfirm,
 }: ConfirmationDialogProps) {
     const returnFocusRef = useRef<HTMLElement | null>(null);
+    const cancelButtonRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         if (open) {
@@ -52,6 +53,7 @@ export function ConfirmationDialog({
         <Dialog.Root
             role="alertdialog"
             open={open}
+            initialFocusEl={() => cancelButtonRef.current}
             finalFocusEl={() => returnFocusRef.current}
             closeOnEscape={!pending}
             closeOnInteractOutside={!pending}
@@ -62,10 +64,11 @@ export function ConfirmationDialog({
             }}
         >
             <Portal>
-                <Dialog.Backdrop />
+                <Dialog.Backdrop backdropFilter="blur(3px)" />
                 <Dialog.Positioner p={{base: 4, md: 6}}>
                     <Dialog.Content
                         layerStyle="panel"
+                        borderColor="border.emphasized"
                     >
                         <Dialog.Header>
                             <Dialog.Title color={severityPresentation[severity].color}>
@@ -73,20 +76,23 @@ export function ConfirmationDialog({
                             </Dialog.Title>
                         </Dialog.Header>
                         <Dialog.Body>
-                            <Dialog.Description>{description}</Dialog.Description>
+                            <Dialog.Description color="fg.muted">
+                                {description}
+                            </Dialog.Description>
                         </Dialog.Body>
                         <Dialog.Footer flexDirection={{base: "column-reverse", sm: "row"}}>
-                            <Dialog.CloseTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    disabled={pending}
-                                    w={{base: "full", sm: "auto"}}
-                                >
-                                    {cancelLabel}
-                                </Button>
-                            </Dialog.CloseTrigger>
+                            <Button
+                                ref={cancelButtonRef}
+                                variant="outline"
+                                disabled={pending}
+                                onClick={onCancel}
+                                w={{base: "full", sm: "auto"}}
+                            >
+                                {cancelLabel}
+                            </Button>
                             <Button
                                 colorPalette={severityPresentation[severity].colorPalette}
+                                variant="solid"
                                 loading={pending}
                                 loadingText={pendingLabel}
                                 disabled={pending}

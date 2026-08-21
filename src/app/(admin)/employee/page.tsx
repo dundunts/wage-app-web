@@ -1,13 +1,13 @@
 // @/app/(admin)/employee/page.tsx
 "use client";
 
-import {useCallback, useEffect, useMemo, useState} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useRouter} from "next/navigation";
-import {Eye, MoreVertical, Plus, Trash2, UserX,} from "lucide-react";
+import {Eye, MoreVertical, Plus, Trash2, UserX} from "lucide-react";
 
 import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
 import {useAllCompanies} from "@/hooks/useAllCompanies";
-import {employeeService,} from "@/service/employee/employee.service";
+import {employeeService} from "@/service/employee/employee.service";
 import {CompanyEmployeeInfo} from "@/types/employee.types";
 import {EmployeeModal} from "@/components/dialog/employee-modal";
 import {feedback} from "@/feedback/feedback";
@@ -19,12 +19,14 @@ import {
     createListCollection,
     Flex,
     Heading,
+    IconButton,
     Menu,
     Portal,
     Select,
     Spinner,
+    Stack,
     Table,
-    Text
+    Text,
 } from "@chakra-ui/react";
 
 export default function EmployeeListPage() {
@@ -39,6 +41,7 @@ export default function EmployeeListPage() {
     const [isCreateOpen, setCreateOpen] = useState(false);
     const [employeeToDelete, setEmployeeToDelete] = useState<CompanyEmployeeInfo | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
 
     // Default company
     useEffect(() => {
@@ -101,36 +104,46 @@ export default function EmployeeListPage() {
     };
 
     return (
-        <Box p={6}>
-            {/* Header */}
-            <Flex justify="space-between" align="center" mb={6}>
-                <Heading size="lg">Работники</Heading>
+        <Box p={{base: 4, md: 6}} maxW="7xl" mx="auto">
+            <Flex
+                justify="space-between"
+                align={{base: "stretch", sm: "center"}}
+                direction={{base: "column", sm: "row"}}
+                gap={4}
+                mb={6}
+            >
+                <Stack gap={1}>
+                    <Text color="accent" fontSize="xs" fontWeight="bold" letterSpacing="0.1em">
+                        УПРАВЛЕНИЕ КОМАНДОЙ
+                    </Text>
+                    <Heading size="lg">Работники</Heading>
+                    <Text color="fg.muted" fontSize="sm">
+                        Состав выбранной компании и назначенные должности
+                    </Text>
+                </Stack>
                 <Button
-                    colorPalette="blue"
+                    colorPalette="brand"
                     onClick={() => setCreateOpen(true)}
+                    alignSelf={{base: "stretch", sm: "center"}}
                 >
                     <Plus size={20}/> Создать работника
                 </Button>
             </Flex>
 
-            {/* Filter */}
             <Box maxW="400px" mb={6}>
-                <Text mb={2} fontWeight="medium">
-                    Компания
-                </Text>
                 <Select.Root
                     collection={companiesCollection}
                     value={[selectedCompanyId]}
                     disabled={isCompaniesLoading}
                     onValueChange={(e) => setSelectedCompanyId(e.value[0] || "")}
                     size="sm"
-                    width="320px"
+                    width="full"
                 >
                     <Select.HiddenSelect />
-                    <Select.Label>Select company</Select.Label>
+                    <Select.Label color="fg.muted">Компания</Select.Label>
                     <Select.Control>
-                        <Select.Trigger>
-                            <Select.ValueText placeholder="Select company" />
+                        <Select.Trigger bg="bg.raised" borderColor="border">
+                            <Select.ValueText placeholder="Выберите компанию" />
                         </Select.Trigger>
                         <Select.IndicatorGroup>
                             <Select.Indicator />
@@ -138,7 +151,7 @@ export default function EmployeeListPage() {
                     </Select.Control>
                     <Portal>
                         <Select.Positioner>
-                            <Select.Content>
+                            <Select.Content bg="bg.raised" borderColor="border.emphasized">
                                 {companiesCollection.items.map((company) => (
                                     <Select.Item item={company} key={company.id}>
                                         {company.title}
@@ -149,26 +162,19 @@ export default function EmployeeListPage() {
                         </Select.Positioner>
                     </Portal>
                 </Select.Root>
-                {/*<Select*/}
-                {/*    value={selectedCompanyId}*/}
-                {/*    onChange={(e) => setSelectedCompanyId(e.target.value)}*/}
-                {/*    disabled={isCompaniesLoading}*/}
-                {/*>*/}
-                {/*    {companies.map((company) => (*/}
-                {/*        <option key={company.id} value={company.id}>*/}
-                {/*            {company.title}*/}
-                {/*        </option>*/}
-                {/*    ))}*/}
-                {/*</Select>*/}
             </Box>
 
-            {/* Table */}
             <Box
                 borderWidth="1px"
-                borderRadius="lg"
-                overflow="hidden"
+                borderColor="border"
+                borderRadius="panel"
+                overflowX="auto"
                 bg="bg.panel"
-                shadow="sm"
+                shadow="panel"
+                role="region"
+                aria-label="Список работников"
+                tabIndex={employees.length > 0 ? 0 : undefined}
+                _focusVisible={{outline: "2px solid", outlineColor: "focus.ring", outlineOffset: "2px"}}
             >
                 {isEmployeesLoading ? (
                     <Center p={10}>
@@ -176,24 +182,36 @@ export default function EmployeeListPage() {
                     </Center>
                 ) : employees.length === 0 ? (
                     <Center p={10} flexDirection="column">
-                        <UserX size={48}/>
+                        <UserX size={48} aria-hidden="true"/>
                         <Text mt={4} color="fg.muted">
                             В этой компании пока нет сотрудников
                         </Text>
                     </Center>
                 ) : (
-                    <Table.Root>
-                        <Table.Header bg="gray.50">
-                            <Table.Row>
-                                <Table.ColumnHeader>ФИО</Table.ColumnHeader>
-                                <Table.ColumnHeader>Должность</Table.ColumnHeader>
-                                <Table.ColumnHeader w="50px"/>
+                    <Table.Root size="sm" minW="560px" fontVariantNumeric="tabular-nums">
+                        <Table.Header bg="bg.subtle">
+                            <Table.Row borderColor="border">
+                                <Table.ColumnHeader color="fg.quiet" letterSpacing="0.06em">
+                                    ФИО
+                                </Table.ColumnHeader>
+                                <Table.ColumnHeader color="fg.quiet" letterSpacing="0.06em">
+                                    Должность
+                                </Table.ColumnHeader>
+                                <Table.ColumnHeader w="56px" color="fg.quiet" aria-label="Действия"/>
                             </Table.Row>
                         </Table.Header>
 
                         <Table.Body>
                             {employees.map((employee) => (
-                                <Table.Row key={employee.id}>
+                                <Table.Row
+                                    key={employee.id}
+                                    borderColor="border.muted"
+                                    transitionProperty="background-color"
+                                    transitionDuration="quiet"
+                                    transitionTimingFunction="quiet"
+                                    _hover={{bg: "accent.subtle"}}
+                                    _motionReduce={{transitionDuration: "0ms"}}
+                                >
                                     <Table.Cell fontWeight="medium">
                                         {formatShortName(employee)}
                                     </Table.Cell>
@@ -202,37 +220,46 @@ export default function EmployeeListPage() {
                                             {employee.position}
                                         </Text>
                                     </Table.Cell>
-                                    <Table.Cell>
+                                    <Table.Cell textAlign="end">
                                         <Menu.Root>
                                             <Menu.Trigger asChild>
-                                                <Button variant="subtle" size="sm" aria-label="Опции">
+                                                <IconButton
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    aria-label={`Действия с работником ${formatShortName(employee)}`}
+                                                    onFocus={(event) => {
+                                                        deleteTriggerRef.current = event.currentTarget;
+                                                    }}
+                                                    onClick={(event) => {
+                                                        deleteTriggerRef.current = event.currentTarget;
+                                                    }}
+                                                >
                                                     <MoreVertical size={16}/>
-                                                </Button>
+                                                </IconButton>
                                             </Menu.Trigger>
-
-                                            <Menu.Content>
-                                                <Menu.Item
-                                                    value="details"
-                                                    onClick={() =>
-                                                        router.push(
-                                                            `/employee/${employee.id}`
-                                                        )
-                                                    }
-                                                >
-                                                    <Eye size={16}/>
-                                                    Подробнее
-                                                </Menu.Item>
-                                                <Menu.Item
-                                                    value="delete"
-                                                    color="red.500"
-                                                    onClick={() =>
-                                                        setEmployeeToDelete(employee)
-                                                    }
-                                                >
-                                                    <Trash2 size={16}/>
-                                                    Удалить
-                                                </Menu.Item>
-                                            </Menu.Content>
+                                            <Portal>
+                                                <Menu.Positioner>
+                                                    <Menu.Content bg="bg.raised" borderColor="border.emphasized">
+                                                        <Menu.Item
+                                                            value="details"
+                                                            onClick={() => router.push(`/employee/${employee.id}`)}
+                                                        >
+                                                            <Box color="accent">
+                                                                <Eye size={16}/>
+                                                            </Box>
+                                                            Подробнее
+                                                        </Menu.Item>
+                                                        <Menu.Item
+                                                            value="delete"
+                                                            color="status.danger"
+                                                            onClick={() => setEmployeeToDelete(employee)}
+                                                        >
+                                                            <Trash2 size={16}/>
+                                                            Удалить
+                                                        </Menu.Item>
+                                                    </Menu.Content>
+                                                </Menu.Positioner>
+                                            </Portal>
                                         </Menu.Root>
                                     </Table.Cell>
                                 </Table.Row>
@@ -261,6 +288,7 @@ export default function EmployeeListPage() {
                 pendingLabel={feedbackMessages.employeeDelete.loading}
                 severity="danger"
                 pending={isDeleting}
+                finalFocusEl={() => deleteTriggerRef.current}
                 onCancel={() => {
                     if (!isDeleting) {
                         setEmployeeToDelete(null);

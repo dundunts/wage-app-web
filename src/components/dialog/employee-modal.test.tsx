@@ -71,6 +71,7 @@ describe("Employee creation", () => {
         const error = await screen.findByText("Фамилия обязательна");
         const lastName = within(dialog).getByRole("textbox", {name: "Фамилия"});
         expect(error).toBeVisible();
+        expect(lastName).toBeRequired();
         expect(lastName).toHaveAttribute("aria-describedby", error.id);
         expect(lastName).toHaveFocus();
         expect(employeeService.create).not.toHaveBeenCalled();
@@ -138,6 +139,7 @@ describe("Employee creation", () => {
 
         const pending = within(dialog).getByRole("button", {name: "Сотрудник создаётся"});
         expect(pending).toBeDisabled();
+        expect(within(dialog).getByRole("textbox", {name: "Фамилия"})).toBeDisabled();
         await user.click(pending);
         expect(employeeService.create).toHaveBeenCalledOnce();
 
