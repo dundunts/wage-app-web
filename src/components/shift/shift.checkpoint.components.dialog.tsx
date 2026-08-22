@@ -178,6 +178,9 @@ export function CheckpointDialog(
                                 maxWidth="max-content"
                                 orientation="horizontal"
                                 value={formType}
+                                disabled={pending}
+                                colorPalette="brand"
+                                aria-label="Тип чекпоинта"
                                 onValueChange={(e) => {
                                     const nextFormType = CheckpointType[e.value as keyof typeof CheckpointType];
                                     setFormType(nextFormType);
@@ -199,8 +202,14 @@ export function CheckpointDialog(
                             {/* Form fields */}
                             <VStack align="stretch" gap={3}>
                                 {form.fields.map((field) => (
-                                    <HStack key={field.label} justify="space-between">
-                                        <Text>{field.label}</Text>
+                                    <Field.Root
+                                        key={field.label}
+                                        display="grid"
+                                        gridTemplateColumns={{base: "1fr", sm: "1fr 140px"}}
+                                        alignItems={{sm: "center"}}
+                                        gap={2}
+                                    >
+                                        <Field.Label flex="1">{field.label}</Field.Label>
                                         <Input
                                             type="number"
                                             disabled={pending}
