@@ -41,9 +41,18 @@ type CreateCheckpointDialogProps = {
     onSave: (payload: CheckpointPayload) => void;
 }
 
-function getInitialValues(origin?: Checkpoint) {
-    return origin?.metricRecords.reduce((acc, item) =>
-        ({...acc, [item.label]: item.value}), {}) || {};
+function getInitialValues(formType: CheckpointType, origin?: Checkpoint): Record<string, number> {
+    const originValues = new Map(
+        origin?.metricRecords.map(item => [item.label, item.value]) || []
+    );
+
+    return checkpointDialogForms[formType].fields.reduce<Record<string, number>>(
+        (acc, field) => ({
+            ...acc,
+            [field.label]: originValues.get(field.label) ?? 0,
+        }),
+        {}
+    );
 }
 
 function getInitialEmployees(origin?: Checkpoint, prevCheckpoint?: Checkpoint) {
@@ -70,7 +79,9 @@ export function CheckpointDialog(
     const [formType, setFormType] =
         useState<CheckpointType>(initialFormType);
 
-    const [values, setValues] = useState<Record<string, number>>(getInitialValues(origin));
+    const [values, setValues] = useState<Record<string, number>>(
+        getInitialValues(initialFormType, origin)
+    );
     const [selectedEmployees, setSelectedEmployees] = useState<EmployeeBase[]>(getInitialEmployees(origin, prevCheckpoint));
     const [date, setDate] = useState<Date>(getInitialDate(origin));
     // const [date, setDate] = useState<Date>(new Date());
@@ -111,7 +122,7 @@ export function CheckpointDialog(
             dateTime: date,
             type: formType,
             fieldRecords: form.fields.map(f =>
-                ({...f, value: values[f.label]} as CheckpointMetricRecordPayload)),
+                ({...f, value: values[f.label] ?? 0} as CheckpointMetricRecordPayload)),
         }
 
         onSave(payload);
@@ -136,7 +147,7 @@ export function CheckpointDialog(
             onOpenChange={(details) => {
                 if (details.open) {
                     setFormType(initialFormType);
-                    setValues(getInitialValues(origin));
+                    setValues(getInitialValues(initialFormType, origin));
                     setSelectedEmployees(getInitialEmployees(origin, prevCheckpoint));
                     setDate(getInitialDate(origin));
                     setEmployeesSelectError(false);
@@ -170,7 +181,14 @@ export function CheckpointDialog(
                                 disabled={pending}
                                 colorPalette="brand"
                                 aria-label="Тип чекпоинта"
-                                onValueChange={(e) => setFormType(CheckpointType[e.value as keyof typeof CheckpointType])}
+                                onValueChange={(e) => {
+                                    const nextFormType = CheckpointType[e.value as keyof typeof CheckpointType];
+                                    setFormType(nextFormType);
+                                    setValues(prev => ({
+                                        ...getInitialValues(nextFormType),
+                                        ...prev,
+                                    }));
+                                }}
                             >
                                 <SegmentGroup.Indicator/>
                                 {Object.values(CheckpointType).map((item) => (

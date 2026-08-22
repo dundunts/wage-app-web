@@ -125,6 +125,18 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("Checkpoint page loading", () => {
+    it("shows Checkpoint as the current workflow stage", async () => {
+        renderPage();
+
+        expect(await screen.findByRole("heading", {name: "Расчёт за день"})).toBeVisible();
+        expect(screen.getByRole("listitem", {name: "1. Сессия: завершён"})).toBeVisible();
+        expect(screen.getByRole("listitem", {name: "2. Checkpoint: текущий"})).toHaveAttribute(
+            "aria-current",
+            "step",
+        );
+        expect(screen.getByRole("listitem", {name: "3. Расчёт: ожидает"})).toBeVisible();
+    });
+
     it("keeps the existing page-level failure persistent", async () => {
         vi.spyOn(console, "error").mockImplementation(() => {});
         vi.mocked(sessionService.getAvailableById).mockRejectedValue(new Error("load failed"));
@@ -145,6 +157,34 @@ describe("Checkpoint create", () => {
         expect(within(dialog).getByRole("spinbutton", {name: "Выручка"})).toBeVisible();
         expect(within(dialog).getByRole("spinbutton", {name: "Чай"})).toBeVisible();
         expect(within(dialog).getByLabelText("Дата и время чекпоинта")).toBeVisible();
+    });
+
+    it("submits untouched metric fields with zero values", async () => {
+        const user = userEvent.setup();
+        vi.mocked(checkpointService.create).mockResolvedValue(checkpoint);
+        const dialog = await openCreateCheckpointDialog(user);
+
+        await user.click(within(dialog).getByRole("checkbox", {name: "Иван"}));
+        await user.click(within(dialog).getByRole("button", {name: "Сохранить"}));
+
+        expect(checkpointService.create).toHaveBeenCalledWith(expect.objectContaining({
+            revenue: 0,
+            tips: 0,
+            employeeIds: [employee.id],
+            type: CheckpointType.REGULAR,
+            fieldRecords: [
+                {
+                    label: "Выручка",
+                    destination: CheckpointCalcDestination.REVENUE,
+                    value: 0,
+                },
+                {
+                    label: "Чай",
+                    destination: CheckpointCalcDestination.TIPS,
+                    value: 0,
+                },
+            ],
+        }));
     });
 
     it("announces the employee selection error inline", async () => {

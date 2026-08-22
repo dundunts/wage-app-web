@@ -57,7 +57,9 @@ describe("SessionOpenDialog", () => {
         }));
         renderDialog();
 
-        await user.click(screen.getByRole("button", {name: "Открыть сессию"}));
+        const trigger = screen.getByRole("button", {name: "Открыть сессию"});
+        expect(trigger).toHaveAttribute("data-selected", "true");
+        await user.click(trigger);
         const dateTime = screen.getByLabelText("Дата и время начала");
         const submit = screen.getByRole("button", {name: "Открыть"});
         await user.click(submit);
