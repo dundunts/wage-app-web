@@ -1,6 +1,6 @@
 "use client";
 
-import {Box, Button, Container, Flex, Heading, Spinner, Stack, Text} from "@chakra-ui/react";
+import {Box, Button, Flex, Heading, Spinner, Stack, Text} from "@chakra-ui/react";
 import {AlertTriangle, ArrowLeft, Check} from "lucide-react";
 import {EmployeePaymentDraftCard, ShiftResultsDraftTable} from "@/components/shift/shift.results.draft.components";
 import React, {useEffect, useState} from "react";
@@ -9,6 +9,10 @@ import {ShiftResultDraft} from "@/types/draft.types";
 import {calculationService} from "@/service/calculation/calculation.service";
 import {feedback} from "@/feedback/feedback";
 import {feedbackMessages} from "@/feedback/messages";
+import {
+    CalculatorStageContainer,
+    CalculatorStageHeader,
+} from "@/components/calculator/calculator-stage";
 
 type PendingAction = "confirm" | "discard" | null;
 
@@ -86,51 +90,53 @@ export default function DraftPage() {
 
     if (isLoading) {
         return (
-            <Stack role="status" aria-label="Shift Result Draft загружается" align="center" mt={10} color="fg.muted">
-                <Spinner size="lg" />
-            </Stack>
+            <CalculatorStageContainer>
+                <Stack role="status" aria-label="Shift Result Draft загружается" align="center" py={10} color="fg.muted">
+                    <Spinner size="lg" />
+                </Stack>
+            </CalculatorStageContainer>
         );
     }
 
     if (error) {
         return (
-            <Container maxW="breakpoint-lg" py={6}>
-                <Stack
-                    role="alert"
-                    gap={3}
-                    p={{base: 4, md: 5}}
-                    bg="bg.panel"
-                    borderWidth="1px"
-                    borderColor="status.danger"
-                    borderRadius="panel"
-                >
-                    <Text color="accent" fontSize="xs" fontWeight="bold" letterSpacing="wide" textTransform="uppercase">
-                        Этап 3 · Shift Result Draft
-                    </Text>
-                    <Heading as="h1" size="md">Shift Result Draft не загружен</Heading>
-                    <Text color="status.danger">{error}</Text>
-                    <Button alignSelf="flex-start" variant="outline" onClick={() => void loadData(true)}>
-                        Повторить
-                    </Button>
+            <CalculatorStageContainer>
+                <Stack gap={6}>
+                    <CalculatorStageHeader
+                        currentStage={3}
+                        title="Проверьте расчёт за день"
+                        description="Подтвердите рассчитанные Payment или вернитесь к Checkpoint для корректировки."
+                    />
+                    <Stack
+                        role="alert"
+                        gap={3}
+                        p={{base: 4, md: 5}}
+                        bg="bg.panel"
+                        borderWidth="1px"
+                        borderColor="status.danger"
+                        borderRadius="panel"
+                    >
+                        <Heading as="h2" size="md">Shift Result Draft не загружен</Heading>
+                        <Text color="status.danger">{error}</Text>
+                        <Button alignSelf="flex-start" variant="outline" onClick={() => void loadData(true)}>
+                            Повторить
+                        </Button>
+                    </Stack>
                 </Stack>
-            </Container>
+            </CalculatorStageContainer>
         );
     }
     
     if (!resultDraft) return;
 
     return (
-        <Container maxW="breakpoint-lg" py={6}>
+        <CalculatorStageContainer>
             <Stack gap={6} aria-busy={pendingAction !== null}>
-                <Box>
-                    <Text color="accent" fontSize="xs" fontWeight="bold" letterSpacing="wide" textTransform="uppercase">
-                        Этап 3 · Shift Result Draft
-                    </Text>
-                    <Heading as="h1" size="lg">Проверьте расчёт за день</Heading>
-                    <Text mt={1} color="fg.muted" fontSize="sm">
-                        Подтвердите рассчитанные Payment или вернитесь к Checkpoint для корректировки.
-                    </Text>
-                </Box>
+                <CalculatorStageHeader
+                    currentStage={3}
+                    title="Проверьте расчёт за день"
+                    description="Подтвердите рассчитанные Payment или вернитесь к Checkpoint для корректировки."
+                />
 
                 <Flex
                     role="status"
@@ -224,6 +230,6 @@ export default function DraftPage() {
                     </Stack>
                 </Stack>
             </Stack>
-        </Container>
+        </CalculatorStageContainer>
     );
 }

@@ -10,6 +10,7 @@ import {
     useDisclosure,
     VStack,
 } from "@chakra-ui/react";
+import {Plus} from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {Company} from "@/types/company.types";
@@ -17,6 +18,7 @@ import {sessionService} from "@/service/session/session.service";
 import {toLocalDateTimeInputValue} from "@/utils/date.utils";
 import {feedback} from "@/feedback/feedback";
 import {feedbackMessages} from "@/feedback/messages";
+import {LiquidGlassAction} from "@/components/ui/liquid-glass";
 
 interface Props {
     company: Company;
@@ -58,12 +60,16 @@ export function SessionOpenDialog({ company }: Props) {
 
     return (
         <>
-            <Button
+            <LiquidGlassAction
                 onClick={() => onOpen()}
-                colorPalette="brand"
+                selected
+                h={12}
+                px={6}
+                w={{base: "full", sm: "auto"}}
             >
+                <Plus aria-hidden="true" size={18} />
                 Открыть сессию
-            </Button>
+            </LiquidGlassAction>
 
             <Dialog.Root
                 open={open}

@@ -55,6 +55,17 @@ describe("Shift Result Draft actions", () => {
 
     afterEach(() => vi.restoreAllMocks());
 
+    it("shows Calculation as the current workflow stage", async () => {
+        await openDraft();
+
+        expect(screen.getByRole("listitem", {name: "1. Сессия: завершён"})).toBeVisible();
+        expect(screen.getByRole("listitem", {name: "2. Checkpoint: завершён"})).toBeVisible();
+        expect(screen.getByRole("listitem", {name: "3. Расчёт: текущий"})).toHaveAttribute(
+            "aria-current",
+            "step",
+        );
+    });
+
     it("shows confirmation success and navigates to the created Shift Result", async () => {
         const user = userEvent.setup();
         vi.mocked(calculationService.confirmDraft).mockResolvedValue({resultId: "result-1"});
