@@ -29,7 +29,8 @@ vi.mock("@/service/auth.service", () => ({
 }));
 
 vi.mock("@/store/userStore", () => ({
-    default: () => userState,
+    default: (selector?: (state: typeof userState) => unknown) =>
+        selector ? selector(userState) : userState,
 }));
 
 function renderHeader() {
@@ -139,6 +140,36 @@ describe("Navigation", () => {
             "aria-current",
             "page",
         );
+    });
+
+    it("places a standalone separator between navigation and logout", async () => {
+        const user = userEvent.setup();
+        renderHeader();
+
+        await user.click(screen.getByRole("button", {name: "Open menu"}));
+        const navigation = await screen.findByRole("navigation", {name: "Основная навигация"});
+        const separator = screen.getByRole("separator");
+        const logout = screen.getByRole("button", {name: /Выйти/});
+
+        expect(navigation.compareDocumentPosition(separator) & Node.DOCUMENT_POSITION_FOLLOWING)
+            .toBeTruthy();
+        expect(separator.compareDocumentPosition(logout) & Node.DOCUMENT_POSITION_FOLLOWING)
+            .toBeTruthy();
+    });
+
+    it("returns from a nested navigation level", async () => {
+        const user = userEvent.setup();
+        navigation.pathname = "/company/company-1";
+        userState.permissions = adminPermissions;
+        renderHeader();
+
+        await user.click(screen.getByRole("button", {name: "Open menu"}));
+        await user.click(await screen.findByRole("button", {name: "Админ. панель"}));
+        expect(await screen.findByRole("button", {name: "Компании"})).toBeVisible();
+
+        await user.click(screen.getByRole("button", {name: /Назад/}));
+        expect(await screen.findByRole("button", {name: "Админ. панель"})).toBeVisible();
+        expect(screen.queryByRole("button", {name: "Компании"})).not.toBeInTheDocument();
     });
 
     it("dismisses the mobile navigation from its keyboard close action", async () => {

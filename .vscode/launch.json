@@ -1,0 +1,49 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Web: production backend (default)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/next/dist/bin/next",
+      "runtimeArgs": ["--inspect"],
+      "cwd": "${workspaceFolder}",
+      "skipFiles": ["<node_internals>/**"],
+      "env": {
+        "NEXT_PUBLIC_BASE_API_URL": "https://92.255.107.65",
+        "NEXT_PUBLIC_KEYCLOAK_URL": "https://92.255.107.65",
+        "NEXT_PUBLIC_KEYCLOAK_REALM": "WageApp",
+        "NEXT_PUBLIC_KEYCLOAK_ID": "mobile-client"
+      },
+      "serverReadyAction": {
+        "action": "debugWithChrome",
+        "killOnServerStop": true,
+        "pattern": "- Local:.+(https?://.+)",
+        "uriFormat": "%s",
+        "webRoot": "${workspaceFolder}"
+      }
+    },
+    {
+      "name": "Web: local backend",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/next/dist/bin/next",
+      "runtimeArgs": ["--inspect"],
+      "cwd": "${workspaceFolder}",
+      "skipFiles": ["<node_internals>/**"],
+      "env": {
+        "NEXT_PUBLIC_BASE_API_URL": "http://localhost:8085",
+        "NEXT_PUBLIC_KEYCLOAK_URL": "http://localhost:8080",
+        "NEXT_PUBLIC_KEYCLOAK_REALM": "WageApp",
+        "NEXT_PUBLIC_KEYCLOAK_ID": "mobile-client"
+      },
+      "serverReadyAction": {
+        "action": "debugWithChrome",
+        "killOnServerStop": true,
+        "pattern": "- Local:.+(https?://.+)",
+        "uriFormat": "%s",
+        "webRoot": "${workspaceFolder}"
+      }
+    }
+  ]
+}

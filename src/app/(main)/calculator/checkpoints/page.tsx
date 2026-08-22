@@ -3,11 +3,8 @@
 
 import React, {useEffect, useRef, useState} from 'react';
 import {
-    Box,
     Button,
-    Container,
     Flex,
-    Heading,
     HStack,
     IconButton,
     Separator,
@@ -39,6 +36,10 @@ import {SessionUpdateTimeDialog} from "@/components/session/session.update-time.
 import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
 import {feedback} from "@/feedback/feedback";
 import {feedbackMessages} from "@/feedback/messages";
+import {
+    CalculatorStageContainer,
+    CalculatorStageHeader,
+} from "@/components/calculator/calculator-stage";
 
 function CalcInShiftPage() {
     const searchParams = useSearchParams();
@@ -210,25 +211,29 @@ function CalcInShiftPage() {
     }
 
     if (isLoading) return (
-        <Stack role="status" aria-label="Checkpoint загружаются" align="center" py={10}>
-            <Spinner size="xl" />
-        </Stack>
+        <CalculatorStageContainer>
+            <Stack role="status" aria-label="Checkpoint загружаются" align="center" py={10}>
+                <Spinner size="xl" />
+            </Stack>
+        </CalculatorStageContainer>
     );
 
     if (error) return (
-        <Stack
-            role="alert"
-            py={6}
-            px={4}
-            align="center"
-            bg="bg.panel"
-            borderWidth="1px"
-            borderColor="status.danger"
-            borderRadius="panel"
-        >
-            <Text color="status.danger" fontSize="lg">{error}</Text>
-            <Button variant="outline" onClick={() => window.location.reload()}>Попробовать снова</Button>
-        </Stack>
+        <CalculatorStageContainer>
+            <Stack
+                role="alert"
+                py={6}
+                px={4}
+                align="center"
+                bg="bg.panel"
+                borderWidth="1px"
+                borderColor="status.danger"
+                borderRadius="panel"
+            >
+                <Text color="status.danger" fontSize="lg">{error}</Text>
+                <Button variant="outline" onClick={() => window.location.reload()}>Попробовать снова</Button>
+            </Stack>
+        </CalculatorStageContainer>
     );
 
     if (!session) return null;
@@ -241,18 +246,13 @@ function CalcInShiftPage() {
     });
 
     return (
-        <Container maxW="breakpoint-lg" pt={6} pb={{base: 24, md: 6}}>
+        <CalculatorStageContainer pb={{base: 24, md: 8}}>
             <Stack gap={6}>
-                {/* Page header */}
-                <Box>
-                    <Text color="accent" fontSize="xs" fontWeight="bold" letterSpacing="wide" textTransform="uppercase">
-                        Этап 2 · Checkpoint
-                    </Text>
-                    <Heading as="h1" size="lg">Расчёт за день</Heading>
-                    <Text mt={1} color="fg.muted" fontSize="sm">
-                        Фиксируйте Revenue, Restaurant Tips и состав команды по ходу Shift Session.
-                    </Text>
-                </Box>
+                <CalculatorStageHeader
+                    currentStage={2}
+                    title="Расчёт за день"
+                    description="Фиксируйте Revenue, Restaurant Tips и состав команды по ходу Shift Session."
+                />
 
                 {/* Shift controls */}
                 <Flex
@@ -431,7 +431,7 @@ function CalcInShiftPage() {
                 onCancel={onCloseCloseSessionDialog}
                 onConfirm={handleCloseSession}
             />
-        </Container>
+        </CalculatorStageContainer>
     );
 }
 

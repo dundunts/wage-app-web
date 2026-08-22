@@ -622,6 +622,18 @@ const config = defineConfig({
                     onAccent: {value: "#062d28"},
                     onDanger: {value: "#2d080b"},
                     onWarning: {value: "#2b1b00"},
+                    glassOverlayStart: {value: "rgba(15, 17, 17, 0.70)"},
+                    glassOverlayEnd: {value: "rgba(7, 10, 11, 0.82)"},
+                    glassGlow: {value: "rgba(111, 255, 229, 0.14)"},
+                    glassSheen: {value: "rgba(255, 255, 255, 0.09)"},
+                    glassEdge: {value: "rgba(111, 255, 229, 0.055)"},
+                    glassActiveHighlight: {value: "rgba(255, 255, 255, 0.20)"},
+                    glassActiveStart: {value: "rgba(62, 213, 188, 0.20)"},
+                    glassActiveMid: {value: "rgba(22, 49, 48, 0.31)"},
+                    glassActiveEnd: {value: "rgba(255, 255, 255, 0.09)"},
+                    glassBorder: {value: "rgba(112, 255, 229, 0.44)"},
+                    glassSeparator: {value: "rgba(255, 255, 255, 0.13)"},
+                    glassHover: {value: "rgba(255, 255, 255, 0.055)"},
                 },
                 ledgerLight: {
                     canvas: {value: "#f7f6f2"},
@@ -640,6 +652,18 @@ const config = defineConfig({
                     danger: {value: "#b42332"},
                     violet: {value: "#6741b4"},
                     onSolid: {value: "#ffffff"},
+                    glassOverlayStart: {value: "rgba(255, 254, 250, 0.70)"},
+                    glassOverlayEnd: {value: "rgba(247, 246, 242, 0.84)"},
+                    glassGlow: {value: "rgba(0, 121, 111, 0.12)"},
+                    glassSheen: {value: "rgba(255, 255, 255, 0.12)"},
+                    glassEdge: {value: "rgba(0, 121, 111, 0.06)"},
+                    glassActiveHighlight: {value: "rgba(255, 255, 255, 0.22)"},
+                    glassActiveStart: {value: "rgba(0, 121, 111, 0.13)"},
+                    glassActiveMid: {value: "rgba(231, 245, 242, 0.72)"},
+                    glassActiveEnd: {value: "rgba(255, 255, 255, 0.62)"},
+                    glassBorder: {value: "rgba(0, 121, 111, 0.36)"},
+                    glassSeparator: {value: "rgba(28, 26, 23, 0.13)"},
+                    glassHover: {value: "rgba(28, 26, 23, 0.055)"},
                 },
             },
             fonts: {
@@ -649,6 +673,7 @@ const config = defineConfig({
             radii: {
                 control: {value: "8px"},
                 panel: {value: "12px"},
+                glassControl: {value: "14px"},
             },
             durations: {
                 quiet: {value: "150ms"},
@@ -668,6 +693,18 @@ const config = defineConfig({
                 },
                 accentLight: {
                     value: "0 0 0 1px {colors.ledgerLight.accent/18}, 0 12px 34px {colors.ledger.teal/12}",
+                },
+                glassOverlayDark: {
+                    value: "inset 1px 0 {colors.ledger.text/16}",
+                },
+                glassOverlayLight: {
+                    value: "inset 1px 0 {colors.white/72}",
+                },
+                glassActionDark: {
+                    value: "inset 0 1px {colors.white/30}, inset 1px 0 {colors.white/13}, inset 0 -1px {colors.ledger.neon/8}, 0 10px 30px {colors.black/22}, 0 0 26px {colors.ledger.neon/8}",
+                },
+                glassActionLight: {
+                    value: "inset 0 1px {colors.white/82}, inset 1px 0 {colors.white/54}, inset 0 -1px {colors.ledgerLight.accent/8}, 0 10px 30px {colors.black/10}, 0 0 26px {colors.ledgerLight.accent/8}",
                 },
             },
         },
@@ -727,6 +764,44 @@ const config = defineConfig({
                 overlay: {
                     backdrop: {
                         value: {_light: "{colors.ledgerLight.text/42}", _dark: "{colors.ledger.canvas/76}"},
+                    },
+                },
+                glass: {
+                    overlayStart: {
+                        value: {_light: "{colors.ledgerLight.glassOverlayStart}", _dark: "{colors.ledger.glassOverlayStart}"},
+                    },
+                    overlayEnd: {
+                        value: {_light: "{colors.ledgerLight.glassOverlayEnd}", _dark: "{colors.ledger.glassOverlayEnd}"},
+                    },
+                    glow: {
+                        value: {_light: "{colors.ledgerLight.glassGlow}", _dark: "{colors.ledger.glassGlow}"},
+                    },
+                    sheen: {
+                        value: {_light: "{colors.ledgerLight.glassSheen}", _dark: "{colors.ledger.glassSheen}"},
+                    },
+                    edge: {
+                        value: {_light: "{colors.ledgerLight.glassEdge}", _dark: "{colors.ledger.glassEdge}"},
+                    },
+                    activeHighlight: {
+                        value: {_light: "{colors.ledgerLight.glassActiveHighlight}", _dark: "{colors.ledger.glassActiveHighlight}"},
+                    },
+                    activeStart: {
+                        value: {_light: "{colors.ledgerLight.glassActiveStart}", _dark: "{colors.ledger.glassActiveStart}"},
+                    },
+                    activeMid: {
+                        value: {_light: "{colors.ledgerLight.glassActiveMid}", _dark: "{colors.ledger.glassActiveMid}"},
+                    },
+                    activeEnd: {
+                        value: {_light: "{colors.ledgerLight.glassActiveEnd}", _dark: "{colors.ledger.glassActiveEnd}"},
+                    },
+                    border: {
+                        value: {_light: "{colors.ledgerLight.glassBorder}", _dark: "{colors.ledger.glassBorder}"},
+                    },
+                    separator: {
+                        value: {_light: "{colors.ledgerLight.glassSeparator}", _dark: "{colors.ledger.glassSeparator}"},
+                    },
+                    hover: {
+                        value: {_light: "{colors.ledgerLight.glassHover}", _dark: "{colors.ledger.glassHover}"},
                     },
                 },
                 accent: {
@@ -853,6 +928,12 @@ const config = defineConfig({
                 },
                 accent: {
                     value: {_light: "{shadows.accentLight}", _dark: "{shadows.accentDark}"},
+                },
+                glassOverlay: {
+                    value: {_light: "{shadows.glassOverlayLight}", _dark: "{shadows.glassOverlayDark}"},
+                },
+                glassAction: {
+                    value: {_light: "{shadows.glassActionLight}", _dark: "{shadows.glassActionDark}"},
                 },
             },
         },

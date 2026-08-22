@@ -125,6 +125,18 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("Checkpoint page loading", () => {
+    it("shows Checkpoint as the current workflow stage", async () => {
+        renderPage();
+
+        expect(await screen.findByRole("heading", {name: "Расчёт за день"})).toBeVisible();
+        expect(screen.getByRole("listitem", {name: "1. Сессия: завершён"})).toBeVisible();
+        expect(screen.getByRole("listitem", {name: "2. Checkpoint: текущий"})).toHaveAttribute(
+            "aria-current",
+            "step",
+        );
+        expect(screen.getByRole("listitem", {name: "3. Расчёт: ожидает"})).toBeVisible();
+    });
+
     it("keeps the existing page-level failure persistent", async () => {
         vi.spyOn(console, "error").mockImplementation(() => {});
         vi.mocked(sessionService.getAvailableById).mockRejectedValue(new Error("load failed"));
