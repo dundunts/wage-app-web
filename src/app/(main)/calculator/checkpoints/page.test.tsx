@@ -147,6 +147,34 @@ describe("Checkpoint create", () => {
         expect(within(dialog).getByLabelText("Дата и время чекпоинта")).toBeVisible();
     });
 
+    it("submits untouched metric fields with zero values", async () => {
+        const user = userEvent.setup();
+        vi.mocked(checkpointService.create).mockResolvedValue(checkpoint);
+        const dialog = await openCreateCheckpointDialog(user);
+
+        await user.click(within(dialog).getByRole("checkbox", {name: "Иван"}));
+        await user.click(within(dialog).getByRole("button", {name: "Сохранить"}));
+
+        expect(checkpointService.create).toHaveBeenCalledWith(expect.objectContaining({
+            revenue: 0,
+            tips: 0,
+            employeeIds: [employee.id],
+            type: CheckpointType.REGULAR,
+            fieldRecords: [
+                {
+                    label: "Выручка",
+                    destination: CheckpointCalcDestination.REVENUE,
+                    value: 0,
+                },
+                {
+                    label: "Чай",
+                    destination: CheckpointCalcDestination.TIPS,
+                    value: 0,
+                },
+            ],
+        }));
+    });
+
     it("announces the employee selection error inline", async () => {
         const user = userEvent.setup();
         const dialog = await openCreateCheckpointDialog(user);
