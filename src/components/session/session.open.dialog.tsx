@@ -1,18 +1,22 @@
 "use client";
 
 import {
-    Box,
     Button,
-    Dialog, HStack,
+    Dialog,
+    Field,
     Input,
-    Text,
-    useDisclosure, VStack,
+    Portal,
+    Stack,
+    useDisclosure,
+    VStack,
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {Company} from "@/types/company.types";
 import {sessionService} from "@/service/session/session.service";
 import {toLocalDateTimeInputValue} from "@/utils/date.utils";
+import {feedback} from "@/feedback/feedback";
+import {feedbackMessages} from "@/feedback/messages";
 
 interface Props {
     company: Company;
@@ -29,74 +33,103 @@ export function SessionOpenDialog({ company }: Props) {
     }
 
     const [dateTime, setDateTime] = useState(getInitDate(company.defaultShiftStartTime));
+    const [isPending, setIsPending] = useState(false);
     const router = useRouter();
 
     const submit = async () => {
-        sessionService.open({
-            companyId: company.id,
-            startWorkAt: dateTime,
-        }).then(session => router.push(
-            `/calculator/checkpoints?sessionId=${session.id}`
-        ))
+        if (isPending) return;
+
+        const action = feedback.beginAction("shiftSessionOpen");
+        setIsPending(true);
+        try {
+            const session = await sessionService.open({
+                companyId: company.id,
+                startWorkAt: dateTime,
+            });
+            action.success();
+            onClose();
+            router.push(`/calculator/checkpoints?sessionId=${session.id}`);
+        } catch (error) {
+            action.error(error);
+        } finally {
+            setIsPending(false);
+        }
     };
 
     return (
         <>
             <Button
                 onClick={() => onOpen()}
-                colorPalette="blue"
+                colorPalette="brand"
             >
                 Открыть сессию
             </Button>
 
             <Dialog.Root
                 open={open}
+                closeOnEscape={!isPending}
+                closeOnInteractOutside={!isPending}
                 onOpenChange={(details) => {
-                    if (!details.open) {
+                    if (!details.open && !isPending) {
                         onClose();
                     }
                 }}
             >
-                <Dialog.Backdrop />
-                <Dialog.Positioner>
-                    <Dialog.Content maxW="400px">
+                <Portal>
+                    <Dialog.Backdrop />
+                    <Dialog.Positioner p={{base: 3, sm: 4}}>
+                    <Dialog.Content
+                        maxW="400px"
+                    >
                         <Dialog.Header>
                             <Dialog.Title>Открытие сессии</Dialog.Title>
                         </Dialog.Header>
 
                         <Dialog.Body>
                             <VStack align="stretch" gap={4}>
-                                <Box>
-                                    <Text fontSize="sm" mb={2} color="fg.muted">
-                                        Дата и время начала
-                                    </Text>
+                                <Field.Root>
+                                    <Field.Label>Дата и время начала</Field.Label>
                                     <Input
                                         type="datetime-local"
+                                        colorScheme="light dark"
+                                        disabled={isPending}
                                         value={toLocalDateTimeInputValue(dateTime)}
                                         onChange={(e) => setDateTime(new Date(e.target.value))}
                                     />
-                                </Box>
+                                </Field.Root>
                             </VStack>
                         </Dialog.Body>
 
                         <Dialog.Footer>
-                            <HStack justify="flex-end" gap={2}>
+                            <Stack
+                                direction={{base: "column-reverse", sm: "row"}}
+                                justify="flex-end"
+                                gap={2}
+                                w="full"
+                            >
                                 <Button
                                     variant="subtle"
-                                    onClick={onOpen}
+                                    onClick={onClose}
+                                    disabled={isPending}
+                                    w={{base: "full", sm: "auto"}}
                                 >
                                     Отмена
                                 </Button>
                                 <Button
-                                    colorPalette="blue"
+                                    colorPalette="brand"
                                     onClick={submit}
+                                    loading={isPending}
+                                    loadingText={feedbackMessages.shiftSessionOpen.loading}
+                                    disabled={isPending}
+                                    w={{base: "full", sm: "auto"}}
                                 >
                                     Открыть
                                 </Button>
-                            </HStack>
+                            </Stack>
                         </Dialog.Footer>
                     </Dialog.Content>
-                </Dialog.Positioner>
+                    </Dialog.Positioner>
+                </Portal>
             </Dialog.Root>
         </>
     );

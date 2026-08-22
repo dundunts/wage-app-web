@@ -43,12 +43,9 @@ export function useStatisticFilters(defaultCompanyId?: string) {
         (key: keyof StatisticFilters, value: string | number | undefined) => {
             const params = new URLSearchParams(searchParams.toString());
 
-            console.log("Set filter", key, value)
-
             if (value === undefined || value === null || value === "") {
                 params.delete(key);
             } else {
-                console.log("Set param", key, value)
                 params.set(key, String(value));
             }
 

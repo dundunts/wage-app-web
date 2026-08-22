@@ -1,8 +1,9 @@
 import React from 'react';
-import {Button, Dialog, Field, Input, Stack, Text} from "@chakra-ui/react";
+import {Button, Dialog, Field, Input, Portal, Stack, Text} from "@chakra-ui/react";
 import {useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
+import {feedbackMessages} from "@/feedback/messages";
 
 // Схема валидации: строго формат HH:mm
 const updateTimeSchema = z.object({
@@ -15,7 +16,7 @@ interface SessionUpdateTimeDialogProps {
     open: boolean;
     onClose: () => void;
     currentStartTime: string; // HH:mm
-    onSave: (time: string) => void;
+    onSave: (time: string) => void | Promise<void>;
     isLoading?: boolean;
 }
 
@@ -46,12 +47,22 @@ export function SessionUpdateTimeDialog({
     }, [open, currentStartTime, reset]);
 
     const onSubmit = (data: UpdateTimeFormValues) => {
-        onSave(data.startWorkTime);
+        void onSave(data.startWorkTime);
     };
 
     return (
-        <Dialog.Root open={open} onOpenChange={(e) => !e.open && onClose()}>
-            <Dialog.Content>
+        <Dialog.Root
+            open={open}
+            closeOnEscape={!isLoading}
+            closeOnInteractOutside={!isLoading}
+            onOpenChange={(e) => !e.open && !isLoading && onClose()}
+        >
+            <Portal>
+                <Dialog.Backdrop />
+                <Dialog.Positioner p={{base: 3, sm: 4}}>
+            <Dialog.Content
+                maxW="440px"
+            >
                 <Dialog.Header>
                     <Dialog.Title>Изменить начало смены</Dialog.Title>
                 </Dialog.Header>
@@ -67,6 +78,8 @@ export function SessionUpdateTimeDialog({
                                 <Field.Label>Время начала (ЧЧ:ММ)</Field.Label>
                                 <Input
                                     type="time"
+                                    colorScheme="light dark"
+                                    disabled={isLoading}
                                     size="lg"
                                     {...register("startWorkTime")}
                                 />
@@ -78,23 +91,28 @@ export function SessionUpdateTimeDialog({
                     </form>
                 </Dialog.Body>
 
-                <Dialog.Footer>
+                <Dialog.Footer flexDirection={{base: "column-reverse", sm: "row"}}>
                     <Dialog.ActionTrigger asChild>
-                        <Button variant="outline" onClick={onClose} disabled={isLoading}>
+                        <Button variant="outline" onClick={onClose} disabled={isLoading} w={{base: "full", sm: "auto"}}>
                             Отмена
                         </Button>
                     </Dialog.ActionTrigger>
                     <Button
-                        colorPalette="teal"
+                        colorPalette="brand"
                         type="submit"
                         form="update-time-form"
                         loading={isLoading}
+                        loadingText={feedbackMessages.shiftSessionUpdateTime.loading}
+                        disabled={isLoading}
+                        w={{base: "full", sm: "auto"}}
                     >
                         Сохранить
                     </Button>
                 </Dialog.Footer>
-                <Dialog.CloseTrigger onClick={onClose} />
+                <Dialog.CloseTrigger aria-label="Закрыть диалог" onClick={onClose} disabled={isLoading} />
             </Dialog.Content>
+                </Dialog.Positioner>
+            </Portal>
         </Dialog.Root>
     );
 }

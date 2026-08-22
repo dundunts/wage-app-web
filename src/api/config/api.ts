@@ -7,18 +7,36 @@ import axios, {
 } from "axios";
 import {apiBaseUrl} from "@/constants/urls";
 import {tokenService} from "@/auth/auth.tokens.service";
+import {normalizeApiError} from "@/feedback/api-error";
+import type {ApplicationError} from "@/feedback/api-error";
+import {sessionExpiryHandler} from "@/auth/session-expiry";
+
+type RetryableRequest = InternalAxiosRequestConfig & { _retry?: boolean };
 
 const baseUrl = apiBaseUrl;
 
-class AxiosInterceptor {
+interface TokenBoundary {
+    getAccessToken(): string | null;
+    refresh(): Promise<string>;
+}
+
+interface SessionExpiryBoundary {
+    handle(refreshError: unknown): ApplicationError;
+}
+
+export class AxiosInterceptor {
     readonly axiosInstance: AxiosInstance;
 
-    constructor(instanceConfig: AxiosRequestConfig = {}) {
+    constructor(
+        instanceConfig: AxiosRequestConfig = {},
+        private readonly tokenBoundary: TokenBoundary = tokenService,
+        private readonly sessionExpiryBoundary: SessionExpiryBoundary = sessionExpiryHandler,
+    ) {
         this.axiosInstance = axios.create(instanceConfig);
 
         // request interceptor
         this.axiosInstance.interceptors.request.use((config: InternalAxiosRequestConfig & { skipAuth?: boolean }) => {
-            const token = tokenService.getAccessToken();
+            const token = this.tokenBoundary.getAccessToken();
             if (token && !config.skipAuth) {
                 config.headers = {
                     ...config.headers,
@@ -32,22 +50,22 @@ class AxiosInterceptor {
         this.axiosInstance.interceptors.response.use(
             resp => resp,
             async (error: AxiosError) => {
-                console.log("Axios interceptor. Error:", error)
-                const originalRequest = error.config as any;
+                const originalRequest = error.config as RetryableRequest | undefined;
 
-                if (error.response?.status === 401 && !originalRequest._retry) {
+                if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
                     originalRequest._retry = true;
 
                     try {
-                        const newToken = await tokenService.refresh();
+                        const newToken = await this.tokenBoundary.refresh();
                         originalRequest.headers.Authorization = `Bearer ${newToken}`;
                         return this.axiosInstance(originalRequest);
                     } catch (err) {
-                        return Promise.reject(err);
+                        const sessionError = this.sessionExpiryBoundary.handle(err);
+                        return Promise.reject(sessionError);
                     }
                 }
 
-                return Promise.reject(error);
+                return Promise.reject(normalizeApiError(error));
             }
         );
     }

@@ -7,39 +7,23 @@ export class CheckpointService {
     }
 
     async create(payload: CreateRegularCheckpointPayload): Promise<Checkpoint> {
-        try {
-            const response = await this.apiClient.create({
-                ...payload,
-                dateTime: formatLocalDateTime(payload.dateTime)
-            })
-            return response.data
-        } catch (e) {
-            console.error("Checkpoint service", e)
-            return Promise.reject(e)
-        }
+        const response = await this.apiClient.create({
+            ...payload,
+            dateTime: formatLocalDateTime(payload.dateTime)
+        })
+        return response.data
     }
 
     async update(payload: UpdateShiftCheckpointPayload): Promise<Checkpoint> {
-        try {
-            console.log("Checkpoint service. Update checkpoint", payload)
-            const response = await this.apiClient.update({
-                ...payload,
-                dateTime: formatLocalDateTime(payload.dateTime)
-            })
-            return response.data
-        } catch (e) {
-            console.error("Checkpoint service", e)
-            return Promise.reject(e)
-        }
+        const response = await this.apiClient.update({
+            ...payload,
+            dateTime: formatLocalDateTime(payload.dateTime)
+        })
+        return response.data
     }
 
     async delete(id: string): Promise<void> {
-        try {
-            await this.apiClient.delete(id)
-        } catch (e) {
-            console.error("Checkpoint service", e)
-            return Promise.reject(e)
-        }
+        await this.apiClient.delete(id)
     }
 }
 

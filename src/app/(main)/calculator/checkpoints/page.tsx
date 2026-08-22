@@ -1,8 +1,9 @@
 // @/app/calculator/checkpoints/page.tsx
 "use client";
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
+    Box,
     Button,
     Container,
     Flex,
@@ -34,11 +35,12 @@ import {employeeService} from "@/service/employee/employee.service";
 // Components
 import {ShiftCheckpointCard} from "@/components/shift/shift.checkpoint.components.card";
 import {CheckpointDialog} from "@/components/shift/shift.checkpoint.components.dialog";
-import ConfirmDeleteDialog from "@/components/dialog/components.dialog.confirmation.delete";
 import {SessionUpdateTimeDialog} from "@/components/session/session.update-time.dialog";
-import {SessionCloseDialog} from "@/components/session/session.close.dialog";
+import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
+import {feedback} from "@/feedback/feedback";
+import {feedbackMessages} from "@/feedback/messages";
 
-export function CalcInShiftPage() {
+function CalcInShiftPage() {
     const searchParams = useSearchParams();
     const sessionId = searchParams.get("sessionId");
     const router = useRouter();
@@ -47,6 +49,12 @@ export function CalcInShiftPage() {
     const [error, setError] = useState("");
     const [session, setSession] = useState<Session | undefined>(undefined);
     const [availableEmployees, setAvailableEmployees] = useState<CompanyEmployeeInfo[]>([]);
+    const [isUpdatingTime, setIsUpdatingTime] = useState(false);
+    const [isClosingSession, setIsClosingSession] = useState(false);
+    const [isCreatingCheckpoint, setIsCreatingCheckpoint] = useState(false);
+    const [isUpdatingCheckpoint, setIsUpdatingCheckpoint] = useState(false);
+    const [isDeletingCheckpoint, setIsDeletingCheckpoint] = useState(false);
+    const closeSessionTriggerRef = useRef<HTMLButtonElement>(null);
 
     // Dialog states
     const {open: isCreateDialogOpened, onOpen: onOpenCreateDialog, onClose: onCloseCreateDialog} = useDisclosure();
@@ -71,10 +79,10 @@ export function CalcInShiftPage() {
         loadData();
     }, []);
 
-    async function loadData() {
+    async function loadData(showLoading = true) {
         if (!sessionId) return;
 
-        setLoading(true);
+        if (showLoading) setLoading(true);
         try {
             const sessionData = await sessionService.getAvailableById(sessionId);
 
@@ -91,98 +99,110 @@ export function CalcInShiftPage() {
             console.error(e);
             setError("Не удалось загрузить данные сессии");
         } finally {
-            setLoading(false);
+            if (showLoading) setLoading(false);
         }
     }
 
     // --- Checkpoint Handlers ---
 
-    function handleCreateCheckpoint(payload: CheckpointPayload) {
-        if (!session) return;
-        setLoading(true);
+    async function handleCreateCheckpoint(payload: CheckpointPayload) {
+        if (!session || isCreatingCheckpoint) return;
+        const action = feedback.beginAction("checkpointCreate");
+        setIsCreatingCheckpoint(true);
 
         const createPayload: CreateRegularCheckpointPayload = {
             ...payload,
             sessionId: session.id
         };
 
-        checkpointService.create(createPayload)
-            .then(() => {
-                loadData();
-                onCloseCreateDialog();
-            })
-            .catch(() => setError("Ошибка при создании чекпоинта"))
-            .finally(() => setLoading(false));
+        try {
+            await checkpointService.create(createPayload);
+            action.success();
+            onCloseCreateDialog();
+            void loadData(false);
+        } catch (error) {
+            action.error(error);
+        } finally {
+            setIsCreatingCheckpoint(false);
+        }
     }
 
-    function handleUpdateCheckpoint(payload: CheckpointPayload) {
-        if (!targetForEdit) return;
-        setLoading(true);
+    async function handleUpdateCheckpoint(payload: CheckpointPayload) {
+        if (!targetForEdit || isUpdatingCheckpoint) return;
+        const action = feedback.beginAction("checkpointUpdate");
+        setIsUpdatingCheckpoint(true);
 
         const updatePayload: UpdateShiftCheckpointPayload = {
             ...payload,
             id: targetForEdit.id
         };
 
-        checkpointService.update(updatePayload)
-            .then(() => {
-                loadData();
-                setTargetForEdit(null);
-            })
-            .catch(() => setError("Ошибка при обновлении чекпоинта"))
-            .finally(() => setLoading(false));
+        try {
+            await checkpointService.update(updatePayload);
+            action.success();
+            setTargetForEdit(null);
+            void loadData(false);
+        } catch (error) {
+            action.error(error);
+        } finally {
+            setIsUpdatingCheckpoint(false);
+        }
     }
 
-    function handleDeleteCheckpoint() {
-        if (!targetIdForRemove) return;
-        setLoading(true);
+    async function handleDeleteCheckpoint() {
+        if (!targetIdForRemove || isDeletingCheckpoint) return;
+        const action = feedback.beginAction("checkpointDelete");
+        setIsDeletingCheckpoint(true);
 
-        checkpointService.delete(targetIdForRemove)
-            .then(() => {
-                loadData();
-                setTargetIdForRemove(null);
-            })
-            .catch(() => setError("Ошибка при удалении чекпоинта"))
-            .finally(() => setLoading(false));
+        try {
+            await checkpointService.delete(targetIdForRemove);
+            action.success();
+            setTargetIdForRemove(null);
+            void loadData(false);
+        } catch (error) {
+            action.error(error);
+        } finally {
+            setIsDeletingCheckpoint(false);
+        }
     }
 
     // --- Session Handlers (NEW) ---
 
-    function handleUpdateSessionTime(newTime: string) {
-        if (!session) return;
-        setLoading(true);
+    async function handleUpdateSessionTime(newTime: string) {
+        if (!session || isUpdatingTime) return;
 
-        sessionService.updateStartWorkTime({
-            sessionId: session.id,
-            startWorkTime: newTime
-        })
-            .then(() => {
-                loadData(); // Перезагружаем, чтобы обновить данные в UI
-                onCloseTimeDialog();
-            })
-            .catch((e) => {
-                console.error(e);
-                // В реальном проекте здесь стоит добавить Toast notification
-                setError("Не удалось обновить время начала смены");
-                setLoading(false); // Снимаем лоадинг только если ошибка, иначе loadData сам снимет
+        const action = feedback.beginAction("shiftSessionUpdateTime");
+        setIsUpdatingTime(true);
+        try {
+            await sessionService.updateStartWorkTime({
+                sessionId: session.id,
+                startWorkTime: newTime
             });
+            setSession((current) => current ? {...current, startWorkTime: newTime} : current);
+            action.success();
+            onCloseTimeDialog();
+        } catch (error) {
+            action.error(error);
+        } finally {
+            setIsUpdatingTime(false);
+        }
     }
 
-    function handleCloseSession() {
-        if (!session) return;
-        setLoading(true);
+    async function handleCloseSession() {
+        if (!session || isClosingSession) return;
 
-        sessionService.close(session.id)
-            .then(() => {
-                // После успешного закрытия переходим на драфт (или страницу результатов)
-                router.push(`/calculator`);
-            })
-            .catch((e) => {
-                console.error(e);
-                setError("Не удалось закрыть смену");
-                setLoading(false);
-                onCloseCloseSessionDialog();
-            });
+        const action = feedback.beginAction("shiftSessionClose");
+        setIsClosingSession(true);
+        try {
+            await sessionService.close(session.id);
+            action.success();
+            onCloseCloseSessionDialog();
+            router.push(`/calculator`);
+        } catch (error) {
+            action.error(error);
+        } finally {
+            setIsClosingSession(false);
+        }
     }
 
     function handleGoToResults() {
@@ -190,14 +210,23 @@ export function CalcInShiftPage() {
     }
 
     if (isLoading) return (
-        <Stack align="center" py={10}>
+        <Stack role="status" aria-label="Checkpoint загружаются" align="center" py={10}>
             <Spinner size="xl" />
         </Stack>
     );
 
     if (error) return (
-        <Stack py={6} align="center">
-            <Text color="red.500" fontSize="lg">{error}</Text>
+        <Stack
+            role="alert"
+            py={6}
+            px={4}
+            align="center"
+            bg="bg.panel"
+            borderWidth="1px"
+            borderColor="status.danger"
+            borderRadius="panel"
+        >
+            <Text color="status.danger" fontSize="lg">{error}</Text>
             <Button variant="outline" onClick={() => window.location.reload()}>Попробовать снова</Button>
         </Stack>
     );
@@ -211,14 +240,19 @@ export function CalcInShiftPage() {
         year: "numeric"
     });
 
-    //TODO delete logs
-    console.log("Checkpoints page. Checkpoints:", checkpoints)
-
     return (
-        <Container maxW="breakpoint-lg" py={6}>
+        <Container maxW="breakpoint-lg" pt={6} pb={{base: 24, md: 6}}>
             <Stack gap={6}>
                 {/* Page header */}
-                <Heading size="lg">Расчёт за день</Heading>
+                <Box>
+                    <Text color="accent" fontSize="xs" fontWeight="bold" letterSpacing="wide" textTransform="uppercase">
+                        Этап 2 · Checkpoint
+                    </Text>
+                    <Heading as="h1" size="lg">Расчёт за день</Heading>
+                    <Text mt={1} color="fg.muted" fontSize="sm">
+                        Фиксируйте Revenue, Restaurant Tips и состав команды по ходу Shift Session.
+                    </Text>
+                </Box>
 
                 {/* Shift controls */}
                 <Flex
@@ -226,10 +260,14 @@ export function CalcInShiftPage() {
                     justify="space-between"
                     direction={{base: "column", md: "row"}}
                     gap={4}
-                    bg="bg.subtle"
-                    p={4}
-                    borderRadius="md"
+                    bg="bg.panel"
+                    p={{base: 4, md: 5}}
+                    borderRadius="panel"
                     borderWidth="1px"
+                    borderColor="border"
+                    boxShadow="panel"
+                    as="section"
+                    aria-label="Управление Shift Session"
                 >
                     {/* Date & Time selector */}
                     <Stack gap={1}>
@@ -249,7 +287,7 @@ export function CalcInShiftPage() {
                                 px={2}
                                 py={1}
                                 onClick={onOpenTimeDialog}
-                                colorPalette="teal"
+                                colorPalette="brand"
                             >
                                 <Clock size={16} style={{marginRight: '6px'}}/>
                                 <Text fontWeight="bold" fontSize="md">{session.startWorkTime}</Text>
@@ -258,11 +296,14 @@ export function CalcInShiftPage() {
                     </Stack>
 
                     {/* Actions */}
-                    <HStack gap={3} wrap="wrap">
+                    <HStack gap={3} wrap="wrap" w={{base: "full", md: "auto"}}>
                         <Button
-                            colorPalette="red"
-                            variant="surface"
+                            ref={closeSessionTriggerRef}
+                            variant="outline"
+                            color="status.danger"
+                            borderColor="status.danger"
                             onClick={onOpenCloseSessionDialog}
+                            flex={{base: "1 1 auto", md: "initial"}}
                         >
                             <Lock size={16}/> Закрыть смену
                         </Button>
@@ -270,9 +311,10 @@ export function CalcInShiftPage() {
                         <Separator orientation="vertical" height="24px" hideBelow="md" />
 
                         <Button
-                            colorPalette="teal"
+                            colorPalette="brand"
                             onClick={handleGoToResults}
                             disabled={checkpoints.length <= 0}
+                            flex={{base: "1 1 auto", md: "initial"}}
                         >
                             <Calculator/> К результатам
                         </Button>
@@ -291,7 +333,16 @@ export function CalcInShiftPage() {
                     ))}
 
                     {checkpoints.length === 0 && (
-                        <Stack align="center" py={8} opacity={0.6}>
+                        <Stack
+                            align="center"
+                            py={8}
+                            px={4}
+                            color="fg.muted"
+                            bg="bg.panel"
+                            borderWidth="1px"
+                            borderColor="border"
+                            borderRadius="panel"
+                        >
                             <Text fontSize="lg" fontWeight="medium">Чекпоинты ещё не добавлены</Text>
                             <Text fontSize="sm">Нажмите кнопку &quot;+&#34; внизу справа, чтобы добавить первую запись</Text>
                         </Stack>
@@ -301,17 +352,18 @@ export function CalcInShiftPage() {
 
             {/* Floating Action Button */}
             <IconButton
-                aria-label="Add checkpoint"
+                aria-label="Добавить чекпоинт"
                 position="fixed"
-                bottom={6}
-                right={6}
+                bottom={{base: "calc(env(safe-area-inset-bottom) + 1rem)", md: 6}}
+                right={{base: "calc(env(safe-area-inset-right) + 1rem)", md: 6}}
                 size="xl"
-                colorPalette="teal"
+                colorPalette="brand"
                 borderRadius="full"
-                boxShadow="xl"
+                boxShadow="accent"
                 onClick={onOpenCreateDialog}
-                _hover={{ transform: "scale(1.1)" }}
-                transition="all 0.2s"
+                _hover={{ transform: "translateY(-1px)" }}
+                _motionReduce={{transform: "none", transitionDuration: "0ms"}}
+                transitionDuration="quiet"
             >
                 <Plus />
             </IconButton>
@@ -322,6 +374,8 @@ export function CalcInShiftPage() {
             <CheckpointDialog
                 companyEmployees={availableEmployees}
                 open={isCreateDialogOpened}
+                pending={isCreatingCheckpoint}
+                pendingLabel={feedbackMessages.checkpointCreate.loading}
                 onClose={onCloseCreateDialog}
                 onSave={handleCreateCheckpoint}
             />
@@ -332,15 +386,26 @@ export function CalcInShiftPage() {
                     origin={targetForEdit}
                     companyEmployees={availableEmployees}
                     open={!!targetForEdit}
+                    pending={isUpdatingCheckpoint}
+                    pendingLabel={feedbackMessages.checkpointUpdate.loading}
                     onClose={() => setTargetForEdit(null)}
                     onSave={handleUpdateCheckpoint}
                 />
             )}
 
             {/* Confirm delete dialog */}
-            <ConfirmDeleteDialog
+            <ConfirmationDialog
                 open={!!targetIdForRemove}
-                onCLose={() => setTargetIdForRemove(null)}
+                title="Удалить чекпоинт?"
+                description="Чекпоинт будет удалён без возможности восстановления."
+                confirmLabel="Удалить"
+                cancelLabel="Отмена"
+                pendingLabel={feedbackMessages.checkpointDelete.loading}
+                severity="danger"
+                pending={isDeletingCheckpoint}
+                onCancel={() => {
+                    if (!isDeletingCheckpoint) setTargetIdForRemove(null);
+                }}
                 onConfirm={handleDeleteCheckpoint}
             />
 
@@ -350,15 +415,21 @@ export function CalcInShiftPage() {
                 onClose={onCloseTimeDialog}
                 currentStartTime={session.startWorkTime}
                 onSave={handleUpdateSessionTime}
-                isLoading={isLoading}
+                isLoading={isUpdatingTime}
             />
 
-            {/* Close Session Dialog (NEW) */}
-            <SessionCloseDialog
+            <ConfirmationDialog
                 open={isCloseSessionDialogOpen}
-                onClose={onCloseCloseSessionDialog}
+                title="Закрыть смену?"
+                description="После закрытия редактирование чекпоинтов будет недоступно, и начнётся финальный пересчёт."
+                confirmLabel="Закрыть смену"
+                cancelLabel="Отмена"
+                pendingLabel={feedbackMessages.shiftSessionClose.loading}
+                severity="danger"
+                pending={isClosingSession}
+                finalFocusEl={() => closeSessionTriggerRef.current}
+                onCancel={onCloseCloseSessionDialog}
                 onConfirm={handleCloseSession}
-                isLoading={isLoading}
             />
         </Container>
     );

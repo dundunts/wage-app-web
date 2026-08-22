@@ -10,6 +10,7 @@ import {
     Grid,
     HStack,
     Input,
+    Portal,
     SegmentGroup,
     Stack,
     Text,
@@ -34,6 +35,8 @@ type CreateCheckpointDialogProps = {
     companyEmployees: CompanyEmployeeInfo[];
     prevCheckpoint?: Checkpoint;
     open: boolean;
+    pending: boolean;
+    pendingLabel: string;
     onClose: () => void;
     onSave: (payload: CheckpointPayload) => void;
 }
@@ -67,6 +70,8 @@ export function CheckpointDialog(
         companyEmployees,
         prevCheckpoint,
         open,
+        pending,
+        pendingLabel,
         onClose,
         onSave,
     }: CreateCheckpointDialogProps
@@ -82,6 +87,7 @@ export function CheckpointDialog(
     // const [date, setDate] = useState<Date>(new Date());
 
     const [employeesSelectError, setEmployeesSelectError] = useState(false)
+    const employeesLabelId = React.useId();
 
     const form = checkpointDialogForms[formType];
 
@@ -119,9 +125,12 @@ export function CheckpointDialog(
                 ({...f, value: values[f.label] ?? 0} as CheckpointMetricRecordPayload)),
         }
 
-        console.log("Saving checkpoint with payload:", payload)
-
         onSave(payload);
+    };
+
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        handleSave();
     };
 
     function pickEmployee(e: CheckedChangeDetails, emp: EmployeeBase) {
@@ -133,26 +142,36 @@ export function CheckpointDialog(
     return (
         <Dialog.Root
             open={open}
+            closeOnEscape={!pending}
+            closeOnInteractOutside={!pending}
             onOpenChange={(details) => {
                 if (details.open) {
                     setFormType(initialFormType);
                     setValues(getInitialValues(initialFormType, origin));
                     setSelectedEmployees(getInitialEmployees(origin, prevCheckpoint));
                     setDate(getInitialDate(origin));
-                } else {
+                    setEmployeesSelectError(false);
+                } else if (!pending) {
                     onClose();
                 }
             }}
         >
-            <Dialog.Backdrop/>
-
-            <Dialog.Positioner>
-                <Dialog.Content maxW="500px">
+            <Portal>
+                <Dialog.Backdrop/>
+                <Dialog.Positioner p={{base: 3, sm: 4}}>
+                <Dialog.Content
+                    as="form"
+                    onSubmit={handleSubmit}
+                    maxW="500px"
+                    maxH="calc(100dvh - 2rem)"
+                >
                     <Dialog.Header>
-                        <Dialog.Title>Создание чекпоинта</Dialog.Title>
+                        <Dialog.Title>
+                            {origin ? "Редактирование чекпоинта" : "Создание чекпоинта"}
+                        </Dialog.Title>
                     </Dialog.Header>
 
-                    <Dialog.Body>
+                    <Dialog.Body overflowY="auto">
                         <Stack gap={5}>
                             {/* Form type switch */}
                             <SegmentGroup.Root
@@ -184,6 +203,7 @@ export function CheckpointDialog(
                                         <Text>{field.label}</Text>
                                         <Input
                                             type="number"
+                                            disabled={pending}
                                             value={values[field.label] ?? 0}
                                             onChange={(e) =>
                                                 setValues((prev) => ({
@@ -191,15 +211,15 @@ export function CheckpointDialog(
                                                     [field.label]: Number(e.target.value),
                                                 }))
                                             }
-                                            w="140px"
+                                            w={{base: "full", sm: "140px"}}
                                         />
-                                    </HStack>
+                                    </Field.Root>
                                 ))}
                             </VStack>
 
                             {/* Employees */}
-                            <Box>
-                                <Text fontSize="sm" mb={2} color="fg.muted">
+                            <Box role="group" aria-labelledby={employeesLabelId}>
+                                <Text id={employeesLabelId} fontSize="sm" mb={2} color="fg.muted">
                                     Сотрудники
                                 </Text>
                                 <Grid templateColumns={{sm: "repeat(2, 1fr)"}} gap={2}>
@@ -209,7 +229,8 @@ export function CheckpointDialog(
                                                 checked={selectedEmployees.some(e => e.id === emp.id)}
                                                 onCheckedChange={(e) => pickEmployee(e, emp)}
                                                 key={emp.id}
-                                                colorPalette="teal"
+                                                colorPalette="brand"
+                                                disabled={pending}
                                                 invalid={employeesSelectError}
                                             >
                                                 <CheckboxCard.HiddenInput/>
@@ -221,21 +242,24 @@ export function CheckpointDialog(
                                         )}
                                     </For>
                                 </Grid>
+                                {employeesSelectError && (
+                                    <Text role="alert" mt={2} fontSize="sm" color="status.danger">
+                                        Выберите хотя бы одного сотрудника
+                                    </Text>
+                                )}
                             </Box>
 
                             {/* Date */}
                             <Box>
-                                <Text fontSize="sm" mb={2} color="fg.muted">
-                                    Дата и время
-                                </Text>
                                 <Field.Root>
-                                    <Field.Label>Время начала (ЧЧ:ММ)</Field.Label>
+                                    <Field.Label>Дата и время чекпоинта</Field.Label>
                                     <Input
                                         type="datetime-local"
+                                        colorScheme="light dark"
+                                        disabled={pending}
                                         size="lg"
                                         value={toLocalDateTimeInputValue(date)}
                                         onChange={e => {
-                                            console.log(e.target.value)
                                             setDate(new Date(e.target.value))
                                         }}
                                     />
@@ -245,8 +269,10 @@ export function CheckpointDialog(
                             {/* Preview */}
                             <Box
                                 p={3}
-                                borderRadius="md"
+                                borderRadius="control"
                                 bg="bg.subtle"
+                                borderWidth="1px"
+                                borderColor="border.muted"
                             >
                                 <HStack justify="space-between">
                                     <Text>Выручка</Text>
@@ -265,17 +291,29 @@ export function CheckpointDialog(
                     </Dialog.Body>
 
                     <Dialog.Footer>
-                        <HStack justify="flex-end">
-                            <Button variant="subtle" onClick={onClose}>
+                        <Stack
+                            direction={{base: "column-reverse", sm: "row"}}
+                            justify="flex-end"
+                            w="full"
+                        >
+                            <Button variant="subtle" disabled={pending} onClick={onClose} w={{base: "full", sm: "auto"}}>
                                 Отмена
                             </Button>
-                            <Button colorPalette="teal" onClick={handleSave}>
+                            <Button
+                                type="submit"
+                                colorPalette="brand"
+                                loading={pending}
+                                loadingText={pendingLabel}
+                                disabled={pending}
+                                w={{base: "full", sm: "auto"}}
+                            >
                                 Сохранить
                             </Button>
-                        </HStack>
+                        </Stack>
                     </Dialog.Footer>
                 </Dialog.Content>
-            </Dialog.Positioner>
+                </Dialog.Positioner>
+            </Portal>
         </Dialog.Root>
     );
 }

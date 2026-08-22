@@ -6,32 +6,17 @@ export class CalculationService {
     }
 
     async getDraftForSession(sessionId: string): Promise<ShiftResultDraft> {
-        try {
-            const response = await this.apiClient.fetchDraftForSession(sessionId)
-            return response.data
-        } catch (e) {
-            console.error("Calculation service", e)
-            return Promise.reject(e)
-        }
+        const response = await this.apiClient.fetchDraftForSession(sessionId)
+        return response.data
     }
 
     async confirmDraft(draftId: string): Promise<ConfirmDraftResponse> {
-        try {
-            const response = await this.apiClient.confirmDraft(draftId)
-            return response.data
-        } catch (e) {
-            console.error("Calculation service", e)
-            return Promise.reject(e)
-        }
+        const response = await this.apiClient.confirmDraft(draftId)
+        return response.data
     }
 
     async deleteDraft(draftId: string): Promise<void> {
-        try {
-            await this.apiClient.deleteDraft(draftId)
-        } catch (e) {
-            console.error("Calculation service", e)
-            return Promise.reject(e)
-        }
+        await this.apiClient.deleteDraft(draftId)
     }
 }
 

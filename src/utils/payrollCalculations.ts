@@ -1,8 +1,7 @@
 import {
-    Payroll,
     PayrollElement,
-    PayrollPayment,
     PayrollEmployeeInfo,
+    PayrollPayment,
 } from "@/types/salary.types";
 
 export interface DayStat {
@@ -56,7 +55,7 @@ export function prepareChartData(elements: PayrollElement[]) {
 
     const chartData = elements.map((el) => {
         // Инициализируем объект дня датой
-        const dayEntry: any = { date: el.date };
+        const dayEntry: DayEmployeeStat = { date: el.date };
 
         el.payments.forEach((p) => {
             const id = p.employee.id;
@@ -67,7 +66,8 @@ export function prepareChartData(elements: PayrollElement[]) {
 
             // Суммируем выплату (процент + чаевые)
             const amount = p.percentFromRevenue + p.tips;
-            dayEntry[id] = (dayEntry[id] || 0) + amount;
+            const previous = dayEntry[id];
+            dayEntry[id] = (typeof previous === "number" ? previous : 0) + amount;
         });
 
         return dayEntry;

@@ -13,6 +13,7 @@ export function DatePicker({ value, onChange }: DatePickerProps) {
         <InputGroup maxW="200px">
             <Input
                 type="date"
+                colorScheme="light dark"
                 value={dateForInput(value)}
                 onChange={(e) => onChange(new Date(e.target.value))}
             />
@@ -30,6 +31,7 @@ export function DateTimePicker({value, onChange}: DateTimePickerProps) {
         <InputGroup maxW="200px">
             <Input
                 type="datetime-local"
+                colorScheme="light dark"
                 value={dateForInput(value)}
                 onChange={(e) => onChange(new Date(e.target.value))}
             />

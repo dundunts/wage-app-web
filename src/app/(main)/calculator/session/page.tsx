@@ -2,7 +2,7 @@
 
 import {useEffect, useMemo, useState} from "react";
 import {useRouter, useSearchParams} from "next/navigation";
-import {Box, Spinner, Stack, Text,} from "@chakra-ui/react";
+import {Button, Spinner, Stack, Text,} from "@chakra-ui/react";
 import {Session} from "@/types/session.types";
 import {PageHeader} from "@/components/page/PageHeader";
 import {EmptyState} from "@/components/page/EmptyState";
@@ -10,6 +10,22 @@ import {SessionOpenDialog} from "@/components/session/session.open.dialog";
 import {Company} from "@/types/company.types";
 import {companyService} from "@/service/company/company.service";
 import {sessionService} from "@/service/session/session.service";
+
+const sessionStatusLabel: Record<Session["status"], string> = {
+    OPENED: "Открыта",
+    OPENED_DRAFT: "Черновик расчёта",
+    CLOSED: "Закрыта",
+    RECALCULATING: "Пересчитывается",
+    RECALCULATING_DRAFT: "Черновик пересчитывается",
+};
+
+function SessionLoadError({message}: {message: string}) {
+    return (
+        <Stack role="alert" py={6} px={4} bg="bg.panel" borderWidth="1px" borderColor="status.danger" borderRadius="panel">
+            <Text color="status.danger">{message}</Text>
+        </Stack>
+    );
+}
 
 export default function SessionPage() {
     const router = useRouter();
@@ -68,31 +84,30 @@ export default function SessionPage() {
 
     if (loading) {
         return (
-            <Stack align="center" py={10}>
+            <Stack role="status" aria-label="Shift Session загружаются" align="center" py={10} color="fg.muted">
                 <Spinner />
             </Stack>
         );
     }
 
     if (error) {
-        return (
-            <Stack py={6}>
-                <Text color="red.500">{error}</Text>
-            </Stack>
-        );
+        return <SessionLoadError message={error} />;
     }
 
     if (!company) {
-        return (
-            <Stack py={6}>
-                <Text color="red.500">Компания не загружена</Text>
-            </Stack>
-        );
+        return <SessionLoadError message="Компания не загружена" />;
     }
 
     return (
         <Stack gap={6}>
-            <PageHeader title="Выбор сессии" />
+            <PageHeader
+                title="Shift Session"
+                description={(
+                    <Text color="fg.muted" fontSize="sm">
+                        Этап 1 · {company.title}: выберите открытую Shift Session или начните новую.
+                    </Text>
+                )}
+            />
 
             {openedSessions.length === 0 && companyId && (
                 <>
@@ -105,26 +120,37 @@ export default function SessionPage() {
             )}
 
             {openedSessions.map((session) => (
-                <Box
+                <Button
+                    type="button"
                     key={session.id}
                     p={5}
                     borderWidth="1px"
-                    borderRadius="md"
+                    borderColor="border"
+                    borderRadius="panel"
+                    bg="bg.panel"
+                    boxShadow="panel"
+                    display="block"
+                    h="auto"
+                    textAlign="left"
+                    w="full"
                     cursor="pointer"
-                    _hover={{ borderColor: "blue.500" }}
+                    transitionDuration="quiet"
+                    _hover={{ borderColor: "accent.border", bg: "bg.raised" }}
+                    _focusVisible={{outlineWidth: "2px", outlineColor: "focus.ring"}}
+                    _motionReduce={{transitionDuration: "0ms"}}
                     onClick={() =>
                         router.push(
                             `/calculator/checkpoints?sessionId=${session.id}`
                         )
                     }
                 >
-                    <Text fontWeight="medium">
+                    <Text as="span" display="block" fontWeight="medium">
                         {session.date.toLocaleString()} — {session.startWorkTime}
                     </Text>
-                    <Text fontSize="sm" color="gray.500">
-                        {session.status}
+                    <Text as="span" display="block" mt={1} fontSize="sm" color="fg.muted">
+                        Статус: {sessionStatusLabel[session.status]}
                     </Text>
-                </Box>
+                </Button>
             ))}
         </Stack>
     );

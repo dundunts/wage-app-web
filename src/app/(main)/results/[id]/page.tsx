@@ -1,7 +1,7 @@
 // @/app/results/[id]/page.tsx
 "use client";
 
-import {use, useEffect, useState} from "react";
+import {use, useEffect, useRef, useState} from "react";
 import {useRouter} from "next/navigation";
 import {
     Badge,
@@ -10,7 +10,6 @@ import {
     Card,
     Container,
     Flex,
-    Grid,
     Heading,
     Separator,
     Spinner,
@@ -18,10 +17,16 @@ import {
     Text
 } from "@chakra-ui/react";
 import {shiftResultService} from "@/service/results/shiftResult.service";
-import {ShiftResultDetailed} from "@/types/shiftResult.types";
-import {companyService} from "@/service/company/company.service";
-import {Company} from "@/types/company.types";
-import {toaster} from "@/components/ui/toaster";
+import {CalculationSource, ShiftResultDetailed} from "@/types/shiftResult.types";
+import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
+import {feedback} from "@/feedback/feedback";
+import {feedbackMessages} from "@/feedback/messages";
+import {PaymentCard} from "@/components/results/PaymentCard";
+
+const calculationSourceLabels: Record<CalculationSource, string> = {
+    [CalculationSource.CHECKPOINTS]: "По контрольным точкам",
+    [CalculationSource.MANUAL_OVERRIDE]: "Ручной расчёт",
+};
 
 // В Next.js 16 params - это Promise
 export default function ResultDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -30,24 +35,18 @@ export default function ResultDetailsPage({ params }: { params: Promise<{ id: st
 
     const router = useRouter();
     const [data, setData] = useState<ShiftResultDetailed | null>(null);
-    const [companies, setCompanies] = useState<Company[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-
-    // Состояния модалок
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [isDeletePending, setDeletePending] = useState(false);
+    const deleteTriggerRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [resultRes, companiesRes] = await Promise.all([
-                    shiftResultService.getDetailed(id),
-                    // getUserCompanies()
-                    companyService.getForUser()
-                ]);
+                const resultRes = await shiftResultService.getDetailed(id);
                 setData(resultRes.shiftResult);
-                setCompanies(companiesRes);
             } catch (e) {
-                toaster.create({ title: "Ошибка загрузки", type: "error" });
+                feedback.beginAction("shiftResultDetailLoad").error(e);
             } finally {
                 setIsLoading(false);
             }
@@ -56,44 +55,55 @@ export default function ResultDetailsPage({ params }: { params: Promise<{ id: st
     }, [id]);
 
     const handleDelete = async () => {
-        if (!confirm("Удалить этот результат безвозвратно?")) return;
+        if (isDeletePending) return;
 
+        const actionFeedback = feedback.beginAction("shiftResultDelete");
+        setDeletePending(true);
         try {
             await shiftResultService.delete(id);
-            toaster.create({ title: "Удалено", type: "success" });
+            actionFeedback.success();
+            setDeleteDialogOpen(false);
             router.push("/results");
-        } catch(e) {
-            toaster.create({ title: "Ошибка удаления", type: "error" });
+        } catch(error) {
+            actionFeedback.error(error);
+        } finally {
+            setDeletePending(false);
         }
     };
 
-    const handleEditSuccess = () => {
-        // Перезагрузка данных страницы
-        setIsLoading(true);
-        shiftResultService.getDetailed(id)
-            .then(res => setData(res.shiftResult))
-            .finally(() => setIsLoading(false));
-    };
-
-    if (isLoading) return <Flex justify="center" p={20}><Spinner size="xl" /></Flex>;
-    if (!data) return <Box p={10}>Данные не найдены</Box>;
+    if (isLoading) {
+        return (
+            <Flex role="status" aria-label="Результат смены загружается" justify="center" p={20}>
+                <Spinner size="xl" color="accent" />
+            </Flex>
+        );
+    }
+    if (!data) return <Box role="status" p={10} color="fg.muted">Данные не найдены</Box>;
 
     return (
-        <Container maxW="4xl" py={8}>
-            <Flex justify="space-between" align="center" mb={6}>
+        <Container maxW="4xl" px={{base: 4, md: 6}} py={{base: 6, md: 8}}>
+            <Flex
+                justify="space-between"
+                align={{base: "stretch", md: "end"}}
+                direction={{base: "column", md: "row"}}
+                gap={4}
+                mb={6}
+            >
                 <Box>
                     <Button variant="subtle" size="sm" mb={2} onClick={() => router.push("/results")}>
                         ← Назад к списку
                     </Button>
-                    <Heading size="xl">
+                    <Heading as="h1" size={{base: "lg", md: "xl"}}>
                         Смена от {new Date(data.date).toLocaleDateString("ru-RU")}
                     </Heading>
                 </Box>
-                <Flex gap={3}>
-                    <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
-                        Изменить
-                    </Button>
-                    <Button colorPalette="red" variant="solid" onClick={handleDelete}>
+                <Flex gap={3} direction={{base: "column", sm: "row"}}>
+                    <Button
+                        ref={deleteTriggerRef}
+                        colorPalette="danger"
+                        variant="solid"
+                        onClick={() => setDeleteDialogOpen(true)}
+                    >
                         Удалить
                     </Button>
                 </Flex>
@@ -103,40 +113,28 @@ export default function ResultDetailsPage({ params }: { params: Promise<{ id: st
                 <Card.Body>
                     <Stack gap={6} separator={<Separator />}>
                         <Box>
-                            <Text color="gray.500" fontSize="sm">Источник расчета</Text>
-                            <Badge mt={1} size="lg" variant="surface">
-                                {data.calculationSource}
+                            <Text color="fg.muted" fontSize="sm">Источник расчёта</Text>
+                            <Badge
+                                mt={2}
+                                size="lg"
+                                variant="outline"
+                                color="status.info"
+                                borderColor="status.info"
+                                bg="bg.subtle"
+                            >
+                                {calculationSourceLabels[data.calculationSource]}
                             </Badge>
                         </Box>
 
                         <Box>
                             <Heading size="md" mb={4}>Детализация выплат</Heading>
                             <Stack gap={4}>
-                                {data.payments.map((p) => (
-                                    <Box key={p.id} p={4} borderWidth="1px" borderRadius="md">
-                                        <Flex justify="space-between" mb={2}>
-                                            <Text fontWeight="bold" fontSize="lg">
-                                                {p.employee.lastName} {p.employee.firstName}
-                                            </Text>
-                                            <Text fontWeight="bold" color="green.600">
-                                                Всего: {(p.percentFromRevenue + p.tips).toFixed(2)}
-                                            </Text>
-                                        </Flex>
-                                        <Grid templateColumns="repeat(3, 1fr)" gap={4} fontSize="sm">
-                                            <Box>
-                                                <Text color="gray.500">Выручка (%)</Text>
-                                                <Text>{p.percentFromRevenue}</Text>
-                                            </Box>
-                                            <Box>
-                                                <Text color="gray.500">Чаевые</Text>
-                                                <Text>{p.tips}</Text>
-                                            </Box>
-                                            <Box>
-                                                <Text color="gray.500">Отработано</Text>
-                                                <Text>{(p.workSeconds / 3600).toFixed(1)} ч.</Text>
-                                            </Box>
-                                        </Grid>
-                                    </Box>
+                                {data.payments.map((payment) => (
+                                    <PaymentCard
+                                        key={payment.id}
+                                        payment={payment}
+                                        requiresAttention={data.calculationSource === CalculationSource.MANUAL_OVERRIDE}
+                                    />
                                 ))}
                             </Stack>
                         </Box>
@@ -144,16 +142,23 @@ export default function ResultDetailsPage({ params }: { params: Promise<{ id: st
                 </Card.Body>
             </Card.Root>
 
-            {/* Модальное окно редактирования */}
-            {/*{isEditModalOpen && (*/}
-            {/*    <ShiftResultModal*/}
-            {/*        isOpen={isEditModalOpen}*/}
-            {/*        onClose={() => setIsEditModalOpen(false)}*/}
-            {/*        onSuccess={handleEditSuccess}*/}
-            {/*        companies={companies}*/}
-            {/*        initialData={data} // Передаем данные для заполнения*/}
-            {/*    />*/}
-            {/*)}*/}
+            <ConfirmationDialog
+                open={isDeleteDialogOpen}
+                title="Удалить результат смены?"
+                description="Результат смены будет удалён без возможности восстановления."
+                confirmLabel="Удалить"
+                cancelLabel="Отмена"
+                pendingLabel={feedbackMessages.shiftResultDelete.loading}
+                severity="danger"
+                pending={isDeletePending}
+                finalFocusEl={() => deleteTriggerRef.current}
+                onCancel={() => {
+                    if (!isDeletePending) {
+                        setDeleteDialogOpen(false);
+                    }
+                }}
+                onConfirm={handleDelete}
+            />
         </Container>
     );
 }

@@ -1,15 +1,19 @@
 // @/app/(admin)/company/[id]/page.tsx
 "use client";
 
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import {useParams, useRouter} from "next/navigation";
-import {Box, Button, Card, Center, Flex, Heading, HStack, Separator, Spinner, Stack, Text} from "@chakra-ui/react";
+import {Box, Button, Card, Center, Container, Separator, Spinner, Stack, Text} from "@chakra-ui/react";
 import {ArrowLeft, Edit, Trash2} from "lucide-react";
 
 import {Company, CompanyPayload} from "@/types/company.types";
 import {companyService} from "@/service/company/company.service";
 import {CompanyFormModal} from "@/components/company/company-form-modal";
-import {DeleteConfirmModal} from "@/components/dialog/delete-confirm-modal";
+import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
+import {feedback} from "@/feedback/feedback";
+import {feedbackMessages} from "@/feedback/messages";
+import {PageHeader} from "@/components/page/PageHeader";
+import {EmptyState} from "@/components/page/EmptyState";
 
 export default function CompanyDetailsPage() {
     const { id } = useParams<{ id: string }>();
@@ -24,6 +28,7 @@ export default function CompanyDetailsPage() {
     const [isEditOpen, setEditOpen] = useState(false);
     const [isDeleteOpen, setDeleteOpen] = useState(false);
     const [isActionLoading, setActionLoading] = useState(false);
+    const deleteTriggerRef = useRef<HTMLButtonElement>(null);
 
     // --- Загрузка данных ---
     const fetchCompanyData = useCallback(async () => {
@@ -50,29 +55,35 @@ export default function CompanyDetailsPage() {
     // --- Хендлеры действий ---
 
     const handleUpdate = async (payload: CompanyPayload) => {
-        if (!company) return;
+        if (!company || isActionLoading) return false;
+
+        const actionFeedback = feedback.beginAction("companyUpdate");
         setActionLoading(true);
         try {
             await companyService.update(company.id, payload);
+            actionFeedback.success();
             await fetchCompanyData(); // Обновляем данные на странице
-            setEditOpen(false);
+            return true;
         } catch (err) {
-            console.error(err);
-            alert("Ошибка при обновлении компании");
+            actionFeedback.error(err);
+            return false;
         } finally {
             setActionLoading(false);
         }
     };
 
     const handleDelete = async () => {
-        if (!company) return;
+        if (!company || isActionLoading) return;
+
+        const actionFeedback = feedback.beginAction("companyDelete");
         setActionLoading(true);
         try {
             await companyService.delete(company.id);
+            actionFeedback.success();
+            setDeleteOpen(false);
             router.push("/company"); // Редирект к списку
         } catch (err) {
-            console.error(err);
-            alert("Ошибка при удалении компании");
+            actionFeedback.error(err);
         } finally {
             setActionLoading(false);
         }
@@ -82,15 +93,15 @@ export default function CompanyDetailsPage() {
 
     if (isLoading) {
         return (
-            <Center h="100vh">
-                <Spinner size="xl" color="blue.500" />
+            <Center role="status" aria-label="Company загружается" minH="calc(100dvh - 64px)">
+                <Spinner size="xl" color="accent" />
             </Center>
         );
     }
 
     if (error || !company) {
         return (
-            <Box p={6}>
+            <Container maxW="4xl" px={{base: 4, md: 6}} py={{base: 6, md: 8}}>
                 <Button
                     variant="subtle"
                     onClick={() => router.back()}
@@ -98,15 +109,19 @@ export default function CompanyDetailsPage() {
                 >
                     <ArrowLeft style={{ width: "16px", marginRight: "8px" }} /> Назад
                 </Button>
-                <Center h="200px">
-                    <Text color="red.500" fontSize="lg">{error || "Компания не найдена"}</Text>
-                </Center>
-            </Box>
+                <Stack gap={6}>
+                    <PageHeader title="Компания" />
+                    <EmptyState
+                        title="Компания недоступна"
+                        description={error || "Компания не найдена"}
+                    />
+                </Stack>
+            </Container>
         );
     }
 
     return (
-        <Box p={6} maxW="800px" mx="auto">
+        <Container maxW="4xl" px={{base: 4, md: 6}} py={{base: 6, md: 8}}>
             {/* Навигация */}
             <Button
                 variant="subtle"
@@ -119,9 +134,10 @@ export default function CompanyDetailsPage() {
             </Button>
 
             {/* Заголовок и основные действия */}
-            <Flex justify="space-between" align="center" mb={6} wrap="wrap" gap={4}>
-                <Heading size="2xl">{company.title}</Heading>
-                <HStack>
+            <PageHeader
+                title={company.title}
+                description="Настройки рабочей точки"
+                actions={<Stack direction={{base: "column", sm: "row"}} gap={3}>
                     <Button
                         variant="outline"
                         onClick={() => setEditOpen(true)}
@@ -130,25 +146,26 @@ export default function CompanyDetailsPage() {
                         Изменить
                     </Button>
                     <Button
-                        colorPalette="red"
+                        ref={deleteTriggerRef}
+                        colorPalette="danger"
                         variant="solid"
                         onClick={() => setDeleteOpen(true)}
                     >
                         <Trash2 style={{ width: "16px", marginRight: "8px" }} />
                         Удалить
                     </Button>
-                </HStack>
-            </Flex>
+                </Stack>}
+            />
 
             {/* Карточка с деталями */}
-            <Card.Root variant="elevated">
-                <Card.Body>
+            <Card.Root mt={6} variant="outline">
+                <Card.Body p={{base: 5, md: 6}}>
                     <Stack gap={6} separator={<Separator />}>
 
                         {/* ID (обычно полезно для админов) */}
                         <Box>
                             <Text textStyle="sm" color="fg.muted" mb={1}>ID Компании</Text>
-                            <Text fontFamily="mono">{company.id}</Text>
+                            <Text fontFamily="mono" overflowWrap="anywhere">{company.id}</Text>
                         </Box>
 
                         {/* Название */}
@@ -190,14 +207,23 @@ export default function CompanyDetailsPage() {
                 isLoading={isActionLoading}
             />
 
-            <DeleteConfirmModal
-                isOpen={isDeleteOpen}
-                onClose={() => setDeleteOpen(false)}
+            <ConfirmationDialog
+                open={isDeleteOpen}
+                title="Удалить компанию?"
+                description={`Компания «${company.title}» будет удалена без возможности восстановления.`}
+                confirmLabel="Удалить"
+                cancelLabel="Отмена"
+                pendingLabel={feedbackMessages.companyDelete.loading}
+                severity="danger"
+                pending={isActionLoading}
+                finalFocusEl={() => deleteTriggerRef.current}
+                onCancel={() => {
+                    if (!isActionLoading) {
+                        setDeleteOpen(false);
+                    }
+                }}
                 onConfirm={handleDelete}
-                title={`Удалить "${company.title}"?`}
-                description="Вы уверены? Данные о компании будут безвозвратно удалены из системы."
-                isLoading={isActionLoading}
             />
-        </Box>
+        </Container>
     );
 }

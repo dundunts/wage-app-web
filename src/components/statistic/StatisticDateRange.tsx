@@ -13,9 +13,9 @@ interface Props {
 
 export function StatisticDateRange({ filters, setFilter }: Props) {
     return (
-        <HStack gap={4} mt={4} flexWrap="wrap">
-            <Field.Root maxW="220px">
-                <Field.Label>С</Field.Label>
+        <HStack gap={4} mt={4} align="start" flexWrap="wrap">
+            <Field.Root maxW={{base: "100%", md: "220px"}}>
+                <Field.Label>Начало периода</Field.Label>
                 <Input
                     type="date"
                     value={filters.start || ""}
@@ -25,8 +25,8 @@ export function StatisticDateRange({ filters, setFilter }: Props) {
                 />
             </Field.Root>
 
-            <Field.Root maxW="220px">
-                <Field.Label>По</Field.Label>
+            <Field.Root maxW={{base: "100%", md: "220px"}}>
+                <Field.Label>Конец периода</Field.Label>
                 <Input
                     type="date"
                     value={filters.end || ""}

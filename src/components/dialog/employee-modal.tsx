@@ -12,6 +12,7 @@ import {
     Select,
     SimpleGrid,
     Stack,
+    Portal,
 } from "@chakra-ui/react";
 import {Controller, useController, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -20,7 +21,8 @@ import {Employee, EmployeePosition} from "@/types/employee.types";
 import {useAllCompanies} from "@/hooks/useAllCompanies";
 import {CreateEmployeeFormValues, createEmployeeSchema} from "@/schemas/employee.schema";
 import {employeeService} from "@/service/employee/employee.service";
-import {toaster} from "@/components/ui/toaster";
+import {feedback} from "@/feedback/feedback";
+import {feedbackMessages} from "@/feedback/messages";
 
 interface EmployeeModalProps {
     isOpen: boolean;
@@ -35,7 +37,7 @@ export const EmployeeModal = ({
                                   initialData,
                                   onSuccess,
                               }: EmployeeModalProps) => {
-    const {companies, isLoading: isCompaniesLoading} = useAllCompanies();
+    const {companies} = useAllCompanies();
     const isEditMode = !!initialData;
 
     const {
@@ -61,7 +63,6 @@ export const EmployeeModal = ({
         if (!isOpen) return;
 
         if (initialData) {
-            console.log("RESET TO INITIAL DATA")
             reset({
                 firstName: initialData.firstName,
                 lastName: initialData.lastName,
@@ -83,6 +84,8 @@ export const EmployeeModal = ({
     })
 
     const onSubmit = async (data: CreateEmployeeFormValues) => {
+        const action = isEditMode ? "employeeUpdate" : "employeeCreate";
+        const actionFeedback = feedback.beginAction(action);
         try {
             const payload = {
                 ...data,
@@ -92,21 +95,15 @@ export const EmployeeModal = ({
 
             if (isEditMode && initialData) {
                 await employeeService.update(initialData.id, payload);
-                toaster.create({title: "Сотрудник обновлён", type: "success"});
             } else {
                 await employeeService.create(payload);
-                toaster.create({title: "Сотрудник создан", type: "success"});
             }
 
+            actionFeedback.success();
             onSuccess();
             onClose();
-        } catch (e) {
-            console.error(e);
-            toaster.create({
-                title: "Ошибка",
-                description: "Не удалось сохранить данные сотрудника",
-                type: "error",
-            });
+        } catch (error) {
+            actionFeedback.error(error);
         }
     };
 
@@ -119,41 +116,58 @@ export const EmployeeModal = ({
     const invalid = !!errors.companyIds
 
     return (
-        <Dialog.Root open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
-            <Dialog.Backdrop/>
-            <Dialog.Positioner>
-                <Dialog.Content as="form" onSubmit={handleSubmit(onSubmit)}>
-                    <Dialog.Header>
-                        <Dialog.Title>
-                            {isEditMode
-                                ? "Редактирование сотрудника"
-                                : "Создание сотрудника"}
-                        </Dialog.Title>
-                    </Dialog.Header>
+        <Dialog.Root
+            open={isOpen}
+            closeOnEscape={!isSubmitting}
+            closeOnInteractOutside={!isSubmitting}
+            scrollBehavior="inside"
+            onOpenChange={(e) => !e.open && !isSubmitting && onClose()}
+        >
+            <Portal>
+                <Dialog.Backdrop/>
+                <Dialog.Positioner p={{base: 3, md: 6}}>
+                    <Dialog.Content
+                        as="form"
+                        onSubmit={handleSubmit(onSubmit)}
+                        maxW="3xl"
+                    >
+                        <Dialog.Header>
+                            <Dialog.Title>
+                                {isEditMode
+                                    ? "Редактирование сотрудника"
+                                    : "Создание сотрудника"}
+                            </Dialog.Title>
+                        </Dialog.Header>
 
-                    <Dialog.Body>
-                        <Stack gap={4}>
+                        <Dialog.Body>
+                            <Stack gap={4}>
                             {/* ФИО */}
                             <SimpleGrid columns={{base: 1, md: 3}} gap={4}>
-                                <Field.Root invalid={!!errors.lastName}>
-                                    <Field.Label>Фамилия</Field.Label>
-                                    <Input {...register("lastName")} />
+                                <Field.Root invalid={!!errors.lastName} disabled={isSubmitting}>
+                                    <Field.Label color="fg.muted">
+                                        Фамилия <Field.RequiredIndicator/>
+                                    </Field.Label>
+                                    <Input {...register("lastName")} aria-required="true" disabled={isSubmitting}/>
                                     <Field.ErrorText>
                                         {errors.lastName?.message}
                                     </Field.ErrorText>
                                 </Field.Root>
 
-                                <Field.Root invalid={!!errors.firstName}>
-                                    <Field.Label>Имя</Field.Label>
-                                    <Input {...register("firstName")} />
+                                <Field.Root invalid={!!errors.firstName} disabled={isSubmitting}>
+                                    <Field.Label color="fg.muted">
+                                        Имя <Field.RequiredIndicator/>
+                                    </Field.Label>
+                                    <Input {...register("firstName")} aria-required="true" disabled={isSubmitting}/>
                                     <Field.ErrorText>
                                         {errors.firstName?.message}
                                     </Field.ErrorText>
                                 </Field.Root>
 
-                                <Field.Root invalid={!!errors.patronymic}>
-                                    <Field.Label>Отчество</Field.Label>
-                                    <Input {...register("patronymic")} />
+                                <Field.Root invalid={!!errors.patronymic} disabled={isSubmitting}>
+                                    <Field.Label color="fg.muted">
+                                        Отчество <Field.RequiredIndicator/>
+                                    </Field.Label>
+                                    <Input {...register("patronymic")} aria-required="true" disabled={isSubmitting}/>
                                     <Field.ErrorText>
                                         {errors.patronymic?.message}
                                     </Field.ErrorText>
@@ -162,20 +176,22 @@ export const EmployeeModal = ({
 
                             {/* SimpleName / UserId */}
                             <SimpleGrid columns={{base: 1, md: 2}} gap={4}>
-                                <Field.Root invalid={!!errors.simpleName}>
-                                    <Field.Label>Simple name</Field.Label>
-                                    <Input {...register("simpleName")} />
+                                <Field.Root invalid={!!errors.simpleName} disabled={isSubmitting}>
+                                    <Field.Label color="fg.muted">Simple name</Field.Label>
+                                    <Input {...register("simpleName")} disabled={isSubmitting}/>
+                                    <Field.ErrorText>{errors.simpleName?.message}</Field.ErrorText>
                                 </Field.Root>
 
-                                <Field.Root invalid={!!errors.userId}>
-                                    <Field.Label>User ID</Field.Label>
-                                    <Input {...register("userId")} />
+                                <Field.Root invalid={!!errors.userId} disabled={isSubmitting}>
+                                    <Field.Label color="fg.muted">User ID</Field.Label>
+                                    <Input {...register("userId")} disabled={isSubmitting}/>
+                                    <Field.ErrorText>{errors.userId?.message}</Field.ErrorText>
                                 </Field.Root>
                             </SimpleGrid>
 
                             {/* Должность */}
-                            <Field.Root invalid={!!errors.position}>
-                                <Field.Label>Должность</Field.Label>
+                            <Field.Root invalid={!!errors.position} required disabled={isSubmitting}>
+                                <Field.Label color="fg.muted">Должность</Field.Label>
                                 <Controller
                                     control={control}
                                     name={"position"}
@@ -184,13 +200,13 @@ export const EmployeeModal = ({
                                             collection={positionsCollection}
                                             value={[Object.values(EmployeePosition).find(v => v.toString() === field.value) || ""]}
                                             onValueChange={e => field.onChange(e.value[0])}
+                                            disabled={isSubmitting}
                                             size="sm"
                                         >
                                             <Select.HiddenSelect/>
-                                            <Select.Label>Select position</Select.Label>
                                             <Select.Control>
-                                                <Select.Trigger>
-                                                    <Select.ValueText placeholder="Select position"/>
+                                                <Select.Trigger bg="bg.raised" borderColor="border">
+                                                    <Select.ValueText placeholder="Выберите должность"/>
                                                 </Select.Trigger>
                                                 <Select.IndicatorGroup>
                                                     <Select.Indicator/>
@@ -209,11 +225,12 @@ export const EmployeeModal = ({
                                         </Select.Root>
                                     )}
                                 />
+                                <Field.ErrorText>{errors.position?.message}</Field.ErrorText>
                             </Field.Root>
 
                             {/* Компании */}
-                            <Fieldset.Root invalid={invalid}>
-                                <Fieldset.Legend>Компании</Fieldset.Legend>
+                            <Fieldset.Root invalid={invalid} disabled={isSubmitting}>
+                                <Fieldset.Legend color="fg.muted">Компании</Fieldset.Legend>
                                 <CheckboxGroup
                                     invalid={invalid}
                                     value={companyIds.field.value}
@@ -222,7 +239,12 @@ export const EmployeeModal = ({
                                 >
                                     <Fieldset.Content>
                                         {companies.map((company) =>
-                                            <Checkbox.Root key={company.id} value={company.id}>
+                                            <Checkbox.Root
+                                                key={company.id}
+                                                value={company.id}
+                                                colorPalette="brand"
+                                                disabled={isSubmitting}
+                                            >
                                                 <Checkbox.HiddenInput/>
                                                 <Checkbox.Control/>
                                                 <Checkbox.Label>{company.title}</Checkbox.Label>
@@ -231,23 +253,28 @@ export const EmployeeModal = ({
                                     </Fieldset.Content>
                                 </CheckboxGroup>
                             </Fieldset.Root>
-                        </Stack>
-                    </Dialog.Body>
+                            </Stack>
+                        </Dialog.Body>
 
-                    <Dialog.Footer>
-                        <Dialog.CloseTrigger asChild>
-                            <Button variant="outline">Отмена</Button>
-                        </Dialog.CloseTrigger>
-                        <Button
-                            type="submit"
-                            colorPalette="blue"
-                            loading={isSubmitting}
-                        >
-                            {isEditMode ? "Сохранить" : "Создать"}
-                        </Button>
-                    </Dialog.Footer>
-                </Dialog.Content>
-            </Dialog.Positioner>
+                        <Dialog.Footer>
+                            <Button variant="outline" disabled={isSubmitting} onClick={onClose}>
+                                Отмена
+                            </Button>
+                            <Button
+                                type="submit"
+                                colorPalette="brand"
+                                loading={isSubmitting}
+                                loadingText={feedbackMessages[
+                                    isEditMode ? "employeeUpdate" : "employeeCreate"
+                                ].loading}
+                                disabled={isSubmitting}
+                            >
+                                {isEditMode ? "Сохранить" : "Создать"}
+                            </Button>
+                        </Dialog.Footer>
+                    </Dialog.Content>
+                </Dialog.Positioner>
+            </Portal>
         </Dialog.Root>
     );
 };

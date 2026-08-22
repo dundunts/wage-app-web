@@ -81,6 +81,21 @@ Frontend-приложение для системы **расчёта зараб�
 
 - Backend: [wage-app-backend](https://github.com/dundunts/wage-app)
 
+## 📚 Документация для разработчиков
+
+- [Краткий обзор проекта](docs/project-overview.md)
+- [Доменный словарь](CONTEXT.md)
+
+### Запуск в VS Code
+
+1. Установите зависимости командой `npm install`.
+2. Откройте **Run and Debug** и нажмите `F5`.
+3. Выберите один из профилей:
+   - `Web: production backend (default)` — подключается к production API и Keycloak. Все изменения данных в этом профиле реальные.
+   - `Web: local backend` — использует backend на `localhost:8085` и Keycloak на `localhost:8080`.
+
+Первым в списке и исходным профилем идёт production. VS Code может запомнить последний выбранный профиль. При запуске VS Code поднимет Next.js с отладчиком и откроет `http://localhost:3000` в Chrome.
+
 ---
 
 ## 👨‍💻 Автор
@@ -91,3 +106,18 @@ Java / Kotlin Backend Developer
 Telegram: @turterDun
 
 Email: DunDunTs@yandex.ru
+
+## Immutable production releases
+
+Production publication starts only from an annotated `vX.Y.Z` or
+`vX.Y.Z-U<N>` tag whose commit belongs to `release/X.Y.Z`. The workflow tests
+and builds that source, publishes `dundunts/wage-app-web:<version>` and
+`git-<sha>` once, records their common digest, and opens an image-only GitOps
+pull request. It never receives Kubernetes credentials.
+
+An owner provisions the Docker Hub and narrowly scoped GitHub App credentials
+without exposing them to the terminal log or repository:
+
+```shell
+./scripts/setup-web-release.sh
+```
