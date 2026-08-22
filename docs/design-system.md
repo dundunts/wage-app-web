@@ -94,9 +94,13 @@ solid на глубокий teal, а focus и subtle состояния — на
 - slot: `Card`, `Checkbox`, `Select`, `Table`, `Tabs`, `Menu`, `Dialog`,
   `Drawer`, `Popover`, `Tooltip`, `Toast`, `Alert`.
 
-Menus, popovers и tooltips используют raised surface; dialogs/drawers — panel и
-единый backdrop; toast/alert остаются на нейтральной поверхности с текстом и
-semantic status border/indicator. Поэтому статус не передаётся одним цветом.
+Menus, popovers и tooltips используют raised surface; drawers — panel и общий
+overlay backdrop. Dialog использует liquid-glass вариант общей panel surface:
+полупрозрачный semantic background, усиленный backdrop blur/saturation и тихий
+accent sheen. Этот эффект задаётся только общей dialog recipe; feature-компоненты
+не дублируют его в `Dialog.Content`, `Dialog.Body` или footer. Toast/alert
+остаются на нейтральной поверхности с текстом и semantic status
+border/indicator. Поэтому статус не передаётся одним цветом.
 Loading presentation использует accent spinner; окружающий экран должен
 добавлять `role="status"` и понятный label/text, когда загрузка блокирует контент.
 

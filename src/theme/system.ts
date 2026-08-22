@@ -48,6 +48,20 @@ const overlaySurfaceStyles = {
     _motionReduce: reducedMotion,
 } as const;
 
+const liquidGlassDialogBackdropStyles = {
+    ...overlayBackdropStyles,
+    backdropFilter: "blur(9px) saturate(118%)",
+} as const;
+
+const liquidGlassDialogSurfaceStyles = {
+    ...overlaySurfaceStyles,
+    bg: "bg.panel/86",
+    backdropFilter: "blur(26px) saturate(138%)",
+    backgroundImage: "linear-gradient(135deg, {colors.accent.glow}, transparent 44%)",
+    isolation: "isolate",
+    overflow: "hidden",
+} as const;
+
 function createStatusSemanticPalette(
     lightToken: string,
     darkToken: string,
@@ -434,11 +448,11 @@ const dialogSlotRecipe = defineSlotRecipe({
         ...chakraDialogSlotRecipe.base,
         backdrop: {
             ...chakraDialogSlotRecipe.base?.backdrop,
-            ...overlayBackdropStyles,
+            ...liquidGlassDialogBackdropStyles,
         },
         content: {
             ...chakraDialogSlotRecipe.base?.content,
-            ...overlaySurfaceStyles,
+            ...liquidGlassDialogSurfaceStyles,
             borderWidth: "1px",
             borderRadius: "panel",
         },
