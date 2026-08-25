@@ -6,6 +6,7 @@ import {Controller, useFieldArray, useForm} from "react-hook-form";
 import {
     Box,
     Button,
+    CloseButton,
     createListCollection,
     Dialog,
     Field as ChakraField,
@@ -186,19 +187,34 @@ export function ShiftResultModal({
             closeOnInteractOutside={!isSubmitting}
             onOpenChange={(details) => !details.open && !isSubmitting && onClose()}
             size="xl"
-            scrollBehavior="inside" // Важно для длинных списков, чтобы модалка скроллилась внутри
+            scrollBehavior="inside"
         >
-            <Dialog.Backdrop />
-            <Dialog.Positioner>
-                <Dialog.Content>
-                    <form noValidate onSubmit={handleSubmit(onSubmit)}>
-                        <Dialog.Header>
-                            <Dialog.Title>
-                                {initialData ? "Редактировать результат" : "Создать результат смены"}
-                            </Dialog.Title>
-                        </Dialog.Header>
+            <Portal>
+                <Dialog.Backdrop/>
+                <Dialog.Positioner p={{base: 0, sm: 4}} alignItems={{base: "stretch", sm: "center"}}>
+                    <Dialog.Content
+                        asChild
+                        width="full"
+                        maxW="56rem"
+                        m={0}
+                        height={{base: "100dvh", sm: "auto"}}
+                        maxH={{base: "100dvh", sm: "calc(100dvh - 2rem)"}}
+                        borderRadius={{base: 0, sm: "panel"}}
+                        overflow="hidden"
+                    >
+                        <form noValidate onSubmit={handleSubmit(onSubmit)}>
+                            <Dialog.Header flexShrink={0} pr={14}>
+                                <Dialog.Title>
+                                    {initialData ? "Редактировать результат" : "Создать результат смены"}
+                                </Dialog.Title>
+                            </Dialog.Header>
 
-                        <Dialog.Body>
+                            <Dialog.Body
+                            minH={0}
+                            overflowY="auto"
+                            overscrollBehavior="contain"
+                            px={{base: 4, sm: 6}}
+                        >
                             <Stack gap={5}>
                                 {/* Верхняя панель: Компания и Дата */}
                                 <Flex gap={4} direction={{ base: "column", sm: "row" }}>
@@ -295,121 +311,133 @@ export function ShiftResultModal({
 
                                     <Stack gap={2}>
                                         {fields.map((field, index) => (
-                                            <Grid
+                                            <Box
                                                 key={field.id}
-                                                templateColumns={{base: "minmax(0, 1fr) auto", md: "2fr 1fr 1fr 1fr auto"}}
-                                                gap={2}
-                                                alignItems="start" // Changed to start so errors don't misalign grid if added later
+                                                p={{base: 3, md: 0}}
+                                                borderWidth={{base: "1px", md: 0}}
+                                                borderColor="border"
+                                                borderRadius={{base: "control", md: 0}}
+                                                bg={{base: "bg.subtle", md: "transparent"}}
                                             >
-                                                {/* Выбор сотрудника (Chakra UI Select + Controller) */}
-                                                <ChakraField.Root
-                                                    required
-                                                    invalid={!!errors.payments?.[index]?.employeeId}
-                                                    gridColumn={{base: "1 / -1", md: "auto"}}
+                                                <Grid
+                                                    templateColumns={{base: "minmax(0, 1fr) auto", md: "2fr 1fr 1fr 1fr auto"}}
+                                                    gap={2}
+                                                    alignItems="start"
                                                 >
-                                                    <Controller
-                                                        control={control}
-                                                        name={`payments.${index}.employeeId`}
-                                                        rules={{required: "Выберите сотрудника"}}
-                                                        render={({field}) => (
-                                                            <Select.Root
-                                                                collection={employeeCollection}
-                                                                value={field.value ? [field.value] : []}
-                                                                onValueChange={(e) => field.onChange(e.value[0])}
-                                                                disabled={isEmployeesLoading}
-                                                                invalid={!!errors.payments?.[index]?.employeeId}
-                                                                size="sm"
-                                                            >
-                                                                <Select.HiddenSelect />
-                                                                <Select.Label srOnly>Сотрудник {index + 1}</Select.Label>
-                                                                <Select.Control>
-                                                                    <Select.Trigger
-                                                                        ref={field.ref}
-                                                                        bg="bg.raised"
-                                                                        borderColor="border"
-                                                                        focusRingColor="focus.ring"
-                                                                        _hover={{borderColor: "border.emphasized"}}
-                                                                        aria-describedby={
-                                                                            errors.payments?.[index]?.employeeId
-                                                                                ? `payment-employee-${index}-error`
-                                                                                : undefined
-                                                                        }
-                                                                    >
-                                                                        {isEmployeesLoading ? (
-                                                                            <Spinner role="status" aria-label="Employee загружаются" size="xs" />
-                                                                        ) : (
-                                                                            <Select.ValueText placeholder="Сотрудник" />
-                                                                        )}
-                                                                    </Select.Trigger>
-                                                                    <Select.IndicatorGroup>
-                                                                        <Select.Indicator />
-                                                                    </Select.IndicatorGroup>
-                                                                </Select.Control>
-                                                                <Portal>
-                                                                    <Select.Positioner>
-                                                                        <Select.Content>
-                                                                            {employeeCollection.items.map((emp) => (
-                                                                                <Select.Item item={emp} key={emp.value}>
-                                                                                    {emp.label}
-                                                                                    <Select.ItemIndicator />
-                                                                                </Select.Item>
-                                                                            ))}
-                                                                        </Select.Content>
-                                                                    </Select.Positioner>
-                                                                </Portal>
-                                                            </Select.Root>
-                                                        )}
-                                                    />
-                                                    <ChakraField.ErrorText
-                                                        id={`payment-employee-${index}-error`}
+                                                    <ChakraField.Root
+                                                        required
+                                                        invalid={!!errors.payments?.[index]?.employeeId}
+                                                        gridColumn={{base: "1 / -1", md: "auto"}}
                                                     >
-                                                        {errors.payments?.[index]?.employeeId?.message}
-                                                    </ChakraField.ErrorText>
-                                                </ChakraField.Root>
+                                                        <ChakraField.Label hideFrom="md">Сотрудник {index + 1}</ChakraField.Label>
+                                                        <Controller
+                                                            control={control}
+                                                            name={`payments.${index}.employeeId`}
+                                                            rules={{required: "Выберите сотрудника"}}
+                                                            render={({field}) => (
+                                                                <Select.Root
+                                                                    collection={employeeCollection}
+                                                                    value={field.value ? [field.value] : []}
+                                                                    onValueChange={(e) => field.onChange(e.value[0])}
+                                                                    disabled={isEmployeesLoading}
+                                                                    invalid={!!errors.payments?.[index]?.employeeId}
+                                                                    size="sm"
+                                                                >
+                                                                    <Select.HiddenSelect />
+                                                                    <Select.Label srOnly>Сотрудник {index + 1}</Select.Label>
+                                                                    <Select.Control>
+                                                                        <Select.Trigger
+                                                                            ref={field.ref}
+                                                                            bg="bg.raised"
+                                                                            borderColor="border"
+                                                                            focusRingColor="focus.ring"
+                                                                            _hover={{borderColor: "border.emphasized"}}
+                                                                            aria-describedby={
+                                                                                errors.payments?.[index]?.employeeId
+                                                                                    ? `payment-employee-${index}-error`
+                                                                                    : undefined
+                                                                            }
+                                                                        >
+                                                                            {isEmployeesLoading ? (
+                                                                                <Spinner role="status" aria-label="Сотрудники загружаются" size="xs" />
+                                                                            ) : (
+                                                                                <Select.ValueText placeholder="Сотрудник" />
+                                                                            )}
+                                                                        </Select.Trigger>
+                                                                        <Select.IndicatorGroup>
+                                                                            <Select.Indicator />
+                                                                        </Select.IndicatorGroup>
+                                                                    </Select.Control>
+                                                                    <Portal>
+                                                                        <Select.Positioner>
+                                                                            <Select.Content>
+                                                                                {employeeCollection.items.map((emp) => (
+                                                                                    <Select.Item item={emp} key={emp.value}>
+                                                                                        {emp.label}
+                                                                                        <Select.ItemIndicator />
+                                                                                    </Select.Item>
+                                                                                ))}
+                                                                            </Select.Content>
+                                                                        </Select.Positioner>
+                                                                    </Portal>
+                                                                </Select.Root>
+                                                            )}
+                                                        />
+                                                        <ChakraField.ErrorText
+                                                            id={`payment-employee-${index}-error`}
+                                                        >
+                                                            {errors.payments?.[index]?.employeeId?.message}
+                                                        </ChakraField.ErrorText>
+                                                    </ChakraField.Root>
 
-                                                <ChakraField.Root gridColumn={{base: "1 / -1", md: "auto"}}>
-                                                    <ChakraField.Label srOnly>От выручки, сотрудник {index + 1}</ChakraField.Label>
-                                                    <Input
-                                                        type="number"
-                                                        step="0.01"
+                                                    <ChakraField.Root gridColumn={{base: "1 / -1", md: "auto"}}>
+                                                        <ChakraField.Label hideFrom="md">От выручки</ChakraField.Label>
+                                                        <Input
+                                                            aria-label={`От выручки, сотрудник ${index + 1}`}
+                                                            type="number"
+                                                            step="0.01"
+                                                            size="sm"
+                                                            placeholder="0"
+                                                            {...register(`payments.${index}.percentFromRevenue` as const, { valueAsNumber: true })}
+                                                        />
+                                                    </ChakraField.Root>
+
+                                                    <ChakraField.Root gridColumn={{base: "1 / -1", md: "auto"}}>
+                                                        <ChakraField.Label hideFrom="md">Чаевые</ChakraField.Label>
+                                                        <Input
+                                                            aria-label={`Чаевые, сотрудник ${index + 1}`}
+                                                            type="number"
+                                                            size="sm"
+                                                            placeholder="0"
+                                                            {...register(`payments.${index}.tips` as const, { valueAsNumber: true })}
+                                                        />
+                                                    </ChakraField.Root>
+
+                                                    <ChakraField.Root>
+                                                        <ChakraField.Label hideFrom="md">Часы</ChakraField.Label>
+                                                        <Input
+                                                            aria-label={`Часы, сотрудник ${index + 1}`}
+                                                            type="number"
+                                                            step="0.5"
+                                                            size="sm"
+                                                            placeholder="ч"
+                                                            {...register(`payments.${index}.workHours` as const, { valueAsNumber: true })}
+                                                        />
+                                                    </ChakraField.Root>
+
+                                                    <IconButton
+                                                        type="button"
+                                                        aria-label={`Удалить выплату сотрудника ${index + 1}`}
+                                                        colorPalette="danger"
+                                                        variant="subtle"
                                                         size="sm"
-                                                        placeholder="0"
-                                                        {...register(`payments.${index}.percentFromRevenue` as const, { valueAsNumber: true })}
-                                                    />
-                                                </ChakraField.Root>
-
-                                                <ChakraField.Root gridColumn={{base: "1 / -1", md: "auto"}}>
-                                                    <ChakraField.Label srOnly>Чаевые, сотрудник {index + 1}</ChakraField.Label>
-                                                    <Input
-                                                        type="number"
-                                                        size="sm"
-                                                        placeholder="0"
-                                                        {...register(`payments.${index}.tips` as const, { valueAsNumber: true })}
-                                                    />
-                                                </ChakraField.Root>
-
-                                                <ChakraField.Root gridColumn={{base: "1 / -1", md: "auto"}}>
-                                                    <ChakraField.Label srOnly>Часы, сотрудник {index + 1}</ChakraField.Label>
-                                                    <Input
-                                                        type="number"
-                                                        step="0.5"
-                                                        size="sm"
-                                                        placeholder="ч"
-                                                        {...register(`payments.${index}.workHours` as const, { valueAsNumber: true })}
-                                                    />
-                                                </ChakraField.Root>
-
-                                                <IconButton
-                                                    type="button"
-                                                    aria-label={`Удалить выплату сотрудника ${index + 1}`}
-                                                    colorPalette="danger"
-                                                    variant="subtle"
-                                                    size="sm"
-                                                    onClick={() => remove(index)}
-                                                >
-                                                    <HiTrash />
-                                                </IconButton>
-                                            </Grid>
+                                                        alignSelf="end"
+                                                        onClick={() => remove(index)}
+                                                    >
+                                                        <HiTrash />
+                                                    </IconButton>
+                                                </Grid>
+                                            </Box>
                                         ))}
                                     </Stack>
 
@@ -420,25 +448,52 @@ export function ShiftResultModal({
                                     )}
                                 </Box>
                             </Stack>
-                        </Dialog.Body>
+                            </Dialog.Body>
 
-                        <Dialog.Footer>
+                            <Dialog.Footer
+                            flexShrink={0}
+                            borderTopWidth="1px"
+                            borderColor="border"
+                            bg="bg.panel"
+                            flexDirection={{base: "column-reverse", sm: "row"}}
+                            pb={{base: "calc(1rem + env(safe-area-inset-bottom))", sm: 4}}
+                        >
                             <Dialog.ActionTrigger asChild>
-                                <Button variant="outline" onClick={onClose} disabled={isSubmitting}>Отмена</Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    width={{base: "full", sm: "auto"}}
+                                    onClick={onClose}
+                                    disabled={isSubmitting}
+                                >
+                                    Отмена
+                                </Button>
                             </Dialog.ActionTrigger>
                             <Button
                                 type="submit"
                                 colorPalette="brand"
+                                width={{base: "full", sm: "auto"}}
                                 loading={isSubmitting}
                                 loadingText={feedbackMessages.shiftResultSave.loading}
                                 disabled={isSubmitting}
                             >
                                 {initialData ? "Сохранить изменения" : "Создать"}
                             </Button>
-                        </Dialog.Footer>
-                    </form>
-                </Dialog.Content>
-            </Dialog.Positioner>
+                            </Dialog.Footer>
+
+                            <Dialog.CloseTrigger asChild>
+                                <CloseButton
+                                    aria-label="Закрыть диалог"
+                                    size="sm"
+                                    top={4}
+                                    right={4}
+                                    disabled={isSubmitting}
+                                />
+                            </Dialog.CloseTrigger>
+                        </form>
+                    </Dialog.Content>
+                </Dialog.Positioner>
+            </Portal>
         </Dialog.Root>
     );
 }
