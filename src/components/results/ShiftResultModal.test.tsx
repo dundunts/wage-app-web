@@ -1,4 +1,4 @@
-import {render, screen} from "@testing-library/react";
+import {render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {AxiosError, AxiosHeaders} from "axios";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -8,6 +8,8 @@ import {shiftResultService} from "@/service/results/shiftResult.service";
 import {employeeService} from "@/service/employee/employee.service";
 import {toaster} from "@/feedback/toast-store";
 import {deferred} from "@/test/deferred";
+import {EmployeePosition} from "@/types/employee.types";
+import {CalculationSource} from "@/types/shiftResult.types";
 
 vi.mock("@/service/results/shiftResult.service", () => ({
     shiftResultService: {save: vi.fn()},
@@ -23,6 +25,29 @@ const companies = [{
     employeeWageCoefficientFromRevenue: 0.4,
     defaultShiftStartTime: "09:00",
 }];
+
+const employees = [
+    {id: "employee-1", firstName: "Иван", lastName: "Иванов"},
+    {id: "employee-2", firstName: "Анна", lastName: "Петрова"},
+].map(employee => ({
+    ...employee,
+    patronymic: "",
+    simpleName: null,
+    userId: null,
+    position: EmployeePosition.WAITER_ACTIVE,
+}));
+
+function mockVisibleLayout() {
+    // jsdom has no layout; hideWhenDetached needs a non-empty viewport and anchor.
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 1024, 768));
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(1024);
+    vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(768);
+    vi.stubGlobal("IntersectionObserver", class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+    });
+}
 
 function renderModal(overrides: Partial<React.ComponentProps<typeof ShiftResultModal>> = {}) {
     const props: React.ComponentProps<typeof ShiftResultModal> = {
@@ -50,7 +75,10 @@ describe("ShiftResultModal save flow", () => {
         vi.mocked(shiftResultService.save).mockReset();
     });
 
-    afterEach(() => vi.restoreAllMocks());
+    afterEach(() => {
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+    });
 
     it("associates the Company and Payment employee Select controls with their labels", async () => {
         const user = userEvent.setup();
@@ -72,6 +100,95 @@ describe("ShiftResultModal save flow", () => {
         expect(shiftResultService.save).toHaveBeenCalledTimes(1);
         expect(props.onSuccess).toHaveBeenCalledTimes(1);
         expect(props.onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it("changes an employee inside the edit dialog and saves the selected employee ID", async () => {
+        mockVisibleLayout();
+        const user = userEvent.setup();
+        vi.mocked(employeeService.getCoworkersForCompany).mockResolvedValue(employees);
+        vi.mocked(shiftResultService.save).mockResolvedValue({resultId: "result-1"});
+        const props = renderModal({
+            initialData: {
+                companyId: "company-1",
+                result: {
+                    id: "result-1",
+                    date: new Date("2026-08-20"),
+                    sessionId: null,
+                    calculationSource: CalculationSource.MANUAL_OVERRIDE,
+                    payments: [{
+                        id: "payment-1",
+                        employee: employees[0],
+                        percentFromRevenue: 1200,
+                        tips: 300,
+                        workSeconds: 28800,
+                    }],
+                },
+            },
+        });
+        const dialog = screen.getByRole("dialog");
+        const employee = within(dialog).getByRole("combobox", {name: "Сотрудник 1"});
+        expect(within(dialog).getByRole("combobox", {name: "Компания"})).toBeDisabled();
+        await waitFor(() => expect(employee).toBeEnabled());
+
+        await user.click(employee);
+        const list = await within(dialog).findByRole("listbox", {name: "Сотрудник 1"});
+        await user.click(within(list).getByRole("option", {name: "Петрова Анна"}));
+
+        expect(employee).toHaveTextContent("Петрова Анна");
+        expect(dialog).toBeVisible();
+        expect(props.onClose).not.toHaveBeenCalled();
+        await user.click(within(dialog).getByRole("button", {name: "Сохранить изменения"}));
+        await waitFor(() => expect(shiftResultService.save).toHaveBeenCalledWith({
+            companyId: "company-1",
+            overwrite: true,
+            date: new Date("2026-08-20"),
+            payments: [{
+                employeeId: "employee-2",
+                percentFromRevenue: 1200,
+                tips: 300,
+                workSeconds: 28800,
+            }],
+        }));
+    });
+
+    it("selects a company and an employee in a new payment and dismisses only the menu on Escape", async () => {
+        mockVisibleLayout();
+        const user = userEvent.setup();
+        vi.mocked(employeeService.getCoworkersForCompany).mockResolvedValue(employees);
+        vi.mocked(shiftResultService.save).mockResolvedValue({resultId: "result-2"});
+        const props = renderModal({
+            companies: [...companies, {...companies[0], id: "company-2", title: "Вторая точка"}],
+        });
+        const dialog = screen.getByRole("dialog");
+        const company = within(dialog).getByRole("combobox", {name: "Компания"});
+        await user.click(company);
+        const companiesList = await within(dialog).findByRole("listbox", {name: "Компания"});
+        await user.click(within(companiesList).getByRole("option", {name: "Вторая точка"}));
+        expect(company).toHaveTextContent("Вторая точка");
+        await waitFor(() => expect(employeeService.getCoworkersForCompany).toHaveBeenLastCalledWith("company-2"));
+
+        await user.click(within(dialog).getByRole("button", {name: /Добавить/}));
+        const employee = within(dialog).getByRole("combobox", {name: "Сотрудник 1"});
+        await waitFor(() => expect(employee).toBeEnabled());
+        await user.click(employee);
+        const employeesList = await within(dialog).findByRole("listbox", {name: "Сотрудник 1"});
+        await waitFor(() => expect(employeesList).toHaveFocus());
+        await user.keyboard("{Escape}");
+        await waitFor(() => expect(employee).toHaveAttribute("aria-expanded", "false"));
+        await waitFor(() => expect(employee).toHaveFocus());
+        expect(props.onClose).not.toHaveBeenCalled();
+
+        await user.keyboard("{ArrowDown}");
+        await waitFor(() => expect(employeesList).toHaveFocus());
+        await user.keyboard("{End}");
+        await user.keyboard("{Enter}");
+        await waitFor(() => expect(employee).toHaveTextContent("Петрова Анна"));
+        await user.click(within(dialog).getByRole("button", {name: "Создать"}));
+        await waitFor(() => expect(shiftResultService.save).toHaveBeenCalledWith(expect.objectContaining({
+            companyId: "company-2",
+            overwrite: false,
+            payments: [{employeeId: "employee-2", percentFromRevenue: 0, tips: 0, workSeconds: 0}],
+        })));
     });
 
     it("shows safe conflict feedback and keeps the entered form recoverable", async () => {
