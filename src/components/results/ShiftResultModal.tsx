@@ -1,7 +1,7 @@
 // @/app/results/_components/ShiftResultModal.tsx
 "use client";
 
-import {useEffect, useMemo, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import {Controller, useFieldArray, useForm} from "react-hook-form";
 import {
     Box,
@@ -64,6 +64,7 @@ export function ShiftResultModal({
                                      initialData,
                                      finalFocusEl,
                                  }: ShiftResultModalProps) {
+    const dialogContentRef = useRef<HTMLFormElement>(null);
     const [employees, setEmployees] = useState<CompanyEmployeeInfo[]>([]);
     const [isEmployeesLoading, setIsEmployeesLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -200,9 +201,9 @@ export function ShiftResultModal({
                         height={{base: "100dvh", sm: "auto"}}
                         maxH={{base: "100dvh", sm: "calc(100dvh - 2rem)"}}
                         borderRadius={{base: 0, sm: "panel"}}
-                        overflow="hidden"
+                        overflow="visible"
                     >
-                        <form noValidate onSubmit={handleSubmit(onSubmit)}>
+                        <form ref={dialogContentRef} noValidate onSubmit={handleSubmit(onSubmit)}>
                             <Dialog.Header flexShrink={0} pr={14}>
                                 <Dialog.Title>
                                     {initialData ? "Редактировать результат" : "Создать результат смены"}
@@ -225,6 +226,7 @@ export function ShiftResultModal({
                                             render={({ field }) => (
                                                 <Select.Root
                                                     collection={companyCollection}
+                                                    positioning={{strategy: "fixed", hideWhenDetached: true}}
                                                     value={field.value ? [field.value] : []}
                                                     onValueChange={(e) => field.onChange(e.value[0])}
                                                     disabled={!!initialData} // Не меняем компанию при редактировании
@@ -245,7 +247,7 @@ export function ShiftResultModal({
                                                             <Select.Indicator />
                                                         </Select.IndicatorGroup>
                                                     </Select.Control>
-                                                    <Portal>
+                                                    <Portal container={dialogContentRef}>
                                                         <Select.Positioner>
                                                             <Select.Content>
                                                                 {companyCollection.items.map((company) => (
@@ -337,6 +339,7 @@ export function ShiftResultModal({
                                                             render={({field}) => (
                                                                 <Select.Root
                                                                     collection={employeeCollection}
+                                                                    positioning={{strategy: "fixed", hideWhenDetached: true}}
                                                                     value={field.value ? [field.value] : []}
                                                                     onValueChange={(e) => field.onChange(e.value[0])}
                                                                     disabled={isEmployeesLoading}
@@ -368,7 +371,7 @@ export function ShiftResultModal({
                                                                             <Select.Indicator />
                                                                         </Select.IndicatorGroup>
                                                                     </Select.Control>
-                                                                    <Portal>
+                                                                    <Portal container={dialogContentRef}>
                                                                         <Select.Positioner>
                                                                             <Select.Content>
                                                                                 {employeeCollection.items.map((emp) => (
@@ -455,6 +458,7 @@ export function ShiftResultModal({
                             borderTopWidth="1px"
                             borderColor="border"
                             bg="bg.panel"
+                            borderBottomRadius="inherit"
                             flexDirection={{base: "column-reverse", sm: "row"}}
                             pb={{base: "calc(1rem + env(safe-area-inset-bottom))", sm: 4}}
                         >
