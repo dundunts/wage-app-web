@@ -9,6 +9,7 @@ import {
     For,
     Grid,
     HStack,
+    IconButton,
     Input,
     Portal,
     SegmentGroup,
@@ -16,10 +17,15 @@ import {
     Text,
     VStack,
 } from "@chakra-ui/react";
-import React, {useMemo, useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
+import {RefreshCw} from "lucide-react";
 import {CompanyEmployeeInfo, EmployeeBase} from "@/types/employee.types";
 import {CheckedChangeDetails} from "@zag-js/checkbox";
-import {checkpointDialogForms} from "@/components/shift/shift.checkpoint.components.dialog.constants";
+import {
+    checkpointDialogForms,
+    createCheckpointDialogForms,
+    QR_TIPS_LABEL,
+} from "@/components/shift/shift.checkpoint.components.dialog.constants";
 import {
     Checkpoint,
     CheckpointCalcDestination,
@@ -28,9 +34,9 @@ import {
     CheckpointType
 } from "@/types/checkpoint.types";
 import {toLocalDateTimeInputValue} from "@/utils/date.utils";
+import {sessionService} from "@/service/session/session.service";
 
-type CreateCheckpointDialogProps = {
-    origin?: Checkpoint;
+type CheckpointDialogProps = {
     initialFormType?: CheckpointType;
     companyEmployees: CompanyEmployeeInfo[];
     prevCheckpoint?: Checkpoint;
@@ -39,14 +45,18 @@ type CreateCheckpointDialogProps = {
     pendingLabel: string;
     onClose: () => void;
     onSave: (payload: CheckpointPayload) => void;
-}
+} & (
+    | {origin: Checkpoint; sessionId?: never}
+    | {origin?: undefined; sessionId: string}
+);
 
 function getInitialValues(formType: CheckpointType, origin?: Checkpoint): Record<string, number> {
     const originValues = new Map(
         origin?.metricRecords.map(item => [item.label, item.value]) || []
     );
 
-    return checkpointDialogForms[formType].fields.reduce<Record<string, number>>(
+    const forms = origin ? checkpointDialogForms : createCheckpointDialogForms;
+    return forms[formType].fields.reduce<Record<string, number>>(
         (acc, field) => ({
             ...acc,
             [field.label]: originValues.get(field.label) ?? 0,
@@ -66,6 +76,7 @@ function getInitialDate(origin?: Checkpoint): Date {
 export function CheckpointDialog(
     {
         origin,
+        sessionId,
         initialFormType = origin?.type || CheckpointType.REGULAR,
         companyEmployees,
         prevCheckpoint,
@@ -74,13 +85,13 @@ export function CheckpointDialog(
         pendingLabel,
         onClose,
         onSave,
-    }: CreateCheckpointDialogProps
+    }: CheckpointDialogProps
 ) {
     const [formType, setFormType] =
         useState<CheckpointType>(initialFormType);
 
     const [values, setValues] = useState<Record<string, number>>(
-        getInitialValues(initialFormType, origin)
+        () => getInitialValues(initialFormType, origin)
     );
     const [selectedEmployees, setSelectedEmployees] = useState<EmployeeBase[]>(getInitialEmployees(origin, prevCheckpoint));
     const [date, setDate] = useState<Date>(getInitialDate(origin));
@@ -88,8 +99,31 @@ export function CheckpointDialog(
 
     const [employeesSelectError, setEmployeesSelectError] = useState(false)
     const employeesLabelId = React.useId();
+    const [qrTipsLoading, setQrTipsLoading] = useState(!origin);
+    const [qrTipsRequestVersion, setQrTipsRequestVersion] = useState(0);
 
-    const form = checkpointDialogForms[formType];
+    const form = (origin ? checkpointDialogForms : createCheckpointDialogForms)[formType];
+
+    useEffect(() => {
+        if (origin || !open || !sessionId) return;
+
+        const controller = new AbortController();
+        void sessionService.getQrTips(sessionId, controller.signal)
+            .catch(() => 0)
+            .then(tips => {
+                if (controller.signal.aborted) return;
+                setValues(previous => ({...previous, [QR_TIPS_LABEL]: tips}));
+                setQrTipsLoading(false);
+            });
+
+        return () => controller.abort();
+    }, [origin, open, sessionId, qrTipsRequestVersion]);
+
+    const refreshQrTips = () => {
+        if (pending || qrTipsLoading) return;
+        setQrTipsLoading(true);
+        setQrTipsRequestVersion(previous => previous + 1);
+    };
 
     const {revenue, tips} = useMemo(() => {
         return form.fields.reduce(
@@ -110,10 +144,20 @@ export function CheckpointDialog(
     }, [values, form]);
 
     const handleSave = () => {
+        if (pending || qrTipsLoading) return;
+
         if (selectedEmployees.length === 0) {
             setEmployeesSelectError(true)
             return
         }
+
+        // Keep the legacy combined "Чай" record so existing edit forms can read new regular checkpoints.
+        const fieldRecords: CheckpointMetricRecordPayload[] = !origin && formType === CheckpointType.REGULAR
+            ? checkpointDialogForms.REGULAR.fields.map(field => ({
+                ...field,
+                value: field.destination === CheckpointCalcDestination.TIPS ? tips : revenue,
+            }))
+            : form.fields.map(field => ({...field, value: values[field.label] ?? 0}));
 
         const payload: CheckpointPayload = {
             revenue,
@@ -121,8 +165,7 @@ export function CheckpointDialog(
             employeeIds: selectedEmployees.map(e => e.id),
             dateTime: date,
             type: formType,
-            fieldRecords: form.fields.map(f =>
-                ({...f, value: values[f.label] ?? 0} as CheckpointMetricRecordPayload)),
+            fieldRecords,
         }
 
         onSave(payload);
@@ -185,7 +228,7 @@ export function CheckpointDialog(
                                     const nextFormType = CheckpointType[e.value as keyof typeof CheckpointType];
                                     setFormType(nextFormType);
                                     setValues(prev => ({
-                                        ...getInitialValues(nextFormType),
+                                        ...getInitialValues(nextFormType, origin),
                                         ...prev,
                                     }));
                                 }}
@@ -210,20 +253,42 @@ export function CheckpointDialog(
                                         gap={2}
                                     >
                                         <Field.Label flex="1">{field.label}</Field.Label>
-                                        <Input
-                                            type="number"
-                                            disabled={pending}
-                                            value={values[field.label] ?? 0}
-                                            onChange={(e) =>
-                                                setValues((prev) => ({
-                                                    ...prev,
-                                                    [field.label]: Number(e.target.value),
-                                                }))
-                                            }
-                                            w={{base: "full", sm: "140px"}}
-                                        />
+                                        <HStack gap={2} w={{base: "full", sm: "140px"}}>
+                                            <Input
+                                                type="number"
+                                                disabled={pending || (!origin && field.label === QR_TIPS_LABEL && qrTipsLoading)}
+                                                value={values[field.label] ?? 0}
+                                                onChange={(e) =>
+                                                    setValues((prev) => ({
+                                                        ...prev,
+                                                        [field.label]: Number(e.target.value),
+                                                    }))
+                                                }
+                                                minW={0}
+                                                w="full"
+                                            />
+                                            {!origin && field.label === QR_TIPS_LABEL && (
+                                                <IconButton
+                                                    type="button"
+                                                    aria-label="Обновить чаевые по QR"
+                                                    title="Обновить чаевые по QR"
+                                                    variant="outline"
+                                                    loading={qrTipsLoading}
+                                                    disabled={pending || qrTipsLoading}
+                                                    onClick={refreshQrTips}
+                                                    flexShrink={0}
+                                                >
+                                                    <RefreshCw size={16}/>
+                                                </IconButton>
+                                            )}
+                                        </HStack>
                                     </Field.Root>
                                 ))}
+                                {!origin && qrTipsLoading && (
+                                    <Text role="status" fontSize="sm" color="fg.muted">
+                                        Загружаем чаевые по QR…
+                                    </Text>
+                                )}
                             </VStack>
 
                             {/* Employees */}
@@ -313,7 +378,7 @@ export function CheckpointDialog(
                                 colorPalette="brand"
                                 loading={pending}
                                 loadingText={pendingLabel}
-                                disabled={pending}
+                                disabled={pending || qrTipsLoading}
                                 w={{base: "full", sm: "auto"}}
                             >
                                 Сохранить

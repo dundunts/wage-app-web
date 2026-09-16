@@ -1,7 +1,7 @@
 import {AxiosInstance, AxiosResponse} from "axios";
 import {axiosBackendClient} from "@/api/config/api";
 import {Session, UpdateShiftSessionStartWorkTimePayload} from "@/types/session.types";
-import {OpenNewShiftSessionApiPayload} from "@/api/session/session.api.dto";
+import {OpenNewShiftSessionApiPayload, SessionQrTipsResponse} from "@/api/session/session.api.dto";
 
 export class SessionApiClient {
     constructor(private readonly client: AxiosInstance) {
@@ -15,6 +15,13 @@ export class SessionApiClient {
 
     async fetchAvailableById(sessionId: string): Promise<AxiosResponse<Session>> {
         return this.client.get(`/api/v1/session/get/available/${sessionId}`)
+    }
+
+    async fetchQrTips(sessionId: string, signal: AbortSignal): Promise<AxiosResponse<SessionQrTipsResponse>> {
+        return this.client.get(`/api/v1/session/${sessionId}/qr-tips`, {
+            signal,
+            timeout: 15_000,
+        });
     }
 
     async open(payload: OpenNewShiftSessionApiPayload): Promise<AxiosResponse<Session>> {

@@ -40,6 +40,12 @@ _Avoid_: Отчёт, событие
 Session.
 _Avoid_: Employee Tips
 
+**Cash Tips**:
+Часть Restaurant Tips, полученная наличными.
+
+**QR Tips**:
+Часть Restaurant Tips, полученная через оплату по QR-коду.
+
 **Shift Result Draft**:
 Предварительный расчёт выплат по Shift Session, который ещё не подтверждён.
 _Avoid_: Shift Result, отчёт

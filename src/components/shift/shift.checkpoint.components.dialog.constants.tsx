@@ -1,5 +1,8 @@
 import {CheckpointCalcDestination, CheckpointForm, CheckpointType} from "@/types/checkpoint.types";
 
+export const CASH_TIPS_LABEL = "Чай (нал)";
+export const QR_TIPS_LABEL = "Чай (по QR)";
+
 export const checkpointDialogForms: Record<CheckpointType, CheckpointForm> = {
     REGULAR: {
         label: "Обычный",
@@ -34,13 +37,25 @@ export const checkpointDialogForms: Record<CheckpointType, CheckpointForm> = {
                 destination: CheckpointCalcDestination.REVENUE
             },
             {
-                label: "Чай (нал)",
+                label: CASH_TIPS_LABEL,
                 destination: CheckpointCalcDestination.TIPS
             },
             {
-                label: "Чай (по QR)",
+                label: QR_TIPS_LABEL,
                 destination: CheckpointCalcDestination.TIPS
             },
         ]
     }
 }
+
+export const createCheckpointDialogForms: Record<CheckpointType, CheckpointForm> = {
+    ...checkpointDialogForms,
+    REGULAR: {
+        ...checkpointDialogForms.REGULAR,
+        fields: [
+            checkpointDialogForms.REGULAR.fields[0],
+            {label: CASH_TIPS_LABEL, destination: CheckpointCalcDestination.TIPS},
+            {label: QR_TIPS_LABEL, destination: CheckpointCalcDestination.TIPS},
+        ],
+    },
+};
