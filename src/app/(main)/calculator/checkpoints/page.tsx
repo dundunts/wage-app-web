@@ -371,14 +371,18 @@ function CalcInShiftPage() {
             {/* --- Dialogs --- */}
 
             {/* Create dialog */}
-            <CheckpointDialog
-                companyEmployees={availableEmployees}
-                open={isCreateDialogOpened}
-                pending={isCreatingCheckpoint}
-                pendingLabel={feedbackMessages.checkpointCreate.loading}
-                onClose={onCloseCreateDialog}
-                onSave={handleCreateCheckpoint}
-            />
+            {isCreateDialogOpened && (
+                <CheckpointDialog
+                    key={session.id}
+                    sessionId={session.id}
+                    companyEmployees={availableEmployees}
+                    open={isCreateDialogOpened}
+                    pending={isCreatingCheckpoint}
+                    pendingLabel={feedbackMessages.checkpointCreate.loading}
+                    onClose={onCloseCreateDialog}
+                    onSave={handleCreateCheckpoint}
+                />
+            )}
 
             {/* Update dialog */}
             {targetForEdit && (

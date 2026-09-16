@@ -1,4 +1,4 @@
-import {fireEvent, render, screen, waitFor, within} from "@testing-library/react";
+import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import CalcInShiftPage from "@/app/(main)/calculator/checkpoints/page";
@@ -21,6 +21,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/service/session/session.service", () => ({
     sessionService: {
         getAvailableById: vi.fn(),
+        getQrTips: vi.fn(),
         updateStartWorkTime: vi.fn(),
         close: vi.fn(),
     },
@@ -113,6 +114,8 @@ beforeEach(() => {
     navigation.push.mockReset();
     vi.mocked(sessionService.getAvailableById).mockReset();
     vi.mocked(sessionService.getAvailableById).mockResolvedValue(session);
+    vi.mocked(sessionService.getQrTips).mockReset();
+    vi.mocked(sessionService.getQrTips).mockResolvedValue(0);
     vi.mocked(sessionService.updateStartWorkTime).mockReset();
     vi.mocked(sessionService.close).mockReset();
     vi.mocked(employeeService.getAvailableEmployeesForCompany).mockReset();
@@ -155,7 +158,8 @@ describe("Checkpoint create", () => {
         const dialog = await openCreateCheckpointDialog(user);
 
         expect(within(dialog).getByRole("spinbutton", {name: "Выручка"})).toBeVisible();
-        expect(within(dialog).getByRole("spinbutton", {name: "Чай"})).toBeVisible();
+        expect(within(dialog).getByRole("spinbutton", {name: "Чай (нал)"})).toBeVisible();
+        expect(within(dialog).getByRole("spinbutton", {name: "Чай (по QR)"})).toBeVisible();
         expect(within(dialog).getByLabelText("Дата и время чекпоинта")).toBeVisible();
     });
 
@@ -258,6 +262,187 @@ describe("Checkpoint create", () => {
         expect(sessionService.getAvailableById).toHaveBeenCalledOnce();
         expect(consoleError).toHaveBeenCalledOnce();
         expect(consoleError).toHaveBeenCalledWith("[feedback:checkpointCreate]", failure);
+    });
+});
+
+describe("QR Tips in new checkpoints", () => {
+    it("loads only on opening and blocks submission until tips arrive", async () => {
+        const user = userEvent.setup();
+        let resolveTips!: (tips: number) => void;
+        vi.mocked(sessionService.getQrTips).mockReturnValue(new Promise(resolve => { resolveTips = resolve; }));
+        renderPage();
+        const add = await screen.findByRole("button", {name: "Добавить чекпоинт"});
+        expect(sessionService.getQrTips).not.toHaveBeenCalled();
+        await user.click(add);
+        const dialog = screen.getByRole("dialog", {name: "Создание чекпоинта"});
+
+        expect(sessionService.getQrTips).toHaveBeenCalledWith("session-1", expect.any(AbortSignal));
+        expect(within(dialog).getByRole("status")).toHaveTextContent("Загружаем чаевые по QR");
+        expect(within(dialog).getByRole("spinbutton", {name: "Чай (по QR)"})).toBeDisabled();
+        expect(within(dialog).getByRole("button", {name: "Обновить чаевые по QR"})).toBeDisabled();
+        expect(within(dialog).getByRole("button", {name: "Сохранить"})).toBeDisabled();
+        expect(within(dialog).getByRole("spinbutton", {name: "Чай (нал)"})).toBeEnabled();
+        await user.click(within(dialog).getByRole("checkbox", {name: "Иван"}));
+        fireEvent.submit(dialog);
+        expect(checkpointService.create).not.toHaveBeenCalled();
+
+        await act(async () => resolveTips(730));
+        expect(within(dialog).getByRole("spinbutton", {name: "Чай (по QR)"})).toHaveValue(730);
+        expect(within(dialog).getByRole("spinbutton", {name: "Чай (по QR)"})).toBeEnabled();
+        expect(within(dialog).getByRole("button", {name: "Сохранить"})).toBeEnabled();
+    });
+
+    it("saves cumulative cash plus QR in the legacy record and reopens it in the unchanged editor", async () => {
+        const user = userEvent.setup();
+        vi.mocked(sessionService.getQrTips).mockResolvedValue(700);
+        const savedCheckpoint = {
+            ...checkpoint,
+            tips: 1000,
+            metricRecords: checkpoint.metricRecords.map(record => record.label === "Чай"
+                ? {...record, value: 1000} : record),
+        };
+        vi.mocked(checkpointService.create).mockResolvedValue(savedCheckpoint);
+        const dialog = await openCreateCheckpointDialog(user);
+        fireEvent.change(within(dialog).getByRole("spinbutton", {name: "Чай (нал)"}), {target: {value: "300"}});
+        await user.click(within(dialog).getByRole("checkbox", {name: "Иван"}));
+        vi.mocked(sessionService.getAvailableById).mockResolvedValue({...session, checkpoints: [savedCheckpoint]});
+        await user.click(within(dialog).getByRole("button", {name: "Сохранить"}));
+
+        expect(checkpointService.create).toHaveBeenCalledWith(expect.objectContaining({
+            tips: 1000,
+            fieldRecords: [
+                {label: "Выручка", destination: CheckpointCalcDestination.REVENUE, value: 0},
+                {label: "Чай", destination: CheckpointCalcDestination.TIPS, value: 1000},
+            ],
+        }));
+        await waitFor(() => expect(dialog).not.toBeInTheDocument());
+        await user.click(screen.getByRole("button", {name: "Изменить чекпоинт 1"}));
+        const edit = screen.getByRole("dialog", {name: "Редактирование чекпоинта"});
+        expect(within(edit).getByRole("spinbutton", {name: "Чай"})).toHaveValue(1000);
+        expect(within(edit).queryByRole("spinbutton", {name: "Чай (по QR)"})).not.toBeInTheDocument();
+        expect(within(edit).queryByRole("button", {name: "Обновить чаевые по QR"})).not.toBeInTheDocument();
+        expect(sessionService.getQrTips).toHaveBeenCalledOnce();
+    });
+
+    it("refresh replaces manual QR tips, preserves other input, and resets QR to zero on failure", async () => {
+        const user = userEvent.setup();
+        let resolveRefresh!: (tips: number) => void;
+        vi.mocked(sessionService.getQrTips)
+            .mockResolvedValueOnce(100)
+            .mockImplementationOnce(() => new Promise(resolve => { resolveRefresh = resolve; }))
+            .mockRejectedValueOnce(new Error("unavailable"));
+        const dialog = await openCreateCheckpointDialog(user);
+        const qr = within(dialog).getByRole("spinbutton", {name: "Чай (по QR)"});
+        const cash = within(dialog).getByRole("spinbutton", {name: "Чай (нал)"});
+        const refresh = within(dialog).getByRole("button", {name: "Обновить чаевые по QR"});
+        fireEvent.change(qr, {target: {value: "200"}});
+        fireEvent.change(cash, {target: {value: "50"}});
+        await user.click(refresh);
+
+        expect(qr).toBeDisabled();
+        expect(refresh).toBeDisabled();
+        expect(within(dialog).getByRole("button", {name: "Сохранить"})).toBeDisabled();
+        expect(checkpointService.create).not.toHaveBeenCalled();
+        await user.click(refresh);
+        expect(sessionService.getQrTips).toHaveBeenCalledTimes(2);
+        await act(async () => resolveRefresh(350));
+        expect(qr).toHaveValue(350);
+        expect(cash).toHaveValue(50);
+
+        await user.click(refresh);
+        expect(qr).toHaveValue(0);
+        expect(cash).toHaveValue(50);
+        expect(qr).toBeEnabled();
+        expect(within(dialog).getByRole("button", {name: "Сохранить"})).toBeEnabled();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    it("allows manual input and retry after the initial request fails", async () => {
+        const user = userEvent.setup();
+        vi.mocked(sessionService.getQrTips)
+            .mockRejectedValueOnce(new Error("timeout"))
+            .mockResolvedValueOnce(500);
+        const dialog = await openCreateCheckpointDialog(user);
+        const qr = within(dialog).getByRole("spinbutton", {name: "Чай (по QR)"});
+        expect(qr).toHaveValue(0);
+        expect(qr).toBeEnabled();
+        fireEvent.change(qr, {target: {value: "120"}});
+        expect(qr).toHaveValue(120);
+        await user.click(within(dialog).getByRole("button", {name: "Обновить чаевые по QR"}));
+        expect(qr).toHaveValue(500);
+    });
+
+    it("preserves cash and QR while switching types and includes all final tip sources once", async () => {
+        const user = userEvent.setup();
+        vi.mocked(sessionService.getQrTips).mockResolvedValue(700);
+        vi.mocked(checkpointService.create).mockResolvedValue(checkpoint);
+        const dialog = await openCreateCheckpointDialog(user);
+        fireEvent.change(within(dialog).getByRole("spinbutton", {name: "Чай (нал)"}), {target: {value: "300"}});
+        fireEvent.change(within(dialog).getByRole("spinbutton", {name: "Чай (по QR)"}), {target: {value: "800"}});
+        await user.click(within(dialog).getByRole("radio", {name: "Финальный"}));
+        expect(within(dialog).getByRole("spinbutton", {name: "Чай (нал)"})).toHaveValue(300);
+        expect(within(dialog).getByRole("spinbutton", {name: "Чай (по QR)"})).toHaveValue(800);
+        await user.click(within(dialog).getByRole("radio", {name: "Обычный"}));
+        expect(within(dialog).getByRole("spinbutton", {name: "Чай (по QR)"})).toHaveValue(800);
+        await user.click(within(dialog).getByRole("radio", {name: "Финальный"}));
+        fireEvent.change(within(dialog).getByRole("spinbutton", {name: "Кредит. карты (обс)"}), {target: {value: "200"}});
+        fireEvent.change(within(dialog).getByLabelText("Дата и время чекпоинта"), {target: {value: "2026-08-21T10:00"}});
+        await user.click(within(dialog).getByRole("checkbox", {name: "Иван"}));
+        await user.click(within(dialog).getByRole("button", {name: "Сохранить"}));
+
+        expect(sessionService.getQrTips).toHaveBeenCalledOnce();
+        expect(checkpointService.create).toHaveBeenCalledWith(expect.objectContaining({
+            tips: 1300,
+            type: CheckpointType.FINAL,
+            fieldRecords: expect.arrayContaining([
+                {label: "Чай (нал)", destination: CheckpointCalcDestination.TIPS, value: 300},
+                {label: "Чай (по QR)", destination: CheckpointCalcDestination.TIPS, value: 800},
+                {label: "Кредит. карты (обс)", destination: CheckpointCalcDestination.TIPS, value: 200},
+            ]),
+        }));
+    });
+
+    it("refetches on reopening and ignores a late response from the closed dialog", async () => {
+        const user = userEvent.setup();
+        let resolveOld!: (tips: number) => void;
+        vi.mocked(sessionService.getQrTips)
+            .mockImplementationOnce(() => new Promise(resolve => { resolveOld = resolve; }))
+            .mockResolvedValueOnce(250);
+        const dialog = await openCreateCheckpointDialog(user);
+        const oldSignal = vi.mocked(sessionService.getQrTips).mock.calls[0][1];
+        fireEvent.change(within(dialog).getByRole("spinbutton", {name: "Чай (нал)"}), {target: {value: "90"}});
+        await user.click(within(dialog).getByRole("button", {name: "Отмена"}));
+        expect(oldSignal.aborted).toBe(true);
+        await user.click(screen.getByRole("button", {name: "Добавить чекпоинт"}));
+        const reopened = screen.getByRole("dialog", {name: "Создание чекпоинта"});
+        expect(within(reopened).getByRole("spinbutton", {name: "Чай (по QR)"})).toHaveValue(250);
+        expect(within(reopened).getByRole("spinbutton", {name: "Чай (нал)"})).toHaveValue(0);
+        await act(async () => resolveOld(999));
+        expect(within(reopened).getByRole("spinbutton", {name: "Чай (по QR)"})).toHaveValue(250);
+        expect(sessionService.getQrTips).toHaveBeenCalledTimes(2);
+    });
+
+    it("keeps final checkpoint editing local with its saved cash and QR fields", async () => {
+        const user = userEvent.setup();
+        const finalCheckpoint = {
+            ...checkpoint,
+            type: CheckpointType.FINAL,
+            tips: 900,
+            metricRecords: [
+                {id: "cash", label: "Чай (нал)", destination: CheckpointCalcDestination.TIPS, value: 300},
+                {id: "qr", label: "Чай (по QR)", destination: CheckpointCalcDestination.TIPS, value: 600},
+            ],
+        };
+        vi.mocked(sessionService.getAvailableById).mockResolvedValue({...session, checkpoints: [finalCheckpoint]});
+        vi.mocked(checkpointService.update).mockResolvedValue(finalCheckpoint);
+        const dialog = await openUpdateCheckpointDialog(user);
+        expect(within(dialog).getByRole("spinbutton", {name: "Чай (по QR)"})).toHaveValue(600);
+        expect(within(dialog).getByRole("spinbutton", {name: "Чай (нал)"})).toHaveValue(300);
+        expect(within(dialog).queryByRole("button", {name: "Обновить чаевые по QR"})).not.toBeInTheDocument();
+        fireEvent.change(within(dialog).getByRole("spinbutton", {name: "Чай (по QR)"}), {target: {value: "650"}});
+        await user.click(within(dialog).getByRole("button", {name: "Сохранить"}));
+        expect(checkpointService.update).toHaveBeenCalledWith(expect.objectContaining({tips: 950}));
+        expect(sessionService.getQrTips).not.toHaveBeenCalled();
     });
 });
 

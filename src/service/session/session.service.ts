@@ -18,6 +18,11 @@ export class SessionService {
         return response.data
     }
 
+    async getQrTips(sessionId: string, signal: AbortSignal): Promise<number> {
+        const response = await this.apiClient.fetchQrTips(sessionId, signal);
+        return response.data.tips;
+    }
+
     async open(payload: OpenNewShiftSessionPayload): Promise<Session> {
         const response = await this.apiClient.open({
             ...payload,
