@@ -18,6 +18,7 @@ import {ConfirmationDialog} from "@/components/dialog/ConfirmationDialog";
 import {feedback} from "@/feedback/feedback";
 import {downloadFile} from "@/utils/download-file";
 import {feedbackMessages} from "@/feedback/messages";
+import {getPeriodValidationMessage} from "@/utils/period-validation";
 
 export default function ResultsPage() {
     const [companies, setCompanies] = useState<Company[]>([]);
@@ -40,6 +41,7 @@ export default function ResultsPage() {
 
     // Инициализация хука фильтров (defaultCompanyId будет применен после загрузки компаний)
     const { filters, setFilter } = useShiftResultFilters(companies[0]?.id);
+    const periodValidationMessage = getPeriodValidationMessage(filters);
 
     // 1. Загрузка компаний при маунте
     useEffect(() => {
@@ -56,9 +58,14 @@ export default function ResultsPage() {
 
     // 2. Загрузка результатов при изменении фильтров
     useEffect(() => {
-        function init() {
-            if (!filters.companyId) return;
+        let active = true;
+        setResultsPage(null);
+        if (!filters.companyId || periodValidationMessage) {
+            setIsLoading(false);
+            return;
+        }
 
+        function init() {
             setIsLoading(true);
             shiftResultService.getPageByPeriod({
                 companyId: filters.companyId,
@@ -69,15 +76,20 @@ export default function ResultsPage() {
                 page: filters.page,
                 size: filters.size
             })
-                .then(setResultsPage)
-                .catch((error) => {
-                    feedback.beginAction("shiftResultListLoad").error(error);
+                .then((page) => {
+                    if (active) setResultsPage(page);
                 })
-                .finally(() => setIsLoading(false));
+                .catch((error) => {
+                    if (active) feedback.beginAction("shiftResultListLoad").error(error);
+                })
+                .finally(() => {
+                    if (active) setIsLoading(false);
+                });
         }
 
-        init()
-    }, [filters, resultsRevision]);
+        init();
+        return () => { active = false; };
+    }, [filters, resultsRevision, periodValidationMessage]);
 
     const handleSaveSuccess = () => {
         setResultsRevision((revision) => revision + 1);
@@ -112,7 +124,7 @@ export default function ResultsPage() {
     };
 
     const handleDownload = () => {
-        if (isDownloadPending) return;
+        if (isDownloadPending || !filters.companyId || periodValidationMessage) return;
 
         const actionFeedback = feedback.beginAction("payrollExport").loading();
         const downloadParameters = {
@@ -167,7 +179,7 @@ export default function ResultsPage() {
                         onClick={handleDownload}
                         loading={isDownloadPending}
                         loadingText={feedbackMessages.payrollExport.loading}
-                        disabled={!filters.companyId || isDownloadPending}
+                        disabled={!filters.companyId || !!periodValidationMessage || isDownloadPending}
                     >
                         Скачать Excel
                     </Button>
@@ -180,8 +192,14 @@ export default function ResultsPage() {
                 onFilterChange={setFilter}
             />
 
+            {periodValidationMessage && (
+                <Text role="alert" color="status.warning" mb={4}>
+                    {periodValidationMessage}
+                </Text>
+            )}
+
             <ResultsTable
-                data={resultsPage?.content || []}
+                data={periodValidationMessage ? [] : resultsPage?.content || []}
                 isLoading={isLoading}
                 onEdit={(result, trigger) => setTargetForEdit({result, trigger})}
                 onDelete={openDeleteDialog}
@@ -202,7 +220,7 @@ export default function ResultsPage() {
             />
 
             {/* Пагинация (упрощенная) */}
-            {resultsPage && resultsPage.totalPages > 1 && (
+            {!periodValidationMessage && resultsPage && resultsPage.totalPages > 1 && (
                 <Flex gap={2} mt={4} justify="center">
                     <Button
                         disabled={filters.page === 0}
