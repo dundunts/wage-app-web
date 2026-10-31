@@ -1,4 +1,4 @@
-import {render, screen, waitFor, within} from "@testing-library/react";
+import {act, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import ResultsPage from "@/app/(main)/results/page";
@@ -11,7 +11,7 @@ import {CalculationSource} from "@/types/shiftResult.types";
 import {downloadFile} from "@/utils/download-file";
 import {ApplicationError} from "@/feedback/api-error";
 
-const searchParams = new URLSearchParams("companyId=company-1");
+let searchParams = new URLSearchParams("companyId=company-1");
 const navigation = vi.hoisted(() => ({push: vi.fn()}));
 
 vi.mock("next/navigation", () => ({
@@ -73,7 +73,7 @@ const resultsPage = {
 };
 
 function renderPage() {
-    render(
+    return render(
         <Provider defaultTheme="light">
             <ResultsPage />
         </Provider>,
@@ -89,12 +89,65 @@ async function openDeleteDialog(user: ReturnType<typeof userEvent.setup>) {
 }
 
 beforeEach(() => {
+    searchParams = new URLSearchParams("companyId=company-1");
     toaster.remove();
     navigation.push.mockReset();
     vi.mocked(companyService.getForUser).mockReset();
     vi.mocked(companyService.getForUser).mockResolvedValue([company]);
     vi.mocked(shiftResultService.getPageByPeriod).mockReset();
     vi.mocked(shiftResultService.getPageByPeriod).mockResolvedValue(resultsPage);
+});
+
+describe("Shift Result period validation", () => {
+    function navigate(view: ReturnType<typeof renderPage>, query: string) {
+        searchParams = new URLSearchParams(`companyId=company-1&${query}`);
+        view.rerender(<Provider defaultTheme="light"><ResultsPage /></Provider>);
+    }
+
+    it.each([
+        "",
+        "&start=2026-10-31",
+        "&start=2026-10-31&end=2026-10-30",
+        "&start=2026-02-30&end=2026-03-01",
+    ])("does not request or export an invalid custom period: %s", async (dates) => {
+        searchParams = new URLSearchParams(`companyId=company-1&periodType=CUSTOM${dates}`);
+        renderPage();
+
+        expect(await screen.findByRole("alert")).toHaveTextContent(/период|дат/i);
+        expect(shiftResultService.getPageByPeriod).not.toHaveBeenCalled();
+        expect(screen.getByRole("button", {name: "Скачать Excel"})).toBeDisabled();
+        expect(screen.queryByRole("button", {name: /Действия для смены/})).not.toBeInTheDocument();
+    });
+
+    it("clears the old rows when a loaded period becomes incomplete", async () => {
+        const view = renderPage();
+        await screen.findByRole("button", {name: /Действия для смены/});
+        const requestCount = vi.mocked(shiftResultService.getPageByPeriod).mock.calls.length;
+
+        navigate(view, "periodType=CUSTOM&start=2026-10-31");
+
+        expect(await screen.findByRole("alert")).toHaveTextContent("Укажите начало и конец периода");
+        expect(screen.queryByRole("button", {name: /Действия для смены/})).not.toBeInTheDocument();
+        expect(shiftResultService.getPageByPeriod).toHaveBeenCalledTimes(requestCount);
+    });
+
+    it("ignores a late response for the previous period", async () => {
+        let resolvePrevious!: (value: typeof resultsPage) => void;
+        vi.mocked(shiftResultService.getPageByPeriod).mockReturnValue(new Promise((resolve) => {
+            resolvePrevious = resolve;
+        }));
+        const view = renderPage();
+        await screen.findByRole("combobox", {name: "Компания"});
+        const newPage = {...resultsPage, content: [{...result, date: new Date("2026-10-31")}]};
+        vi.mocked(shiftResultService.getPageByPeriod).mockResolvedValue(newPage);
+
+        navigate(view, "periodType=CUSTOM&start=2026-10-31&end=2026-10-31");
+        expect(await screen.findByRole("button", {name: "Действия для смены 31.10.2026"})).toBeVisible();
+        await act(async () => resolvePrevious(resultsPage));
+
+        expect(screen.getByRole("button", {name: "Действия для смены 31.10.2026"})).toBeVisible();
+        expect(screen.queryByRole("button", {name: "Действия для смены 21.08.2026"})).not.toBeInTheDocument();
+    });
 });
 
 afterEach(() => vi.restoreAllMocks());
