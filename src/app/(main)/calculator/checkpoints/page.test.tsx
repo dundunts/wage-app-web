@@ -642,7 +642,7 @@ describe("Shift Session close", () => {
         const dialog = await openCloseDialog(user);
 
         expect(dialog).toBeVisible();
-        expect(screen.getByText(/После закрытия редактирование чекпоинтов будет недоступно/)).toBeVisible();
+        expect(screen.getByText(/Смена будет закрыта без расчёта выплат/)).toBeVisible();
         await user.click(screen.getByRole("button", {name: "Отмена"}));
 
         expect(sessionService.close).not.toHaveBeenCalled();

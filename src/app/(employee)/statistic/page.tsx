@@ -10,7 +10,7 @@ import {StaffStatistic} from "@/components/statistic/StaffStatistic";
 
 export default function StatisticPage() {
     const { filters } = useStatisticFilters();
-    const { data, isLoading } = useSalaryStatistic(filters);
+    const { data, isLoading, validationMessage } = useSalaryStatistic(filters);
 
     return (
         <Box w="100%" minW={0} maxW="7xl" mx="auto" p={{base: 4, md: 6}}>
@@ -21,13 +21,19 @@ export default function StatisticPage() {
             <StatisticFilters />
 
             <Box mt={8}>
+                {validationMessage && (
+                    <Text role="alert" color="status.warning">
+                        {validationMessage}
+                    </Text>
+                )}
+
                 {isLoading && (
                     <Center role="status" aria-label="Статистика загружается" py={10}>
                         <Spinner size="lg" />
                     </Center>
                 )}
 
-                {!isLoading && !data && (
+                {!isLoading && !data && !validationMessage && (
                     <Center py={10}>
                         <Text color="fg.muted">
                             Нет данных за выбранный период

@@ -425,7 +425,7 @@ function CalcInShiftPage() {
             <ConfirmationDialog
                 open={isCloseSessionDialogOpen}
                 title="Закрыть смену?"
-                description="После закрытия редактирование чекпоинтов будет недоступно, и начнётся финальный пересчёт."
+                description="Смена будет закрыта без расчёта выплат. Чтобы рассчитать и сохранить выплаты, отмените закрытие, нажмите «К результатам» и подтвердите черновик."
                 confirmLabel="Закрыть смену"
                 cancelLabel="Отмена"
                 pendingLabel={feedbackMessages.shiftSessionClose.loading}
